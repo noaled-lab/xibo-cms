@@ -27,3 +27,6 @@ tests/http-client.private.env.json
 
 # Hide module/template translate file
 locale/moduletranslate.php
+
+# 노아엘이디
+dev-data/
