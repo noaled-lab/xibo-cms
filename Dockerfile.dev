@@ -61,6 +61,9 @@ RUN a2enmod rewrite \
     && a2enmod proxy_http \
     && a2enmod proxy_wstunnel
 
+# Enable OPcache
+RUN phpenmod opcache
+
 # Add all necessary config files in one layer
 ADD docker/ /
 

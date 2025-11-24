@@ -362,6 +362,42 @@ sed -i "s/memory_limit = .*$/memory_limit = $CMS_PHP_MEMORY_LIMIT/" /etc/php/8.4
 sed -i "s/session.cookie_httponly =.*$/session.cookie_httponly = $CMS_PHP_COOKIE_HTTP_ONLY/" /etc/php/8.4/apache2/php.ini
 sed -i "s/session.cookie_samesite =.*$/session.cookie_samesite = $CMS_PHP_COOKIE_SAMESITE/" /etc/php/8.4/apache2/php.ini
 sed -i "s/;session.cookie_secure =.*$/session.cookie_secure = $CMS_PHP_COOKIE_SECURE/" /etc/php/8.4/apache2/php.ini
+
+# Configure OPcache for better performance
+echo "Configuring OPcache"
+# Enable OPcache module
+if [ -f /etc/php/8.4/mods-available/opcache.ini ]; then
+  # Create symlink to enable opcache
+  if [ ! -f /etc/php/8.4/apache2/conf.d/20-opcache.ini ]; then
+    ln -s /etc/php/8.4/mods-available/opcache.ini /etc/php/8.4/apache2/conf.d/20-opcache.ini
+  fi
+  
+  # Optimize OPcache settings
+  # In dev mode, validate timestamps to detect file changes
+  if [ "$CMS_DEV_MODE" == "true" ]; then
+    OP_VALIDATE_TIMESTAMPS=1
+    OP_REVALIDATE_FREQ=2
+  else
+    OP_VALIDATE_TIMESTAMPS=0
+    OP_REVALIDATE_FREQ=0
+  fi
+  
+  # Override OPcache settings
+  cat > /etc/php/8.4/apache2/conf.d/10-opcache-custom.ini <<EOF
+; OPcache settings for performance
+opcache.enable=1
+opcache.enable_cli=0
+opcache.memory_consumption=256
+opcache.interned_strings_buffer=16
+opcache.max_accelerated_files=20000
+opcache.validate_timestamps=$OP_VALIDATE_TIMESTAMPS
+opcache.revalidate_freq=$OP_REVALIDATE_FREQ
+opcache.fast_shutdown=1
+opcache.save_comments=1
+opcache.enable_file_override=1
+opcache.optimization_level=0x7FFFBFFF
+EOF
+fi
 sed -i "s/session.gc_maxlifetime = .*$/session.gc_maxlifetime = $CMS_PHP_SESSION_GC_MAXLIFETIME/" /etc/php/8.4/cli/php.ini
 sed -i "s/post_max_size = .*$/post_max_size = $CMS_PHP_POST_MAX_SIZE/" /etc/php/8.4/cli/php.ini
 sed -i "s/upload_max_filesize = .*$/upload_max_filesize = $CMS_PHP_UPLOAD_MAX_FILESIZE/" /etc/php/8.4/cli/php.ini
@@ -375,6 +411,13 @@ echo "Configure Apache"
 
 # Configure Apache TimeOut
 sed -i "s/\bTimeout\b .*$/Timeout $CMS_APACHE_TIMEOUT/" /etc/apache2/apache2.conf
+
+# Enable KeepAlive for better performance
+sed -i "s/KeepAlive Off/KeepAlive On/" /etc/apache2/sites-enabled/000-default.conf
+# Add KeepAlive settings in apache2.conf if not present
+if ! grep -q "KeepAliveTimeout" /etc/apache2/apache2.conf; then
+  sed -i "/^# KeepAlive/a\KeepAliveTimeout 5\nMaxKeepAliveRequests 100" /etc/apache2/apache2.conf
+fi
 
 # Configure Indexes
 if [ "$CMS_APACHE_OPTIONS_INDEXES" == "true" ]
