@@ -11,6 +11,8 @@ services:
       MYSQL_DATABASE: "cms"
       MYSQL_USER: "cms"
     restart: always
+    networks:
+      - app
 
   cms-xmr:
     image: ghcr.io/xibosignage/xibo-xmr:1.0
@@ -21,6 +23,8 @@ services:
     environment:
       XMR_DEBUG: "true"
       IPV6PUBSUPPORT: "false"
+    networks:
+      - app
 
   cms-web:
     image: ghcr.io/noaled-lab/xibo-cms:latest
@@ -51,12 +55,23 @@ services:
       CMS_APACHE_MAX_CONNECTIONS_PER_CHILD: "1000"
       CMS_APACHE_TIMEOUT: "60"
       CMS_APACHE_LOG_REQUEST_TIME: "false"
+    networks:
+      - app
 
   cms-memcached:
     image: memcached:alpine
     command: memcached -m 15
     restart: always
+    networks:
+      - app
 
   cms-quickchart:
     image: ianw/quickchart
     restart: always
+    networks:
+      - app
+
+networks:
+  app:
+    external: true
+    name: app
