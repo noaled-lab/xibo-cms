@@ -1,0 +1,62 @@
+version: "3"
+
+services:
+  cms-db:
+    image: mysql:8.0
+    ports:
+      - "3310:3306"
+    volumes:
+      - ./db/data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: "cms"
+      MYSQL_USER: "cms"
+    restart: always
+
+  cms-xmr:
+    image: ghcr.io/xibosignage/xibo-xmr:1.0
+    ports:
+      - "9505:9505"
+    restart: always
+    env_file: config.env
+    environment:
+      XMR_DEBUG: "true"
+      IPV6PUBSUPPORT: "false"
+
+  cms-web:
+    image: ghcr.io/noaled-lab/xibo-cms:latest
+    volumes:
+      - ./:/var/www/cms
+    ports:
+      - "8093:80"
+    restart: always
+    env_file: config.env
+    environment:
+      CMS_DEV_MODE: "true"
+      MYSQL_HOST: "cms-db"
+      MYSQL_DATABASE: "cms"
+      XMR_HOST: "cms-xmr"
+      USE_MEMCACHED: "true"
+      # PHP 업로드 설정 - 4GB까지 허용
+      CMS_PHP_UPLOAD_MAX_FILESIZE: "4G"
+      CMS_PHP_POST_MAX_SIZE: "4G"
+      CMS_PHP_MAX_EXECUTION_TIME: "3600"
+      CMS_PHP_CLI_MAX_EXECUTION_TIME: "3600"
+      CMS_PHP_MEMORY_LIMIT: "1G"
+      CMS_PHP_SESSION_GC_MAXLIFETIME: "14400"
+      # Apache 성능 최적화
+      CMS_APACHE_START_SERVERS: "4"
+      CMS_APACHE_MIN_SPARE_SERVERS: "8"
+      CMS_APACHE_MAX_SPARE_SERVERS: "16"
+      CMS_APACHE_MAX_REQUEST_WORKERS: "100"
+      CMS_APACHE_MAX_CONNECTIONS_PER_CHILD: "1000"
+      CMS_APACHE_TIMEOUT: "60"
+      CMS_APACHE_LOG_REQUEST_TIME: "false"
+
+  cms-memcached:
+    image: memcached:alpine
+    command: memcached -m 15
+    restart: always
+
+  cms-quickchart:
+    image: ianw/quickchart
+    restart: always

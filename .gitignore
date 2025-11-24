@@ -30,3 +30,4 @@ locale/moduletranslate.php
 
 # 노아엘이디
 dev-data/
+config.env
