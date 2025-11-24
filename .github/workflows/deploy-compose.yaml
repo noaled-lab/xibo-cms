@@ -56,7 +56,7 @@ jobs:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
-          source: "docker-compose.yaml"
+          source: "docker-compose.deploy.yaml"
           target: "/home/${{ secrets.REMOTE_USER }}/xibo-cms/"
 
       - name: SSH to remote server and deploy
