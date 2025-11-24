@@ -70,5 +70,5 @@ jobs:
             cd /home/${{ secrets.REMOTE_USER }}/xibo-cms
             docker compose down
             echo "${{ secrets.DOT_ENV }}" | base64 --decode > /home/${{ secrets.REMOTE_USER }}/xibo-cms/config.env
-            docker compose up -d --pull always --remove-orphans
+            docker compose -f docker-compose.deploy.yaml up -d --pull always --remove-orphans
             docker image prune -f
