@@ -180,7 +180,7 @@
                 {% endif %}
             {% endif %}
 
-            {% if currentUser.isSuperAdmin() %}
+            {% if currentUser.isSuperAdmin() or currentUser.featureEnabled("settings.view") %}
                 {% if countViewable == 0 %}
                 <li class="nav-item">
                 {% endif %}

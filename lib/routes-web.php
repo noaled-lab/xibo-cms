@@ -517,7 +517,7 @@ $app->group('', function(\Slim\Routing\RouteCollectorProxy $group) {
 // admin
 //
 $app->get('/admin/view', ['\Xibo\Controller\Settings','displayPage'])
-    ->addMiddleware(new SuperAdminAuth($app->getContainer()))
+    ->addMiddleware(new FeatureAuth($app->getContainer(), ['settings.view']))
     ->setName('admin.view');
 
 //

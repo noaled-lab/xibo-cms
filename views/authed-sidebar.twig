@@ -96,7 +96,7 @@
                 <li class="sidebar-list"><a href="{{ url_for("group.view") }}">{% trans "User Groups" %}</a></li>
             {% endif %}
 
-            {% if currentUser.isSuperAdmin() %}
+            {% if currentUser.isSuperAdmin() or currentUser.featureEnabled("settings.view") %}
                 <li class="sidebar-list"><a href="{{ url_for("admin.view") }}">{% trans "Settings" %}</a></li>
             {% endif %}
 

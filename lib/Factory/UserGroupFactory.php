@@ -949,6 +949,11 @@ class UserGroupFactory extends BaseFactory
                     'feature' => 'font.delete',
                     'group' => 'fonts',
                     'title' => __('Delete existing Fonts')
+                ],
+                'settings.view' => [
+                    'feature' => 'settings.view',
+                    'group' => 'system',
+                    'title' => __('View Settings page including CMS Key for display registration')
                 ]
             ];
         }
