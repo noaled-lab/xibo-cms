@@ -19,7 +19,9 @@ services:
         restart: always
         env_file: config.env
     cms-web:
-        image: ghcr.io/noaled-lab/xibo-cms:latest
+        build:
+          context: .
+          dockerfile: Dockerfile
         volumes:
             - "./shared/cms/custom:/var/www/cms/custom:Z"
             - "./shared/backup:/var/www/backup:Z"
