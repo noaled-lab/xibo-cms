@@ -34,7 +34,7 @@ services:
             - MEMCACHED_HOST=cms-memcached
         env_file: config.env
         ports:
-            - "80:80"
+            - "8089:80"
         networks:
             - app
     cms-memcached:
