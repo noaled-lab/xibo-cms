@@ -32,6 +32,18 @@ services:
             - XMR_HOST=cms-xmr
             - CMS_USE_MEMCACHED=true
             - MEMCACHED_HOST=cms-memcached
+            - CMS_PHP_UPLOAD_MAX_FILESIZE=4G # PHP 업로드 설정 - 4GB까지 허용
+            - CMS_PHP_POST_MAX_SIZE=4G # PHP 업로드 설정 - 4GB까지 허용
+            - CMS_PHP_MAX_EXECUTION_TIME=3600 # PHP 최대 실행 시간 설정
+            - CMS_PHP_CLI_MAX_EXECUTION_TIME=3600 # PHP CLI 최대 실행
+            - CMS_PHP_SESSION_GC_MAXLIFETIME=14400 # PHP 세션 최대 수명 설정
+            - CMS_APACHE_START_SERVERS=4 # Apache 성능 최적화
+            - CMS_APACHE_MIN_SPARE_SERVERS=8
+            - CMS_APACHE_MAX_SPARE_SERVERS=16
+            - CMS_APACHE_MAX_REQUEST_WORKERS=100
+            - CMS_APACHE_MAX_CONNECTIONS_PER_CHILD=1000
+            - CMS_APACHE_TIMEOUT=60
+            - CMS_APACHE_LOG_REQUEST_TIME=false
         env_file: config.env
         ports:
             - "8089:80"
