@@ -5,19 +5,18 @@ services:
         image: mysql:8.0
         volumes:
             - "./shared/db:/var/lib/mysql:Z"
-        environment:
-            - MYSQL_DATABASE=cms
-            - MYSQL_USER=cms
         env_file: config.env
         restart: always
-        ports:
-            - "3314:3306"
+        networks:
+            - app
     cms-xmr:
         image: ghcr.io/xibosignage/xibo-xmr:1.0
         ports:
             - "9505:9505"
         restart: always
         env_file: config.env
+        networks:
+            - app
     cms-web:
         image: ghcr.io/noaled-lab/xibo-cms:latest
         volumes:
@@ -35,11 +34,22 @@ services:
             - MEMCACHED_HOST=cms-memcached
         env_file: config.env
         ports:
-            - "8099:80"
+            - "80:80"
+        networks:
+            - app
     cms-memcached:
         image: memcached:alpine
         command: memcached -m 15
         restart: always
+        networks:
+            - app
     cms-quickchart:
-      image: ianw/quickchart
-      restart: always
+        image: ianw/quickchart
+        restart: always
+        networks:
+                - app
+
+networks:
+  app:
+    external: true
+    name: app
