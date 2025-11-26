@@ -40,11 +40,25 @@ $(function() {
         templates.help.feedbackForm({
           trans: translations.helpPane,
           pageURL: window.location.pathname,
+          faultViewUrl: $help.data('faultViewUrl'),
+          faultViewEnabled: $help.data('faultViewEnabled') == 1,
           accountId: accountId,
           currentUserName,
           currentUserEmail,
         }),
       );
+
+      // Privacy info popover
+      $helpContainer.find('.help-pane-feedback-privacy-info > i')
+        .popover({
+          container: '.help-pane-container',
+          placement: 'top',
+          delay: {
+            show: 200,
+            hide: 50,
+          },
+          trigger: 'hover',
+        });
 
       handleFileUpload();
     } else {

@@ -30,78 +30,90 @@ const XiboPlayer = function() {
    * @param {Object} currentWidget Widget object
    * @return {Promise<unknown>}
    */
-  this.getWidgetData = async function(currentWidget) {
+  this.getWidgetData = function(currentWidget) {
     // if we are a dataset type, then first check to see if there
     // is realtime data.
     console.debug('getWidgetData: ' + currentWidget.widgetId);
 
     let localData;
+
+    // wait for dataset fetch (resolve when its "done" or "error" fires)
+    let chain = Promise.resolve();
     if (currentWidget.properties?.dataSetId) {
-      await xiboIC.getData(currentWidget.properties?.dataSetId, {
-        done: (status, data) => {
-          localData = JSON.parse(data);
-        },
+      chain = new Promise(function(resolve) {
+        xiboIC.getData(currentWidget.properties?.dataSetId, {
+          done: (status, data) => {
+            localData = data ? JSON.parse(data) : null;
+            resolve();
+          },
+          error: () => {
+            resolve();
+          },
+        });
       });
     }
 
-    return new Promise(function(resolve) {
-      // if we have data on the widget (for older players),
-      // or if we are not in preview and have empty data on Widget (like text)
-      // do not run ajax use that data instead
-      if (String(currentWidget.url) !== 'null') {
-        const ajaxOptions = {
-          method: 'GET',
-          url: currentWidget.url,
-        };
+    return chain.then(function() {
+      return new Promise(function(resolve) {
+        // if we have data on the widget (for older players),
+        // or if we are not in preview and have empty data on Widget (like text)
+        // do not run ajax use that data instead
+        if (String(currentWidget.url) !== 'null') {
+          const ajaxOptions = {
+            method: 'GET',
+            url: currentWidget.url,
+          };
 
-        // We include dataType for ChromeOS player consumer
-        if (window.location && window.location.pathname === '/pwa/') {
-          ajaxOptions.dataType = 'json';
-        }
+          // We include dataType for ChromeOS player consumer
+          if (window.location && window.location.pathname === '/pwa/') {
+            ajaxOptions.dataType = 'json';
+          }
 
-        // else get data from widget.url,
-        // this will be either getData for preview
-        // or new json file for v4 players
-        $.ajax(ajaxOptions).done(function(data) {
-          // The contents of the JSON file will be an object with data and meta
-          // add in local data.
+          // else get data from widget.url,
+          // this will be either getData for preview
+          // or new json file for v4 players
+          $.ajax(ajaxOptions).done(function(data) {
+            // The contents of the JSON file will be
+            // an object with data and meta
+            // add in local data.
+            if (localData) {
+              data.data = localData;
+            }
+
+            let widgetData = data;
+
+            if (typeof widgetData === 'string') {
+              widgetData = JSON.parse(data);
+            }
+
+            resolve({
+              ...widgetData,
+              isDataReady: true,
+            });
+          }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error(jqXHR, textStatus, errorThrown);
+            resolve({
+              isDataReady: false,
+              error: jqXHR.status,
+              success: false,
+              data: jqXHR.responseJSON,
+            });
+          });
+        } else if (currentWidget.data?.data !== undefined) {
+          // This happens for v3 players where the data is already
+          // added to the HTML
           if (localData) {
-            data.data = localData;
+            currentWidget.data.data = localData;
           }
-
-          let widgetData = data;
-
-          if (typeof widgetData === 'string') {
-            widgetData = JSON.parse(data);
-          }
-
           resolve({
-            ...widgetData,
+            ...currentWidget.data,
             isDataReady: true,
           });
-        }).fail(function(jqXHR, textStatus, errorThrown) {
-          console.error(jqXHR, textStatus, errorThrown);
-          resolve({
-            isDataReady: false,
-            error: jqXHR.status,
-            success: false,
-            data: jqXHR.responseJSON,
-          });
-        });
-      } else if (currentWidget.data?.data !== undefined) {
-        // This happens for v3 players where the data is already
-        // added to the HTML
-        if (localData) {
-          currentWidget.data.data = localData;
+        } else {
+          // This should be impossible.
+          resolve(null);
         }
-        resolve({
-          ...currentWidget.data,
-          isDataReady: true,
-        });
-      } else {
-        // This should be impossible.
-        resolve(null);
-      }
+      });
     });
   };
 
@@ -122,7 +134,7 @@ const XiboPlayer = function() {
 
     if (isDataWidget) {
       const {dataItems, showError, errorMessage} =
-          this.loadData(playerWidget, data);
+        this.loadData(playerWidget, data);
       widgetDataItems = dataItems;
       shouldShowError = showError;
       withErrorMessage = errorMessage;
@@ -185,17 +197,17 @@ const XiboPlayer = function() {
    */
   this.prepareWidgetElements = function(widgetElements, currentWidget) {
     const transformedElems =
-        this.composeElements(widgetElements, currentWidget);
+      this.composeElements(widgetElements, currentWidget);
 
     if (currentWidget.isDataExpected && widgetElements.length > 0) {
       const {minSlot, maxSlot} =
-          PlayerHelper.getMinAndMaxSlot(Object.values(transformedElems));
+        PlayerHelper.getMinAndMaxSlot(Object.values(transformedElems));
       // Compose data elements slots
       currentWidget.maxSlot = maxSlot;
       currentWidget.elements = transformedElems;
       currentWidget.metaElements = this.composeMetaElements(transformedElems);
       currentWidget.dataElements =
-          this.initSlots(transformedElems, minSlot, maxSlot);
+        this.initSlots(transformedElems, minSlot, maxSlot);
       currentWidget.pinnedSlots =
         PlayerHelper.getPinnedSlots(currentWidget.dataElements);
 
@@ -500,9 +512,9 @@ const XiboPlayer = function() {
             if (lastSlotFilled % maxSlot === 0) {
               lastSlotFilled = null;
             } else if (currentKey > maxSlot &&
-                nextSlot !== currentSlot &&
-                pinnedSlots.includes(nextSlot) &&
-                filledPinnedSlot.includes(nextSlot)
+              nextSlot !== currentSlot &&
+              pinnedSlots.includes(nextSlot) &&
+              filledPinnedSlot.includes(nextSlot)
             ) {
               // Next slot is a pinned slot and has been filled
               // So, current item must be passed to next non-pinned slot
@@ -540,25 +552,25 @@ const XiboPlayer = function() {
 
     if (minCount < maxCount) {
       const nonPinnedDataKeys =
-          Object.values(groupSlotsData).reduce((a, b) => {
-            if (!b.hasPinnedSlot) {
-              a = [...a, ...(b.dataKeys)];
-            } else {
-              if (b.dataKeys.length > 1) {
-                b.dataKeys.forEach(function(dataKey) {
-                  if (!pinnedSlots.includes(dataKey)) {
-                    a = [...a, dataKey];
-                  }
-                });
-              }
+        Object.values(groupSlotsData).reduce((a, b) => {
+          if (!b.hasPinnedSlot) {
+            a = [...a, ...(b.dataKeys)];
+          } else {
+            if (b.dataKeys.length > 1) {
+              b.dataKeys.forEach(function(dataKey) {
+                if (!pinnedSlots.includes(dataKey)) {
+                  a = [...a, dataKey];
+                }
+              });
             }
+          }
 
-            return a;
-          }, []).sort((a, b) => {
-            if (a < b) return -1;
-            if (a > b) return 1;
-            return 0;
-          });
+          return a;
+        }, []).sort((a, b) => {
+          if (a < b) return -1;
+          if (a > b) return 1;
+          return 0;
+        });
 
       Object.keys(groupSlotsData).forEach(function(slotIndex, slotKey) {
         const dataCount = dataCounts[slotIndex];
@@ -601,7 +613,7 @@ const XiboPlayer = function() {
     elemCopy.dataKeys = [];
 
     if (Object.keys(elemCopy).length > 0 &&
-        elemCopy.hasOwnProperty('properties')) {
+      elemCopy.hasOwnProperty('properties')) {
       delete elemCopy.properties;
     }
 
@@ -673,7 +685,7 @@ const XiboPlayer = function() {
         if (elemProps.hasOwnProperty(extendWith)) {
           elemCopy[elemCopy.dataOverride] = elemProps[extendWith];
           elemCopy.templateData[elemCopy.dataOverride] =
-              elemProps[extendWith];
+            elemProps[extendWith];
         }
       }
     }
@@ -685,7 +697,7 @@ const XiboPlayer = function() {
 
     // Check if element is extended and data is coming from meta
     if (elemCopy.isExtended && elemCopy.dataOverrideWith !== null &&
-        elemCopy.dataOverrideWith.includes('meta')) {
+      elemCopy.dataOverrideWith.includes('meta')) {
       elemCopy.dataInMeta = true;
     }
 
@@ -1461,18 +1473,18 @@ XiboPlayer.prototype.renderGlobalElements = function(currentWidget) {
           // Invoke groupItem onTemplateRender if present
           Promise.all(Array.from(elemObj.items).map(function(groupItem) {
             const itemID =
-            groupItem.uniqueID || groupItem.templateData?.uniqueID;
+              groupItem.uniqueID || groupItem.templateData?.uniqueID;
 
             // Call onTemplateRender
             // Handle the rendering of the template
             (groupItem.onTemplateRender() !== undefined) &&
-            groupItem.onTemplateRender()(
-              groupItem.elementId,
-              $content.find(`#${itemID}`).parent(),
-              {},
-              {groupItem, ...groupItem.templateData, data: {}},
-              meta,
-            );
+              groupItem.onTemplateRender()(
+                groupItem.elementId,
+                $content.find(`#${itemID}`).parent(),
+                {},
+                {groupItem, ...groupItem.templateData, data: {}},
+                meta,
+              );
           }));
         }
       } else {
@@ -1644,7 +1656,7 @@ XiboPlayer.prototype.loadElementFunctions = function(element, dataItem) {
       `onTemplateRender_${element.templateData.id}`
     ] === 'function') {
       onTemplateRender = window[`onTemplateRender_${element.templateData.id}`];
-    } else if (element.isExtended && typeof window [
+    } else if (element.isExtended && typeof window[
       `onTemplateRender_${element.dataOverride}`
     ] === 'function') {
       onTemplateRender = window[`onTemplateRender_${element.dataOverride}`];
@@ -1694,7 +1706,7 @@ XiboPlayer.prototype.onDataLoad = function(params) {
     );
 
     if (onDataLoadResult !== undefined &&
-        Object.keys(onDataLoadResult).length > 0
+      Object.keys(onDataLoadResult).length > 0
     ) {
       if ((onDataLoadResult ?? {}).hasOwnProperty('handled')) {
         onDataLoadResponse = {
@@ -1886,11 +1898,11 @@ XiboPlayer.prototype.onVisible = function(params) {
 XiboPlayer.prototype.saveTemplateDimensions = function($template) {
   if ($template && $template.length > 0) {
     $template.data('width') &&
-    (globalOptions.widgetDesignWidth = $template.data('width'));
+      (globalOptions.widgetDesignWidth = $template.data('width'));
     $template.data('height') &&
-    (globalOptions.widgetDesignHeight = $template.data('height'));
+      (globalOptions.widgetDesignHeight = $template.data('height'));
     $template.data('gap') &&
-    (globalOptions.widgetDesignGap = $template.data('gap'));
+      (globalOptions.widgetDesignGap = $template.data('gap'));
   }
 };
 
