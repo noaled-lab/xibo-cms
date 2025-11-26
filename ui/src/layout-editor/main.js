@@ -3361,7 +3361,9 @@ lD.getObjectByTypeAndId = function(type, id, auxId) {
       id = 'region_' + id;
     }
 
+    // Verify that the region exists before checking the unique id
     targetObject = lD.layout.regions[id];
+
   } else if (type === 'drawer') {
     targetObject = lD.layout.drawer;
   } else if (type === 'canvas') {

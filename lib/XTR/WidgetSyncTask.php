@@ -139,20 +139,32 @@ class WidgetSyncTask implements TaskInterface
 
                             // We need to run the cache for every display this widget is assigned to.
                             foreach ($this->getDisplays($widget) as $display) {
-                                $mediaIds = $this->cache(
+                                $cacheData = $this->cache(
                                     $module,
                                     $widget,
                                     $widgetInterface,
                                     $display,
                                 );
-                                $this->linkDisplays($widget->widgetId, [$display], $mediaIds);
+
+                                $this->linkDisplays(
+                                    $widget->widgetId,
+                                    [$display],
+                                    $cacheData['mediaIds'],
+                                    $cacheData['fromCache']
+                                );
                             }
                         } else {
                             $this->getLogger()->debug('widgetSyncTask: cache is not display specific');
 
                             // Just a single run will do it.
-                            $mediaIds = $this->cache($module, $widget, $widgetInterface, null);
-                            $this->linkDisplays($widget->widgetId, $this->getDisplays($widget), $mediaIds);
+                            $cacheData = $this->cache($module, $widget, $widgetInterface, null);
+
+                            $this->linkDisplays(
+                                $widget->widgetId,
+                                $this->getDisplays($widget),
+                                $cacheData['mediaIds'],
+                                $cacheData['fromCache']
+                            );
                         }
 
                         // Record end time and aggregate for final total
@@ -183,8 +195,12 @@ class WidgetSyncTask implements TaskInterface
     }
 
     /**
-     * @return int[] mediaIds
-     * @throws \Xibo\Support\Exception\GeneralException
+     * @param Module $module
+     * @param Widget $widget
+     * @param WidgetProviderInterface|null $widgetInterface
+     * @param Display|null $display
+     * @return array
+     * @throws GeneralException
      */
     private function cache(
         Module $module,
@@ -251,6 +267,9 @@ class WidgetSyncTask implements TaskInterface
         } else {
             $dataTypeFields = null;
         }
+
+        // Is this data from cache?
+        $fromCache = false;
 
         if (!$widgetDataProviderCache->decorateWithCache($dataProvider, $cacheKey, $dataModifiedDt)
             || $widgetDataProviderCache->isCacheMissOrOld()
@@ -343,11 +362,16 @@ class WidgetSyncTask implements TaskInterface
         } else {
             $this->getLogger()->debug('cache: Cache still valid, key: ' . $cacheKey);
 
+            $fromCache = true;
+
             // Get the existing mediaIds so that we can maintain the links to displays.
             $mediaIds = $widgetDataProviderCache->getCachedMediaIds();
         }
 
-        return $mediaIds;
+        return [
+            'mediaIds' => $mediaIds,
+            'fromCache' => $fromCache
+        ];
     }
 
     /**
@@ -381,9 +405,10 @@ class WidgetSyncTask implements TaskInterface
      * @param int $widgetId
      * @param Display[] $displays
      * @param int[] $mediaIds
+     * @param bool $fromCache
      * @return void
      */
-    private function linkDisplays(int $widgetId, array $displays, array $mediaIds): void
+    private function linkDisplays(int $widgetId, array $displays, array $mediaIds, bool $fromCache): void
     {
         $this->getLogger()->debug('linkDisplays: ' . count($displays) . ' displays, ' . count($mediaIds) . ' media');
 
@@ -426,8 +451,11 @@ class WidgetSyncTask implements TaskInterface
                     $this->displayFactory->getDisplayNotifyService()->collectLater()
                         ->notifyByDisplayId($display->displayId);
                 }
-                $this->displayFactory->getDisplayNotifyService()
-                    ->notifyDataUpdate($display, $widgetId);
+
+                if (!$fromCache) {
+                    $this->displayFactory->getDisplayNotifyService()
+                        ->notifyDataUpdate($display, $widgetId);
+                }
             } else {
                 $this->displayFactory->getDisplayNotifyService()->collectNow()
                     ->notifyByDisplayId($display->displayId);
