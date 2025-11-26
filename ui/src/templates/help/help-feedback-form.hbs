@@ -4,8 +4,14 @@
     close=true
 }}
 
-<form class="help-pane-feedback-form" data-action="https://xibosignage.com/api/cms/feedback" data-method="POST">
-    <div class="help-pane-feedback-form-title">{{trans.form.title}}</div>
+<form class="help-pane-feedback-form" data-action="https://api.xibosignage.com/api/cms/feedback" data-method="POST">
+    
+    <div class="d-flex align-items-center">
+        <div class="help-pane-feedback-form-title">{{trans.form.title}}</div>
+        <div class="help-pane-feedback-privacy-info">
+            <i class="btn fa fa-info-circle text-info" data-toggle="popover" data-content="{{trans.form.privacyNotice}}"></i>
+        </div>
+    </div>
 
     {{> ../forms/inputs/text
         id="feedback_form_name"
@@ -63,7 +69,13 @@
         </div>
     </div>
 
-    <button type="button" data-action="submit_feedback_form" class="btn btn-primary submit-form-btn">
-        {{trans.form.sendFeedback}}
-    </button>
+    <div class="d-flex">
+        {{#if faultViewEnabled}}
+           <a type="button" class="btn btn-link" href="{{faultViewUrl}}" target="_blank">{{trans.form.reportingAnIssue}}</a>
+        {{/if}}
+
+        <button type="button" data-action="submit_feedback_form" class="btn btn-primary submit-form-btn ml-auto">
+            {{trans.form.sendFeedback}}
+        </button>
+    </div>
 </form>

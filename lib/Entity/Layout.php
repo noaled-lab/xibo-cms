@@ -1315,9 +1315,6 @@ class Layout implements \JsonSerializable
         // merge regions and drawers into one array and go through it.
         $allRegions = array_merge($this->regions, $this->drawers);
 
-        // Used to identify Layouts which only have Canvas with global elements
-        $isCanvasOnlyRegion = true;
-
         foreach ($allRegions as $region) {
             /* @var Region $region */
 
@@ -1379,8 +1376,7 @@ class Layout implements \JsonSerializable
                     // Pull out the global widget, if we have one (we should)
                     if ($item->type === 'global') {
                         $widget = $item;
-                    } else {
-                        $isCanvasOnlyRegion = false;
+
                     }
 
                     // Get the highest duration.
@@ -1403,8 +1399,6 @@ class Layout implements \JsonSerializable
                     $widgets = [$widget];
                 }
             } else {
-                $isCanvasOnlyRegion = false;
-
                 $widgets = $region->getPlaylist()->setModuleFactory($this->moduleFactory)->expandWidgets();
             }
 
@@ -1419,6 +1413,8 @@ class Layout implements \JsonSerializable
             }
 
             // Work out if we have any "lead regions", those are Widgets with a duration
+            $maxWidgetDurationInLayout = 1;
+
             foreach ($widgets as $widget) {
                 if (($widget->useDuration == 1 && $widget->type !== 'global')
                     || $countWidgets > 1
@@ -1427,6 +1423,11 @@ class Layout implements \JsonSerializable
                 ) {
                     $layoutCountRegionsWithDuration++;
                 }
+
+                $maxWidgetDurationInLayout = Max(
+                    ($widget->useDuration == 1 ? $widget->duration : $widget->calculatedDuration),
+                    $maxWidgetDurationInLayout
+                );
             }
 
             foreach ($widgets as $widget) {
@@ -1454,16 +1455,10 @@ class Layout implements \JsonSerializable
                 ) {
                     // Make sure this Widget expires immediately so that the other Regions can be the leaders when
                     // it comes to expiring the Layout
-                    $widgetDuration = Widget::$widgetMinDuration;
-                }
-
-                // Layouts which only have Canvas with global elements
-                if ($region->type == 'canvas'
-                    && $widget->type == 'global'
-                    && $isCanvasOnlyRegion
-                ) {
-                    $widget->calculatedDuration = 10;
-                    $widgetDuration = $widget->calculatedDuration;
+                    // Only do this when the widget's default duration is not the max duration in layout
+                    if ($widgetDuration < $maxWidgetDurationInLayout) {
+                        $widgetDuration = Widget::$widgetMinDuration;
+                    }
                 }
 
                 if ($region->isDrawer === 0) {
@@ -1477,7 +1472,7 @@ class Layout implements \JsonSerializable
                     if ($tempCyclePlaybackAverageDuration) {
                         $region->duration = $region->duration + $tempCyclePlaybackAverageDuration;
                     } else {
-                        $region->duration = $region->duration + $widget->calculatedDuration;
+                        $region->duration = $region->duration + $widgetDuration;
                     }
 
                     // We also want to add any transition OUT duration
@@ -1516,6 +1511,7 @@ class Layout implements \JsonSerializable
                     ($widget->type === 'video' || $widget->type === 'audio')
                     && $widget->useDuration === 0
                 );
+
                 $mediaNode->setAttribute('duration', ($isEndDetectVideoWidget ? 0 : $widgetDuration));
                 $mediaNode->setAttribute('useDuration', $widget->useDuration);
                 $widgetActionNode = null;
