@@ -140,6 +140,13 @@ class Settings extends Base
             $systemUser = null;
         }
 
+        // The admin User Group (optional)
+        try {
+            $adminUserGroup = $this->userGroupFactory->getById($this->getConfig()->getSetting('ADMIN_USERGROUP'));
+        } catch (NotFoundException $notFoundException) {
+            $adminUserGroup = null;
+        }
+
         // The default user group
         try {
             $defaultUserGroup = $this->userGroupFactory->getById($this->getConfig()->getSetting('DEFAULT_USERGROUP'));
@@ -186,7 +193,8 @@ class Settings extends Base
             'elevateLogUntil' => $elevateLogUntil,
             'defaultTransitionIn' => $defaultTransitionIn,
             'defaultTransitionOut' => $defaultTransitionOut,
-            'systemUser' => $systemUser
+            'systemUser' => $systemUser,
+            'adminUserGroup' => $adminUserGroup
         ]);
 
         return $this->render($request, $response);
@@ -739,6 +747,11 @@ class Settings extends Base
         if ($this->getConfig()->isSettingEditable('DEFAULT_USERGROUP')) {
             $this->handleChangedSettings('DEFAULT_USERGROUP', $this->getConfig()->getSetting('DEFAULT_USERGROUP'), $sanitizedParams->getInt('DEFAULT_USERGROUP'), $changedSettings);
             $this->getConfig()->changeSetting('DEFAULT_USERGROUP', $sanitizedParams->getInt('DEFAULT_USERGROUP'));
+        }
+
+        if ($this->getConfig()->isSettingEditable('ADMIN_USERGROUP')) {
+            $this->handleChangedSettings('ADMIN_USERGROUP', $this->getConfig()->getSetting('ADMIN_USERGROUP'), $sanitizedParams->getInt('ADMIN_USERGROUP'), $changedSettings);
+            $this->getConfig()->changeSetting('ADMIN_USERGROUP', $sanitizedParams->getInt('ADMIN_USERGROUP'));
         }
 
         if ($this->getConfig()->isSettingEditable('defaultUsertype')) {
