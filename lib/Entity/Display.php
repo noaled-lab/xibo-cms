@@ -1083,6 +1083,21 @@ class Display implements \JsonSerializable
         $this->getLog()->debug('Creating display specific group with userId ' . $displayGroup->userId);
 
         $displayGroup->save();
+
+        // If an Admin User Group is configured, grant it full permissions for this new display specific group
+        try {
+            $adminGroupId = $this->config->getSetting('ADMIN_USERGROUP');
+            if (!empty($adminGroupId)) {
+                // Verify the group exists
+                $exists = $this->getStore()->exists('SELECT GroupID FROM `group` WHERE GroupID = :groupId', ['groupId' => $adminGroupId]);
+                if ($exists) {
+                    $displayGroup->addPermissionForGroup($adminGroupId, 1, 1, 1);
+                }
+            }
+        } catch (\Exception $e) {
+            // Don't let permission creation block display creation; log and continue
+            $this->getLog()->error('Failed to apply ADMIN_USERGROUP permissions: ' . $e->getMessage());
+        }
     }
 
 

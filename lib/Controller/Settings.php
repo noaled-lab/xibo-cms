@@ -28,9 +28,11 @@ use Slim\Http\Response as Response;
 use Slim\Http\ServerRequest as Request;
 use Xibo\Event\PlaylistMaxNumberChangedEvent;
 use Xibo\Event\SystemUserChangedEvent;
+use Xibo\Event\AdminUserGroupChangedEvent;
 use Xibo\Factory\LayoutFactory;
 use Xibo\Factory\TransitionFactory;
 use Xibo\Factory\UserFactory;
+use Xibo\Factory\DisplayGroupFactory;
 use Xibo\Factory\UserGroupFactory;
 use Xibo\Helper\DateFormatHelper;
 use Xibo\Support\Exception\AccessDeniedException;
@@ -49,6 +51,9 @@ class Settings extends Base
     /** @var UserGroupFactory */
     private $userGroupFactory;
 
+    /** @var DisplayGroupFactory */
+    private $displayGroupFactory;
+
     /** @var TransitionFactory */
     private $transitionfactory;
 
@@ -62,12 +67,13 @@ class Settings extends Base
      * @param TransitionFactory $transitionfactory
      * @param UserFactory $userFactory
      */
-    public function __construct($layoutFactory, $userGroupFactory, $transitionfactory, $userFactory)
+    public function __construct($layoutFactory, $userGroupFactory, $transitionfactory, $userFactory, $displayGroupFactory)
     {
         $this->layoutFactory = $layoutFactory;
         $this->userGroupFactory = $userGroupFactory;
         $this->transitionfactory = $transitionfactory;
         $this->userFactory = $userFactory;
+        $this->displayGroupFactory = $displayGroupFactory;
     }
 
     /**
@@ -798,6 +804,19 @@ class Settings extends Base
                 $newSystemUser = $this->userFactory->getById($newValue);
                 $oldSystemUser = $this->userFactory->getById($oldValue);
                 $this->getDispatcher()->dispatch(SystemUserChangedEvent::$NAME, new SystemUserChangedEvent($oldSystemUser, $newSystemUser));
+            } elseif ($setting === 'ADMIN_USERGROUP') {
+                $oldGroup = null;
+                $newGroup = null;
+
+                if (!empty($oldValue)) {
+                    try { $oldGroup = $this->userGroupFactory->getById($oldValue); } catch (NotFoundException $e) { $oldGroup = null; }
+                }
+
+                if (!empty($newValue)) {
+                    try { $newGroup = $this->userGroupFactory->getById($newValue); } catch (NotFoundException $e) { $newGroup = null; }
+                }
+
+                $this->getDispatcher()->dispatch(AdminUserGroupChangedEvent::$NAME, new AdminUserGroupChangedEvent($oldGroup, $newGroup));
             } elseif ($setting === 'DEFAULT_DYNAMIC_PLAYLIST_MAXNUMBER_LIMIT') {
                 $this->getDispatcher()->dispatch(PlaylistMaxNumberChangedEvent::$NAME, new PlaylistMaxNumberChangedEvent($newValue));
             }

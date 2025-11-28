@@ -36,6 +36,7 @@ use Xibo\Event\MediaFullLoadEvent;
 use Xibo\Event\ParsePermissionEntityEvent;
 use Xibo\Event\PlaylistMaxNumberChangedEvent;
 use Xibo\Event\SystemUserChangedEvent;
+use Xibo\Event\AdminUserGroupChangedEvent;
 use Xibo\Event\UserDeleteEvent;
 use Xibo\Listener\CampaignListener;
 use Xibo\Listener\DataSetDataProviderListener;
@@ -302,6 +303,11 @@ class ListenersMiddleware implements MiddlewareInterface
         // On System User change event listener
         $dispatcher->addListener(SystemUserChangedEvent::$NAME, (new \Xibo\Listener\OnSystemUserChange(
             $c->get('store')
+        )));
+
+        // On Admin User Group change event listener
+        $dispatcher->addListener(AdminUserGroupChangedEvent::$NAME, (new \Xibo\Listener\OnAdminUserGroupChange(
+            $c->get('displayGroupFactory')
         )));
 
         // On Playlist Max Number of Items limit change listener
