@@ -30,6 +30,7 @@ services:
             - "./shared/cms/ca-certs:/var/www/cms/ca-certs:Z"
         restart: always
         environment:
+            - CMS_DEV_MODE=true
             - MYSQL_HOST=cms-db
             - XMR_HOST=cms-xmr
             - CMS_USE_MEMCACHED=true

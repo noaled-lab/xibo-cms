@@ -526,7 +526,8 @@ class Controllers
                     $c->get('layoutFactory'),
                     $c->get('userGroupFactory'),
                     $c->get('transitionFactory'),
-                    $c->get('userFactory')
+                    $c->get('userFactory'),
+                    $c->get('displayGroupFactory')
                 );
                 $controller->useBaseDependenciesService($c->get('ControllerBaseDependenciesService'));
                 return $controller;
