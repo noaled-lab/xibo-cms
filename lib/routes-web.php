@@ -457,10 +457,13 @@ $app->group('', function(\Slim\Routing\RouteCollectorProxy $group) {
 //
 $app->group('', function(\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/displaygroup/view', ['\Xibo\Controller\DisplayGroup','displayPage'])->setName('displaygroup.view');
-    $group->get('/displaygroup/form/command/{id}', ['\Xibo\Controller\DisplayGroup','commandForm'])->setName('displayGroup.command.form');
     $group->get('/displaygroup/form/collect/{id}', ['\Xibo\Controller\DisplayGroup','collectNowForm'])->setName('displayGroup.collectNow.form');
     $group->get('/displaygroup/form/trigger/webhook/{id}', ['\Xibo\Controller\DisplayGroup','triggerWebhookForm'])->setName('displayGroup.trigger.webhook.form');
 })->addMiddleware(new FeatureAuth($app->getContainer(), ['displaygroup.view']));
+
+$app->get('/displaygroup/form/command/{id}', ['\Xibo\Controller\DisplayGroup','commandForm'])
+    ->addMiddleware(new FeatureAuth($app->getContainer(), ['command.send']))
+    ->setName('displayGroup.command.form');
 
 $app->get('/displaygroup/form/add', ['\Xibo\Controller\DisplayGroup','addForm'])
     ->addMiddleware(new FeatureAuth($app->getContainer(), ['displaygroup.add']))
@@ -672,12 +675,18 @@ $app->group('', function(\Slim\Routing\RouteCollectorProxy $group) {
 //
 // Commands
 //
+$app->get('/command/view', ['\Xibo\Controller\Command','displayPage'])
+    ->addMiddleware(new FeatureAuth($app->getContainer(), ['command.view']))
+    ->setName('command.view');
+
+$app->get('/command/form/add', ['\Xibo\Controller\Command','addForm'])
+    ->addMiddleware(new FeatureAuth($app->getContainer(), ['command.add']))
+    ->setName('command.add.form');
+
 $app->group('', function(\Slim\Routing\RouteCollectorProxy $group) {
-    $group->get('/command/view', ['\Xibo\Controller\Command','displayPage'])->setName('command.view');
-    $group->get('/command/form/add', ['\Xibo\Controller\Command','addForm'])->setName('command.add.form');
     $group->get('/command/form/edit/{id}', ['\Xibo\Controller\Command','editForm'])->setName('command.edit.form');
     $group->get('/command/form/delete/{id}', ['\Xibo\Controller\Command','deleteForm'])->setName('command.delete.form');
-})->addMiddleware(new FeatureAuth($app->getContainer(), ['command.view']));
+})->addMiddleware(new FeatureAuth($app->getContainer(), ['command.modify']));
 
 //
 // Daypart
