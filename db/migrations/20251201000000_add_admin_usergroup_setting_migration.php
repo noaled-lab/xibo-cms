@@ -20,6 +20,8 @@
  * along with Xibo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+namespace Xibo\Db\Migrations;
+
 use Phinx\Migration\AbstractMigration;
 
 class AddAdminUsergroupSettingMigration extends AbstractMigration

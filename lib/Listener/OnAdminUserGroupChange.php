@@ -25,7 +25,10 @@ class OnAdminUserGroupChange
 
         // Get all existing display-specific groups
         try {
-            $displayGroups = $this->displayGroupFactory->query(null, ['disableUserCheck' => 1, 'isDisplaySpecific' => 1]);
+            $displayGroups = $this->displayGroupFactory->query(
+                null,
+                ['disableUserCheck' => 1, 'isDisplaySpecific' => 1]
+            );
 
             foreach ($displayGroups as $dg) {
                 // Remove permissions from old group if it exists
