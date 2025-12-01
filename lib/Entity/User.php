@@ -1412,12 +1412,27 @@ class User implements \JsonSerializable, UserEntityInterface
         // Admin users
         if ($this->userTypeId == 1 || ($this->userId == $object->getOwnerId() && $this->featureEnabled('user.sharing')))
             return true;
+        
+        // Admin User Group members (same as Super Admin)
+        $adminGroupId = $this->configService->getSetting('ADMIN_USERGROUP');
+        if (!empty($adminGroupId)) {
+            // Extract group IDs from UserGroup objects
+            $userGroupIds = array_map(function($group) {
+                return $group->groupId;
+            }, $this->groups);
+            
+            if (in_array($adminGroupId, $userGroupIds)) {
+                return true;
+            }
+        }
+        
         // Group Admins
-        else if ($this->userTypeId == 2 && count(array_intersect($this->groups, $this->userGroupFactory->getByUserId($object->getOwnerId()))) && $this->featureEnabled('user.sharing'))
+        if ($this->userTypeId == 2 && count(array_intersect($this->groups, $this->userGroupFactory->getByUserId($object->getOwnerId()))) && $this->featureEnabled('user.sharing')) {
             // Group Admin and in the same group as the owner.
             return true;
-        else
-            return false;
+        }
+        
+        return false;
     }
 
     /**
