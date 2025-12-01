@@ -1140,4 +1140,22 @@ class DisplayGroup implements \JsonSerializable
         $permission = $this->permissionFactory->create($groupId, get_class($this), $this->displayGroupId, $view, $edit, $delete);
         $permission->save();
     }
+
+    /**
+     * Remove permission for a group from this display group
+     * @param int $groupId
+     */
+    public function removePermissionForGroup($groupId)
+    {
+        // Ensure permissions are loaded for inspection
+        $this->permissions = $this->permissionFactory->getByObjectId(get_class($this), $this->displayGroupId);
+
+        foreach ($this->permissions as $permission) {
+            /* @var \Xibo\Entity\Permission $permission */
+            if ($permission->groupId == $groupId) {
+                $permission->delete();
+                return;
+            }
+        }
+    }
 }

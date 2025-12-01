@@ -20,22 +20,30 @@ class OnAdminUserGroupChange
 
     public function __invoke(AdminUserGroupChangedEvent $event)
     {
+        $oldGroup = $event->getOldGroup();
         $newGroup = $event->getNewGroup();
 
-        if ($newGroup === null) {
-            // Nothing to apply
-            return;
-        }
-
-        // Apply permissions to all existing display-specific groups
+        // Get all existing display-specific groups
         try {
             $displayGroups = $this->displayGroupFactory->query(null, ['disableUserCheck' => 1, 'isDisplaySpecific' => 1]);
 
             foreach ($displayGroups as $dg) {
-                try {
-                    $dg->addPermissionForGroup($newGroup->groupId, 1, 1, 1);
-                } catch (\Exception $e) {
-                    // Best-effort; cannot log here without logger, swallow exceptions
+                // Remove permissions from old group if it exists
+                if ($oldGroup !== null) {
+                    try {
+                        $dg->removePermissionForGroup($oldGroup->groupId);
+                    } catch (\Exception $e) {
+                        // Best-effort; cannot log here without logger, swallow exceptions
+                    }
+                }
+
+                // Add permissions to new group if it exists
+                if ($newGroup !== null) {
+                    try {
+                        $dg->addPermissionForGroup($newGroup->groupId, 1, 1, 1);
+                    } catch (\Exception $e) {
+                        // Best-effort; cannot log here without logger, swallow exceptions
+                    }
                 }
             }
         } catch (NotFoundException $e) {
