@@ -48,6 +48,10 @@
             {% if currentUser.featureEnabled("menuBoard.view") %}
                 <li class="sidebar-list"><a href="{{ url_for("menuBoard.view") }}">{% trans "Menu Boards" %}</a></li>
             {% endif %}
+
+            {% if currentUser.featureEnabled("font.view") %}
+                <li class="sidebar-list"><a href="{{ url_for("font.view") }}">{% trans "Fonts" %}</a></li>
+            {% endif %}
         {% endif %}
 
         {% set countViewable = currentUser.featureEnabledCount(["displays.view", "displaygroup.view", "displayprofile.view", "playersoftware.view", "command.view"]) %}
@@ -84,7 +88,7 @@
             {% set userMenuViewable = false %}
         {% endif %}
 
-        {% set countViewable = currentUser.featureEnabledCount(["usergroup.view", "module.view", "transition.view", "task.view"]) %}
+        {% set countViewable = currentUser.featureEnabledCount(["usergroup.view", "module.view", "transition.view", "task.view", "tag.view"]) %}
         {% if countViewable > 0 or userMenuViewable %}
             <li class="sidebar-title"><a>{% trans "Administration" %}</a></li>
 
@@ -122,10 +126,6 @@
 
             {% if currentUser.isSuperAdmin() %}
                 <li class="sidebar-list"><a href="{{ url_for("folders.view") }}">{% trans "Folders" %}</a></li>
-            {% endif %}
-
-            {% if currentUser.featureEnabled("font.view") %}
-                <li class="sidebar-list"><a href="{{ url_for("font.view") }}">{% trans "Fonts" %}</a></li>
             {% endif %}
         {% endif %}
 
