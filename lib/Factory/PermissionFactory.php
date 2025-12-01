@@ -189,6 +189,13 @@ class PermissionFactory extends BaseFactory
                   FROM `group`
                  WHERE IsUserSpecific = 0 ';
 
+        // Exclude ADMIN_USERGROUP from the sharing form
+        $adminGroupId = $this->getConfig()->getSetting('ADMIN_USERGROUP');
+        if (!empty($adminGroupId)) {
+            $body .= ' AND `group`.groupId != :adminGroupId ';
+            $params['adminGroupId'] = $adminGroupId;
+        }
+
         // Permissions for the group section
         if ($sanitizedFilter->getCheckbox('disableUserCheck') == 0) {
             // Normal users can only see their group
