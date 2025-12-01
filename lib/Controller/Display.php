@@ -1010,30 +1010,33 @@ class Display extends Base
                 || $this->getUser()->featureEnabled('displays.limitedView')
             ) {
                 if ($this->getUser()->checkEditable($display)) {
-                    if ($this->getUser()->featureEnabled('layout.view')) {
-                        $display->buttons[] = [
-                            'id' => 'display_button_layouts_jump',
-                            'linkType' => '_self',
-                            'external' => true,
-                            'url' => $this->urlFor($request, 'layout.view')
-                                . '?activeDisplayGroupId=' . $display->displayGroupId,
-                            'text' => __('Jump to Scheduled Layouts')
-                        ];
+                    // Only show these menu items for SuperAdmin users
+                    if ($this->getUser()->isSuperAdmin()) {
+                        if ($this->getUser()->featureEnabled('layout.view')) {
+                            $display->buttons[] = [
+                                'id' => 'display_button_layouts_jump',
+                                'linkType' => '_self',
+                                'external' => true,
+                                'url' => $this->urlFor($request, 'layout.view')
+                                    . '?activeDisplayGroupId=' . $display->displayGroupId,
+                                'text' => __('Jump to Scheduled Layouts')
+                            ];
+                        }
+
+                        // File Associations
+                        $display->buttons[] = array(
+                            'id' => 'displaygroup_button_fileassociations',
+                            'url' => $this->urlFor($request, 'displayGroup.media.form', ['id' => $display->displayGroupId]),
+                            'text' => __('Assign Files')
+                        );
+
+                        // Layout Assignments
+                        $display->buttons[] = array(
+                            'id' => 'displaygroup_button_layout_associations',
+                            'url' => $this->urlFor($request, 'displayGroup.layout.form', ['id' => $display->displayGroupId]),
+                            'text' => __('Assign Layouts')
+                        );
                     }
-
-                    // File Associations
-                    $display->buttons[] = array(
-                        'id' => 'displaygroup_button_fileassociations',
-                        'url' => $this->urlFor($request, 'displayGroup.media.form', ['id' => $display->displayGroupId]),
-                        'text' => __('Assign Files')
-                    );
-
-                    // Layout Assignments
-                    $display->buttons[] = array(
-                        'id' => 'displaygroup_button_layout_associations',
-                        'url' => $this->urlFor($request, 'displayGroup.layout.form', ['id' => $display->displayGroupId]),
-                        'text' => __('Assign Layouts')
-                    );
                 }
 
                 // Screen Shot
@@ -1089,35 +1092,35 @@ class Display extends Base
                 ];
 
                 if ($this->getUser()->checkEditable($display)) {
-                    // Trigger webhook
-                    $display->buttons[] = [
-                        'id' => 'display_button_trigger_webhook',
-                        'url' => $this->urlFor(
-                            $request,
-                            'displayGroup.trigger.webhook.form',
-                            ['id' => $display->displayGroupId]
-                        ),
-                        'text' => __('Trigger a web hook'),
-                        'multi-select' => true,
-                        'dataAttributes' => [
-                            [
-                                'name' => 'commit-url',
-                                'value' => $this->urlFor(
-                                    $request,
-                                    'displayGroup.action.trigger.webhook',
-                                    ['id' => $display->displayGroupId]
-                                )
-                            ],
-                            ['name' => 'commit-method', 'value' => 'post'],
-                            ['name' => 'id', 'value' => 'display_button_trigger_webhook'],
-                            ['name' => 'sort-group', 'value' => 3],
-                            ['name' => 'text', 'value' => __('Trigger a web hook')],
-                            ['name' => 'rowtitle', 'value' => $display->display],
-                            ['name' => 'form-callback', 'value' => 'triggerWebhookMultiSelectFormOpen']
-                        ]
-                    ];
-
+                    // Trigger webhook - Only show for SuperAdmin users
                     if ($this->getUser()->isSuperAdmin()) {
+                        $display->buttons[] = [
+                            'id' => 'display_button_trigger_webhook',
+                            'url' => $this->urlFor(
+                                $request,
+                                'displayGroup.trigger.webhook.form',
+                                ['id' => $display->displayGroupId]
+                            ),
+                            'text' => __('Trigger a web hook'),
+                            'multi-select' => true,
+                            'dataAttributes' => [
+                                [
+                                    'name' => 'commit-url',
+                                    'value' => $this->urlFor(
+                                        $request,
+                                        'displayGroup.action.trigger.webhook',
+                                        ['id' => $display->displayGroupId]
+                                    )
+                                ],
+                                ['name' => 'commit-method', 'value' => 'post'],
+                                ['name' => 'id', 'value' => 'display_button_trigger_webhook'],
+                                ['name' => 'sort-group', 'value' => 3],
+                                ['name' => 'text', 'value' => __('Trigger a web hook')],
+                                ['name' => 'rowtitle', 'value' => $display->display],
+                                ['name' => 'form-callback', 'value' => 'triggerWebhookMultiSelectFormOpen']
+                            ]
+                        ];
+
                         $display->buttons[] = [
                             'id' => 'display_button_purgeAll',
                             'url' => $this->urlFor($request, 'display.purge.all.form', ['id' => $display->displayId]),
@@ -1132,12 +1135,14 @@ class Display extends Base
             if ($this->getUser()->featureEnabled('displays.modify')
                 && $this->getUser()->checkPermissionsModifyable($display)
             ) {
-                // Display Groups
-                $display->buttons[] = array(
-                    'id' => 'display_button_group_membership',
-                    'url' => $this->urlFor($request, 'display.membership.form', ['id' => $display->displayId]),
-                    'text' => __('Display Groups')
-                );
+                // Display Groups - Only show for SuperAdmin users
+                if ($this->getUser()->isSuperAdmin()) {
+                    $display->buttons[] = array(
+                        'id' => 'display_button_group_membership',
+                        'url' => $this->urlFor($request, 'display.membership.form', ['id' => $display->displayId]),
+                        'text' => __('Display Groups')
+                    );
+                }
 
                 // Permissions
                 $display->buttons[] = [
@@ -1186,12 +1191,14 @@ class Display extends Base
                 }
 
                 if ($this->getUser()->checkEditable($display)) {
-                    // Wake On LAN
-                    $display->buttons[] = array(
-                        'id' => 'display_button_wol',
-                        'url' => $this->urlFor($request, 'display.wol.form', ['id' => $display->displayId]),
-                        'text' => __('Wake on LAN')
-                    );
+                    // Wake On LAN - Only show for SuperAdmin users
+                    if ($this->getUser()->isSuperAdmin()) {
+                        $display->buttons[] = array(
+                            'id' => 'display_button_wol',
+                            'url' => $this->urlFor($request, 'display.wol.form', ['id' => $display->displayId]),
+                            'text' => __('Wake on LAN')
+                        );
+                    }
                 }
 
                 // Send Command
@@ -1219,30 +1226,35 @@ class Display extends Base
                 ];
 
                 if ($this->getUser()->checkEditable($display)) {
-                    $display->buttons[] = ['divider' => true];
+                    // Only show Transfer to another CMS for SuperAdmin users
+                    if ($this->getUser()->isSuperAdmin()) {
+                        $display->buttons[] = ['divider' => true];
 
-                    $display->buttons[] = [
-                        'id' => 'display_button_move_cms',
-                        'url' => $this->urlFor($request, 'display.moveCms.form', ['id' => $display->displayId]),
-                        'text' => __('Transfer to another CMS'),
-                        'multi-select' => true,
-                        'dataAttributes' => [
-                            [
-                                'name' => 'commit-url',
-                                'value' => $this->urlFor(
-                                    $request,
-                                    'display.moveCms',
-                                    ['id' => $display->displayId]
-                                )
-                            ],
-                            ['name' => 'commit-method', 'value' => 'put'],
-                            ['name' => 'id', 'value' => 'display_button_move_cms'],
-                            ['name' => 'text', 'value' => __('Transfer to another CMS')],
-                            ['name' => 'sort-group', 'value' => 5],
-                            ['name' => 'rowtitle', 'value' => $display->display],
-                            ['name' => 'form-callback', 'value' => 'setMoveCmsMultiSelectFormOpen']
-                        ]
-                    ];
+                        $display->buttons[] = [
+                            'id' => 'display_button_move_cms',
+                            'url' => $this->urlFor($request, 'display.moveCms.form', ['id' => $display->displayId]),
+                            'text' => __('Transfer to another CMS'),
+                            'multi-select' => true,
+                            'dataAttributes' => [
+                                [
+                                    'name' => 'commit-url',
+                                    'value' => $this->urlFor(
+                                        $request,
+                                        'display.moveCms',
+                                        ['id' => $display->displayId]
+                                    )
+                                ],
+                                ['name' => 'commit-method', 'value' => 'put'],
+                                ['name' => 'id', 'value' => 'display_button_move_cms'],
+                                ['name' => 'text', 'value' => __('Transfer to another CMS')],
+                                ['name' => 'sort-group', 'value' => 5],
+                                ['name' => 'rowtitle', 'value' => $display->display],
+                                ['name' => 'form-callback', 'value' => 'setMoveCmsMultiSelectFormOpen']
+                            ]
+                        ];
+                    } else {
+                        $display->buttons[] = ['divider' => true];
+                    }
 
                     $display->buttons[] = [
                         'multi-select' => true,
