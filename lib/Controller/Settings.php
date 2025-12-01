@@ -148,7 +148,12 @@ class Settings extends Base
 
         // The admin User Group (optional)
         try {
-            $adminUserGroup = $this->userGroupFactory->getById($this->getConfig()->getSetting('ADMIN_USERGROUP'));
+            $adminGroupId = $this->getConfig()->getSetting('ADMIN_USERGROUP');
+            if ($adminGroupId !== null && $adminGroupId !== '' && $adminGroupId > 0) {
+                $adminUserGroup = $this->userGroupFactory->getById($adminGroupId);
+            } else {
+                $adminUserGroup = null;
+            }
         } catch (NotFoundException $notFoundException) {
             $adminUserGroup = null;
         }

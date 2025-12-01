@@ -1144,7 +1144,7 @@
                                             { name: "data-id-property", value: "groupId" },
                                             { name: "data-text-property", value: "group" }
                                         ] %}
-                                        {{ forms.dropdown("ADMIN_USERGROUP", "single", title, adminUserGroup.groupId, [adminUserGroup], "groupId", "group", helpText, "pagedSelect", "", "", "", attributes) }}
+                                        {{ forms.dropdown("ADMIN_USERGROUP", "single", title, adminUserGroup ? adminUserGroup.groupId : null, adminUserGroup ? [adminUserGroup] : [], "groupId", "group", helpText, "pagedSelect", "", "", "", attributes, "", "", "", not theme.isSettingEditable("ADMIN_USERGROUP")) }}
                                     {% else %}
                                         {{ forms.disabled("ADMIN_USERGROUP", title, theme.getSetting("ADMIN_USERGROUP"), helpText) }}
                                     {% endif %}
