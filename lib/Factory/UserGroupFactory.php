@@ -825,6 +825,11 @@ class UserGroupFactory extends BaseFactory
                     'group' => 'displays',
                     'title' => __('Allow edits including deletion for all created Commands')
                 ],
+                'command.send' => [
+                    'feature' => 'command.send',
+                    'group' => 'displays',
+                    'title' => __('Allow sending Commands to Displays and Display Groups')
+                ],
                 'display.syncView' => [
                     'feature' => 'display.syncView',
                     'group' => 'displays',

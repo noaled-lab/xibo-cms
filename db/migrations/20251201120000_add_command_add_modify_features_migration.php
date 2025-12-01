@@ -32,6 +32,10 @@ class AddCommandAddModifyFeaturesMigration extends AbstractMigration
                     $addIndex = array_search('command.add', $features);
                     array_splice($features, $addIndex + 1, 0, 'command.modify');
                 }
+                if (!in_array('command.send', $features)) {
+                    $modifyIndex = array_search('command.modify', $features);
+                    array_splice($features, $modifyIndex + 1, 0, 'command.send');
+                }
                 
                 $this->execute(sprintf(
                     'UPDATE `group` SET features = \'%s\' WHERE groupId = %d',
@@ -61,6 +65,10 @@ class AddCommandAddModifyFeaturesMigration extends AbstractMigration
                 if (!in_array('command.modify', $features)) {
                     $addIndex = array_search('command.add', $features);
                     array_splice($features, $addIndex + 1, 0, 'command.modify');
+                }
+                if (!in_array('command.send', $features)) {
+                    $modifyIndex = array_search('command.modify', $features);
+                    array_splice($features, $modifyIndex + 1, 0, 'command.send');
                 }
                 
                 $this->execute(sprintf(
