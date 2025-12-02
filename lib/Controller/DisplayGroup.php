@@ -1957,11 +1957,10 @@ class DisplayGroup extends Base
     {
         $displayGroup = $this->displayGroupFactory->getById($id);
 
-        // Non-destructive edit-only feature; allow limited view access
+        // Allow limited view access
         if (
-            !$this->getUser()->checkEditable($displayGroup)
+            !$this->getUser()->checkViewable($displayGroup)
             && !$this->getUser()->featureEnabled('displays.limitedView')
-            && !$this->getUser()->featureEnabled('displaygroup.limitedView')
         ) {
             throw new AccessDeniedException();
         }
@@ -2008,11 +2007,10 @@ class DisplayGroup extends Base
     {
         $displayGroup = $this->displayGroupFactory->getById($id);
 
-        // Non-destructive edit-only feature; allow limited view access
+        // Allow limited view access
         if (
-            !$this->getUser()->checkEditable($displayGroup)
+            !$this->getUser()->checkViewable($displayGroup)
             && !$this->getUser()->featureEnabled('displays.limitedView')
-            && !$this->getUser()->featureEnabled('displaygroup.limitedView')
         ) {
             throw new AccessDeniedException();
         }
