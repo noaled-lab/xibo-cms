@@ -37,6 +37,6 @@ jobs:
           file: ./Dockerfile
           push: true
           load: false
-          tags: ghcr.io/noaled-lab/xibo-cms:latest
+          tags: ghcr.io/noaled-lab/xibo-cms:latest,ghcr.io/noaled-lab/xibo-cms:yangsan
           cache-from: type=gha
           cache-to: type=gha,mode=max
