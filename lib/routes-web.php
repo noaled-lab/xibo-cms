@@ -457,9 +457,12 @@ $app->group('', function(\Slim\Routing\RouteCollectorProxy $group) {
 //
 $app->group('', function(\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/displaygroup/view', ['\Xibo\Controller\DisplayGroup','displayPage'])->setName('displaygroup.view');
-    $group->get('/displaygroup/form/collect/{id}', ['\Xibo\Controller\DisplayGroup','collectNowForm'])->setName('displayGroup.collectNow.form');
     $group->get('/displaygroup/form/trigger/webhook/{id}', ['\Xibo\Controller\DisplayGroup','triggerWebhookForm'])->setName('displayGroup.trigger.webhook.form');
 })->addMiddleware(new FeatureAuth($app->getContainer(), ['displaygroup.view']));
+
+$app->get('/displaygroup/form/collect/{id}', ['\Xibo\Controller\DisplayGroup','collectNowForm'])
+    ->addMiddleware(new FeatureAuth($app->getContainer(), ['displays.view']))
+    ->setName('displayGroup.collectNow.form');
 
 $app->get('/displaygroup/form/command/{id}', ['\Xibo\Controller\DisplayGroup','commandForm'])
     ->addMiddleware(new FeatureAuth($app->getContainer(), ['command.send']))
