@@ -330,7 +330,8 @@ class Template extends Base
                 ];
             }
 
-            if ($this->getUser()->featureEnabled('layout.export')) {
+            // Only show export button for system users
+            if ($this->getUser()->featureEnabled('layout.export') && $this->getUser()->userTypeId == 1) {
                 $template->buttons[] = ['divider' => true];
 
                 // Export Button
