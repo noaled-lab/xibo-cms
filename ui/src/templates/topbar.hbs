@@ -51,6 +51,7 @@
         {{!-- Right menu --}}
         <ul class="layout-action-menu nav">
             {{!-- Interactive control --}}
+            {{#if isSystemUser}}
             <li class="nav-item interactive-control" data-status="off">
                 <div class="interactive-control-container">
                     <i class="fa fa-paper-plane"></i>
@@ -59,6 +60,7 @@
                     <div class="interactive-control-status-off">{{trans.interactiveToggle.off}}</div>
                 </div>
             </li>
+            {{/if}}
 
             {{!-- Layout select dropdown --}}
             <li>
