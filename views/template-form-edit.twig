@@ -37,11 +37,14 @@
         <div class="col-md-12">
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item"><a class="nav-link active" href="#general" role="tab" data-toggle="tab"><span>{% trans "General" %}</span></a></li>
+                {% if currentUser.userTypeId == 1 %}
                 <li class="nav-item"><a class="nav-link" href="#description" role="tab" data-toggle="tab"><span>{% trans "Description" %}</span></a></li>
+                {% endif %}
             </ul>
             <form id="templateEditForm" class="XiboForm form-horizontal" method="put" action="{{ url_for("layout.edit", {id: layout.layoutId}) }}" data-gettag="{{ url_for("tag.getByName") }}">
                 <div class="tab-content">
                     <div class="tab-pane active" id="general">
+                        {% if currentUser.userTypeId == 1 %}
                         {% if currentUser.featureEnabled('folder.view') %}
                         <div class="form-group row">
                             <label class="col-sm-2 control-label">{% trans "Current Folder" %}</label>
@@ -59,11 +62,13 @@
                         </div>
                         {{ forms.hidden('folderId', layout.folderId) }}
                         {% endif %}
+                        {% endif %}
 
                         {% set title %}{% trans "Name" %}{% endset %}
                         {% set helpText %}{% trans "The Name of the Template - (1 - 50 characters)" %}{% endset %}
                         {{ forms.input("name", title, layout.layout, helpText) }}
 
+                        {% if currentUser.userTypeId == 1 %}
                         {% if currentUser.featureEnabled("tag.tagging") %}
                             {% set title %}{% trans "Tags" %}{% endset %}
                             {% set helpText %}{% trans "Tags for this Template - Comma separated string of Tags or Tag|Value format. If you choose a Tag that has associated values, they will be shown for selection below." %}{% endset %}
@@ -84,10 +89,13 @@
                                 <p>{% trans "This tag requires a set value, please select one from the Tag value dropdown or provide Tag value in the dedicated field." %}</p>
                             </div>
                         {% endif %}
+                        {% endif %}
 
+                        {% if currentUser.userTypeId == 1 %}
                         {% set title %}{% trans "Retired" %}{% endset %}
                         {% set helpText %}{% trans "Retire this template or not? It will no longer be visible in lists" %}{% endset %}
                         {{ forms.checkbox("retired", title, layout.retired, helpText) }}
+                        {% endif %}
                     </div>
                     <div class="tab-pane" id="description">
                         {% set title %}{% trans "Description" %}{% endset %}

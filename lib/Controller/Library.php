@@ -763,9 +763,10 @@ class Library extends Base
                 'text' => __('Download')
             );
 
-            // Set Enable Stat
+            // Set Enable Stat - only for system users
             if ($this->getUser()->featureEnabled('library.modify')
                 && $this->getUser()->checkEditable($media)
+                && $this->getUser()->userTypeId == 1
             ) {
                 $media->buttons[] = ['divider' => true];
 
@@ -785,7 +786,10 @@ class Library extends Base
                 );
             }
 
-            if ($this->getUser()->featureEnabled(['schedule.view', 'layout.view'])) {
+            // Usage Report - only for system users
+            if ($this->getUser()->featureEnabled(['schedule.view', 'layout.view'])
+                && $this->getUser()->userTypeId == 1
+            ) {
                 $media->buttons[] = ['divider' => true];
 
                 $media->buttons[] = array(

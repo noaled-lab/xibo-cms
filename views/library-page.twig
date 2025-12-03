@@ -30,7 +30,9 @@
         {% if currentUser.featureEnabledCount(["library.add", "library.modify"]) > 0 or settings.SETTING_LIBRARY_TIDY_ENABLED == 1 %}
             {% if currentUser.featureEnabled("library.add") %}
                 <button class="btn btn-success" href="#" id="libraryUploadForm" title="{% trans "Add a new media item to the library" %}"><i class="fa fa-plus-circle" aria-hidden="true"></i> {% trans "Add Media" %}</button>
+                {% if currentUser.userTypeId == 1 %}
                 <button class="btn btn-success XiboFormButton" title="{% trans "Add a new media item to the library via external URL" %}" href="{{ url_for("library.uploadUrl.form") }}"> <i class="fa fa-plus-circle" aria-hidden="true"></i> {% trans "Add media (URL)" %}</button>
+                {% endif %}
             {% endif %}
             {% if settings.SETTING_LIBRARY_TIDY_ENABLED == 1 and currentUser.featureEnabled("library.modify") %}
                 <button class="btn btn-danger XiboFormButton" title="{% trans "Run through the library and remove unused and unnecessary files" %}" href="{{ url_for("library.tidy.form") }}"> <i class="fa fa-trash" aria-hidden="true"></i> {% trans "Tidy Library" %}</button>
