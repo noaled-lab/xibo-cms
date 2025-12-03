@@ -261,7 +261,10 @@ window.dataTableDraw = function(e, settings, callBack) {
   const $folderController =
     target.closest('.XiboGrid').find('.folder-controller');
 
-  if (enabledButtons.length > 0) {
+  // Skip multi-select buttons for non-system users
+  const shouldShowMultiSelect = typeof isSystemUser === 'undefined' || isSystemUser;
+
+  if (enabledButtons.length > 0 && shouldShowMultiSelect) {
     const searchByKey = function(array, item, key) {
       // return Object from array where array[object].item matches key
       for (const i in array) {
