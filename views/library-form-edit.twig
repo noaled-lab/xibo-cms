@@ -33,7 +33,7 @@
     {% trans "Save" %}, $("#mediaEditForm").submit()
 {% endblock %}
 
-{% block callBack %}mediaEditFormOpen{% endblock %}
+{% block callBack %}{% if currentUser.userTypeId == 1 %}mediaEditFormOpen{% endif %}{% endblock %}
 
 {% block formHtml %}
     <div class="row">
@@ -41,6 +41,7 @@
             <form id="mediaEditForm" class="XiboForm form-horizontal" method="put" action="{{ url_for("library.edit", {"id": media.mediaId}) }}" data-media-id="{{ media.mediaId }}" data-valid-extensions="{{ validExtensions }}" data-gettag="{{ url_for("tag.getByName") }}" data-folder-id="{{ media.folderId }}">
                 {% if media.mediaType != "font" %}
 
+                    {% if currentUser.userTypeId == 1 %}
                     <div class="form-group row">
                         <label class="col-sm-2 control-label">{% trans "Current Folder" %}</label>
                         <div class="col-sm-10" style="padding-top: 7px">
@@ -55,6 +56,7 @@
                             <span id="selectedFormFolder"></span>
                         </div>
                     </div>
+                    {% endif %}
 
                     {% set title %}{% trans "Name" %}{% endset %}
                     {% set helpText %}{% trans "The Name of this item - Leave blank to use the file name" %}{% endset %}
@@ -85,16 +87,21 @@
                         </div>
                     {% endif %}
 
+                    {% if currentUser.userTypeId == 1 %}
                     {% set title %}{% trans "Expiry date" %}{% endset %}
                     {% set helpText %}{% trans "Select the date and time after which this media should be removed from the CMS - it will be removed from any existing widgets as well" %}{% endset %}
                     {{ forms.dateTime("expires", title, expiryDate, helpText) }}
+                    {% endif %}
 
+                    {% if currentUser.userTypeId == 1 %}
                     {% set title %}{% trans "Retire this media?" %}{% endset %}
                     {% set helpText %}{% trans "Retired media remains on existing Layouts but is not available to assign to new Layouts." %}{% endset %}
                     {{ forms.checkbox("retired", title, media.retired, helpText) }}
+                    {% endif %}
 
+                    {% if currentUser.userTypeId == 1 %}
                     {% set title %}{% trans "Enable Media Stats Collection?" %}{% endset %}
-                    {% set helpText %}{% trans "Enable the collection of Proof of Play statistics for this Media Item. Ensure that ‘Enable Stats Collection’ is set to ‘On’ in the Display Settings." %}{% endset %}
+                    {% set helpText %}{% trans "Enable the collection of Proof of Play statistics for this Media Item. Ensure that 'Enable Stats Collection' is set to 'On' in the Display Settings." %}{% endset %}
 
                     {% set offOption %}{% trans "Off" %}{% endset %}
                     {% set onOption %}{% trans "On" %}{% endset %}
@@ -112,6 +119,7 @@
                     {% set option2 = "Portrait"|trans %}
                     {% set values = [{id: 'landscape', value: option1}, {id: 'portrait', value: option2}] %}
                     {{ forms.dropdown("orientation", "single", title, media.orientation, values, "id", "value", helpText) }}
+                    {% endif %}
 
                     {% set title %}{% trans "Update this media in all layouts it is assigned to?" %}{% endset %}
                     {% set helpText %}{% trans "Note: It will only be updated in layouts you have permission to edit." %}{% endset %}
