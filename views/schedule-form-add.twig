@@ -31,7 +31,7 @@
 
 {% block formButtons %}
     {% trans "Cancel" %}, XiboDialogClose()
-    {% if not isScheduleNow %}
+    {% if not isScheduleNow and currentUser.userTypeId == 1 %}
         {% trans "Next" %}, XiboDialogApply("#scheduleAddForm")
     {% endif %}
     {% trans "Save" %}, beforeSubmitScheduleForm($("#scheduleAddForm"))
@@ -43,9 +43,11 @@
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item"><a class="nav-link active" href="#general" role="tab" data-toggle="tab"><span>{% trans "General" %}</span></a></li>
                 <li class="nav-item repeats"><a class="nav-link" href="#repeats" role="tab" data-toggle="tab"><span>{% trans "Repeats" %}</span></a></li>
+                {% if currentUser.userTypeId == 1 %}
                 <li class="nav-item reminders"><a class="nav-link" href="#reminders" role="tab" data-toggle="tab"><span>{% trans "Reminder" %}</span></a></li>
                 <li class="nav-item geoSchedule"><a class="nav-link" href="#geoSchedule" role="tab" data-toggle="tab"><span>{% trans "Geo Location" %}</span></a></li>
                 <li class="nav-item criteria"><a class="nav-link" href="#tab-criteria" role="tab" data-toggle="tab"><span>{% trans "Criteria" %}</span></a></li>
+                {% endif %}
             </ul>
             {% set dayPartMessage %}{% trans "Select the start time for this event" %}{% endset %}
             {% set notDayPartMessage %}{% trans "Start and end time will be defined by the daypart's configuration for this day of the week. Use a repeating schedule to apply this event over multiple days" %}{% endset %}
@@ -101,9 +103,11 @@
                             </div>
                         </div>
 
+                        {% if currentUser.userTypeId == 1 %}
                         {% set title %}{% trans "Use Relative time?" %}{% endset %}
                         {% set helpText %}{% trans "Switch between relative time inputs and Date pickers for start and end time." %}{% endset %}
                         {{ forms.checkbox("relativeTime", title, relativeTime, helpText, 'relative-time-checkbox') }}
+                        {% endif %}
 
                         {% set title %}{% trans "Hours" %}{% endset %}
                         {% set helpText %}{% trans "Hours this event should be scheduled for" %}{% endset %}
@@ -235,13 +239,17 @@
                         {% set helpText %}{% trans "Sets the event priority - events with the highest priority play in preference to lower priority events." %}{% endset %}
                         {{ forms.number("isPriority", title, "", helpText, 'priority-control', "", "", "", "0") }}
 
+                        {% if currentUser.userTypeId == 1 %}
                         {% set title %}{% trans "Maximum plays per hour" %}{% endset %}
                         {% set helpText %}{% trans "Limit the number of times this event will play per hour on each display. For unlimited plays set to 0." %}{{ forms.playerCompat("R308", "", "", "", "R306", "") }}{% endset %}
                         {{ forms.number("maxPlaysPerHour", title, 0, helpText, 'max-plays-control', "", "", "", "0") }}
+                        {% endif %}
 
+                        {% if currentUser.userTypeId == 1 %}
                         {% set title %}{% trans "Run at CMS Time?" %}{% endset %}
                         {% set helpText %}{% trans "When selected, your event will run according to the timezone set on the CMS, otherwise the event will run at Display local time" %}{% endset %}
                         {{ forms.checkbox("syncTimezone", title, 0, helpText) }}
+                        {% endif %}
                     </div>
 
                     <div class="tab-pane" id="repeats">

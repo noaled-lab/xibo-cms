@@ -758,6 +758,29 @@ class Schedule extends Base
     }
 
     /**
+     * Get filtered event types based on user type
+     * @return array
+     */
+    private function getFilteredEventTypes(): array
+    {
+        $eventTypes = \Xibo\Entity\Schedule::getEventTypesForm();
+        
+        if ($this->getUser()->userTypeId != 1) {
+            // Only allow Layout, Command, and Campaign for non-system users
+            $allowedTypes = [
+                \Xibo\Entity\Schedule::$LAYOUT_EVENT,
+                \Xibo\Entity\Schedule::$COMMAND_EVENT,
+                \Xibo\Entity\Schedule::$CAMPAIGN_EVENT
+            ];
+            $eventTypes = array_filter($eventTypes, function($type) use ($allowedTypes) {
+                return in_array($type['eventTypeId'], $allowedTypes);
+            });
+        }
+        
+        return $eventTypes;
+    }
+
+    /**
      * Shows a form to add an event
      * @param Request $request
      * @param Response $response
@@ -788,7 +811,7 @@ class Schedule extends Base
             'reminders' => [],
             'defaultLat' => $defaultLat,
             'defaultLong' => $defaultLong,
-            'eventTypes' => \Xibo\Entity\Schedule::getEventTypesForm(),
+            'eventTypes' => $this->getFilteredEventTypes(),
             'isScheduleNow' => false,
             'relativeTime' => 0,
             'setDisplaysFromFilter' => true,
@@ -1405,7 +1428,7 @@ class Schedule extends Base
             'recurringEvent' => $schedule->recurrenceType != '',
             'eventStart' => $eventStart,
             'eventEnd' => $eventEnd,
-            'eventTypes' => \Xibo\Entity\Schedule::getEventTypesForm(),
+            'eventTypes' => $this->getFilteredEventTypes(),
             'scheduleCriteria' => $criteria,
             'criteriaDefaultCondition' => $criteriaDefaultCondition
         ]);
