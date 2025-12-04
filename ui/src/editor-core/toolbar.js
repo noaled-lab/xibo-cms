@@ -133,7 +133,8 @@ Toolbar.prototype.init = function(
   modulesList.forEach((el) => {
     // Skip specific modules for non-Super Admin users
     if (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1) {
-      const allowedModules = ['clock', 'webpage', 'embedded'];
+      // Only allow clock-related modules
+      const allowedModules = ['clock-digital', 'clock-analogue', 'clock-flip'];
       if (!allowedModules.includes(el.type)) {
         return; // Skip this module
       }
@@ -216,15 +217,10 @@ Toolbar.prototype.init = function(
 
     // Check if module.group is an object
     if (typeof module.group == 'object' && !(module.group instanceof Array)) {
-      // Skip group modules for non-Super Admin users
+      // Skip group modules for non-Super Admin users - allow clock group to pass through
       if (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1) {
-        const allowedModules = ['clock', 'webpage', 'embedded'];
-        if (!allowedModules.includes(module.group.id)) {
-          // Remove module from list and skip
-          moduleListFiltered.splice(i, 1);
-          i--;
-          continue;
-        }
+        // Clock group should be allowed, so we don't filter it out here
+        // Individual clock types (clock-digital, clock-analogue) are already in the list
       }
 
       if (!moduleGroups[module.group.id]) {
