@@ -274,11 +274,13 @@ $(function() {
       {
         data: 'shareOfVoice',
         className: 'align-middle',
+        visible: false,
         responsivePriority: 4,
       },
       {
         name: 'maxPlaysPerHour',
         className: 'align-middle',
+        visible: false,
         responsivePriority: 4,
         data: function(data) {
           if (data.maxPlaysPerHour === 0) {
@@ -291,6 +293,7 @@ $(function() {
       {
         data: 'isGeoAware',
         className: 'align-middle',
+        visible: false,
         responsivePriority: 4,
         render: dataTableTickCrossColumn,
       },
@@ -383,6 +386,7 @@ $(function() {
       {
         name: 'criteria',
         className: 'align-middle',
+        visible: false,
         responsivePriority: 2,
         data: function(data, type, row) {
           return (data.criteria && data.criteria.length > 0) ?

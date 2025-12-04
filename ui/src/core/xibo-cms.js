@@ -2401,10 +2401,10 @@ window.SystemMessage = function(messageText, success) {
   } else {
     const dialog = bootbox.dialog({
       message: messageText,
-      title: 'Application Message',
+      title: '메시지',
       size: 'large',
       buttons: [{
-        label: 'Close',
+        label: '닫기',
         className: 'btn-bb-close',
         callback: function() {
           dialog.modal('hide');

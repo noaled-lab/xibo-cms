@@ -85,6 +85,7 @@ Topbar.prototype.render = function() {
     mainObject: mainObject,
     showOptions: self.showOptions,
     exitURL: (lD != 'undefined') && lD.exitURL,
+    isSystemUser: (typeof isSystemUser !== 'undefined') ? isSystemUser : false,
   });
 
   // Append layout html to the main div

@@ -257,6 +257,7 @@
                         "name": "description",
                         "data": null,
                         responsivePriority: 10,
+                        visible: false,
                         "render": {"_": "description", "display": "descriptionFormatted", "sort": "description"}
                     },
                     {
@@ -306,6 +307,7 @@
                     {
                         "name": "status",
                         responsivePriority: 3,
+                        visible: false,
                         "data": function (data, type) {
                             if (type != "display")
                                 return data.status;
@@ -326,6 +328,7 @@
                     {
                         "name": "enableStat",
                         responsivePriority: 4,
+                        visible: false,
                         "data": function (data) {
 
                             var icon = "";
