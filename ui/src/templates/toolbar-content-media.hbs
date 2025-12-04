@@ -1,5 +1,7 @@
 {{#if headerMessage }}<p class="alert alert-info p-2 text-center font-weight-bold text-center">{{headerMessage}}</p>{{/if}}
 
+{{#unless hideSearchForm}}
 {{> toolbar-search-form trans=trans filters=filters class=formClass showSort=showSort autocomplete="off"}}
+{{/unless}}
 
 <div id="media-content-{{menuIndex}}" class="toolbar-pane-content"></div>
