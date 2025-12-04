@@ -327,6 +327,7 @@ Toolbar.prototype.init = function(
           value: '',
           key: 'tags',
           dataRole: 'tagsinput',
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
         type: {
           value: 'image',
@@ -337,15 +338,18 @@ Toolbar.prototype.init = function(
           key: 'folders',
           dataRole: 'foldersList',
           searchUrl: urlsForApi.folders.get.url,
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
         owner: {
           value: '',
           key: 'users',
           dataRole: 'usersList',
           searchUrl: urlsForApi.user.get.url,
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
         orientation: {
           value: '',
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
       },
       sort: {
@@ -379,6 +383,7 @@ Toolbar.prototype.init = function(
           value: '',
           key: 'tags',
           dataRole: 'tagsinput',
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
         type: {
           value: 'audio',
@@ -389,12 +394,14 @@ Toolbar.prototype.init = function(
           key: 'folders',
           dataRole: 'foldersList',
           searchUrl: urlsForApi.folders.get.url,
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
         owner: {
           value: '',
           key: 'users',
           dataRole: 'usersList',
           searchUrl: urlsForApi.user.get.url,
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
       },
       sort: {
@@ -425,6 +432,7 @@ Toolbar.prototype.init = function(
           value: '',
           key: 'tags',
           dataRole: 'tagsinput',
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
         type: {
           value: 'video',
@@ -435,15 +443,18 @@ Toolbar.prototype.init = function(
           key: 'folders',
           dataRole: 'foldersList',
           searchUrl: urlsForApi.folders.get.url,
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
         owner: {
           value: '',
           key: 'users',
           dataRole: 'usersList',
           searchUrl: urlsForApi.user.get.url,
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
         orientation: {
           value: '',
+          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
         },
       },
       sort: {
@@ -577,6 +588,14 @@ Toolbar.prototype.init = function(
       defaultMenuItems.findIndex((item) => item.name === 'playlists'),
       1,
     );
+  }
+
+  // Remove library menu for non-Super Admin users
+  if (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1) {
+    const libraryIndex = defaultMenuItems.findIndex((item) => item.name === 'library');
+    if (libraryIndex !== -1) {
+      defaultMenuItems.splice(libraryIndex, 1);
+    }
   }
 
   // Menu items
