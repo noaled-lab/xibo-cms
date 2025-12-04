@@ -343,7 +343,7 @@ $(() => {
           layoutName: lD.layout.name,
           callback: lD.reloadData,
         },
-        true, // Show Options
+        (typeof currentUserTypeId !== 'undefined' && currentUserTypeId === 1), // Show Options only for Super Admin
       );
 
       // Initialize bottom toolbar ( with custom buttons )
