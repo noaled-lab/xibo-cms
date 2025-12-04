@@ -105,15 +105,18 @@
                     {
                         name: 'libraryQuota',
                         data: null,
-                        render: {'_': 'libraryQuota', 'display': 'libraryQuotaFormatted', 'sort': 'libraryQuota'}
+                        render: {'_': 'libraryQuota', 'display': 'libraryQuotaFormatted', 'sort': 'libraryQuota'},
+                        visible: false
                     },
                     {
                         data: 'isSystemNotification',
-                        render: dataTableTickCrossColumn
+                        render: dataTableTickCrossColumn,
+                        visible: false
                     },
                     {
                         data: 'isDisplayNotification',
-                        render: dataTableTickCrossColumn
+                        render: dataTableTickCrossColumn,
+                        visible: false
                     },
                     {
                         data: 'isDataSetNotification',
@@ -147,7 +150,8 @@
                     },
                     {
                         data: "isShownForAddUser",
-                        render: dataTableTickCrossColumn
+                        render: dataTableTickCrossColumn,
+                        visible: false
                     },
                     {
                         "orderable": false,
