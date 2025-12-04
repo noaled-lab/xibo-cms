@@ -1940,28 +1940,30 @@ class Layout extends Base
                     'text' => __('Copy')
                 );
 
-                // Retire Button
-                if ($layout->retired == 0) {
-                    $layout->buttons[] = [
-                        'id' => 'layout_button_retire',
-                        'url' => $this->urlFor($request, 'layout.retire.form', ['id' => $layout->layoutId]),
-                        'text' => __('Retire'),
-                        'multi-select' => true,
-                        'dataAttributes' => [
-                            ['name' => 'commit-url', 'value' => $this->urlFor($request, 'layout.retire', ['id' => $layout->layoutId])],
-                            ['name' => 'commit-method', 'value' => 'put'],
-                            ['name' => 'id', 'value' => 'layout_button_retire'],
-                            ['name' => 'text', 'value' => __('Retire')],
-                            ['name' => 'sort-group', 'value' => 1],
-                            ['name' => 'rowtitle', 'value' => $layout->layout]
-                        ]
-                    ];
-                } else {
-                    $layout->buttons[] = array(
-                        'id' => 'layout_button_unretire',
-                        'url' => $this->urlFor($request, 'layout.unretire.form', ['id' => $layout->layoutId]),
-                        'text' => __('Unretire'),
-                    );
+                // Retire Button (Super Admin only)
+                if ($this->getUser()->userTypeId == 1) {
+                    if ($layout->retired == 0) {
+                        $layout->buttons[] = [
+                            'id' => 'layout_button_retire',
+                            'url' => $this->urlFor($request, 'layout.retire.form', ['id' => $layout->layoutId]),
+                            'text' => __('Retire'),
+                            'multi-select' => true,
+                            'dataAttributes' => [
+                                ['name' => 'commit-url', 'value' => $this->urlFor($request, 'layout.retire', ['id' => $layout->layoutId])],
+                                ['name' => 'commit-method', 'value' => 'put'],
+                                ['name' => 'id', 'value' => 'layout_button_retire'],
+                                ['name' => 'text', 'value' => __('Retire')],
+                                ['name' => 'sort-group', 'value' => 1],
+                                ['name' => 'rowtitle', 'value' => $layout->layout]
+                            ]
+                        ];
+                    } else {
+                        $layout->buttons[] = array(
+                            'id' => 'layout_button_unretire',
+                            'url' => $this->urlFor($request, 'layout.unretire.form', ['id' => $layout->layoutId]),
+                            'text' => __('Unretire'),
+                        );
+                    }
                 }
 
                 // Extra buttons if have delete permissions
