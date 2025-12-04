@@ -131,6 +131,19 @@ Toolbar.prototype.init = function(
 
   // Filter module list to create the types for the filter
   modulesList.forEach((el) => {
+    // Hide specific modules for non-Super Admin users
+    if (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1) {
+      const hiddenModules = [
+        'countdown', 'hls', 'interactive', 'worldclock',
+        'localvideo', 'videoin', 'shellcommand', 'webpage', 'embedded',
+        'emergency-alert', 'mastodon', 'menuboard-category', 'menuboard-product',
+        'rss-ticker', 'dataset', 'notificationview', 'ics-calendar'
+      ];
+      if (hiddenModules.includes(el.type)) {
+        return;
+      }
+    }
+
     // Show/hide modules based on showIn property
     if (
       el.showIn == 'playlist' && !isPlaylist ||
