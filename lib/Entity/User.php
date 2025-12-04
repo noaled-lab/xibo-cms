@@ -1051,6 +1051,24 @@ class User implements \JsonSerializable, UserEntityInterface
             return true;
         }
 
+        // Check if user is in Admin User Group
+        $adminGroupId = $this->configService->getSetting('ADMIN_USERGROUP');
+        if (!empty($adminGroupId)) {
+            $userGroupIds = array_map(function($group) {
+                return $group->groupId;
+            }, $this->groups);
+            
+            if (in_array($adminGroupId, $userGroupIds)) {
+                // Admin User Group members can access audit log
+                if (!is_array($feature)) {
+                    $feature = [$feature];
+                }
+                if (in_array('auditlog.view', $feature)) {
+                    return true;
+                }
+            }
+        }
+
         if (!is_array($feature)) {
             $feature = [$feature];
         }
