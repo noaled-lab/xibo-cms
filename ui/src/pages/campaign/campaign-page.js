@@ -75,6 +75,7 @@ $(document).ready(function() {
       {
         name: 'cyclePlaybackEnabled',
         responsivePriority: 3,
+        visible: false,
         data: function(data, type) {
           if (type != 'display') {
             return data.cyclePlaybackEnabled;
@@ -93,6 +94,7 @@ $(document).ready(function() {
       {
         name: 'playCount',
         responsivePriority: 3,
+        visible: false,
         data: function(data, type) {
           if (type !== 'display') {
             return data.playCount;
