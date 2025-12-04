@@ -19,3 +19,13 @@
  * along with Xibo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* Hide stats collection fields for non-system users */
+body:not(.system-user) label[for*="enableStat"],
+body:not(.system-user) #input_30_enableStat,
+body:not(.system-user) select[name="enableStat"],
+body:not(.system-user) input[name="enableStat"],
+body:not(.system-user) .form-group:has(#input_30_enableStat),
+body:not(.system-user) .form-group:has(select[name="enableStat"]),
+body:not(.system-user) .form-group:has(input[name="enableStat"]) {
+    display: none !important;
+}

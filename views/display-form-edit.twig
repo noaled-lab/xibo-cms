@@ -41,6 +41,7 @@
         <div class="col-md-12">
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item"><a class="nav-link active" href="#general" role="tab" data-toggle="tab"><span>{% trans "General" %}</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="#settings" role="tab" data-toggle="tab"><span>{% trans "Settings" %}</span></a></li>
                 {% if currentUser.isSuperAdmin() %}
                 <li class="nav-item"><a class="nav-link" href="#location" role="tab" data-toggle="tab"><span>{% trans "Details" %}</span></a></li>
                 <li class="nav-item"><a class="nav-link" href="#reference" role="tab" data-toggle="tab"><span>{% trans "Reference" %}</span></a></li>
@@ -48,7 +49,6 @@
                 {% if not isWolDisabled %}
                 <li class="nav-item"><a class="nav-link" href="#wol" role="tab" data-toggle="tab"><span>{% trans "Wake on LAN" %}</span></a></li>
                 {% endif %}
-                <li class="nav-item"><a class="nav-link" href="#settings" role="tab" data-toggle="tab"><span>{% trans "Settings" %}</span></a></li>
                 <li class="nav-item"><a class="nav-link" href="#remote" role="tab" data-toggle="tab"><span>{% trans "Remote" %}</span></a></li>
                 <li class="nav-item"><a class="nav-link" href="#advanced" role="tab" data-toggle="tab"><span>{% trans "Advanced" %}</span></a></li>
                 {% endif %}
@@ -333,6 +333,7 @@
                             </tbody>
                         </table>
                     </div>
+                    {% if currentUser.isSuperAdmin() %}
                     <div class="tab-pane" id="advanced">
                         {% set title %}{% trans "Interleave Default" %}{% endset %}
                         {% set helpText %}{% trans "Whether to always put the default layout into the cycle." %}{% endset %}

@@ -32,7 +32,7 @@
         <!-- Please be sure you read this before removing the Source/About links from your theme: http://bit.ly/agplv3 -->
         {% block headContent %}{% endblock %}
     </head>
-    <body>
+    <body{% if currentUser.userTypeId == 1 %} class="system-user"{% endif %}>
         {% block content %}{% endblock %}
         <script type="text/javascript" nonce="{{ cspNonce }}">
             var CALENDAR_TYPE = "{{ settings.CALENDAR_TYPE }}";

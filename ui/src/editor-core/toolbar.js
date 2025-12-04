@@ -2537,6 +2537,7 @@ Toolbar.prototype.playlistsContentCreateWindow = function(menu) {
     filters: this.menuItems[menu].filters,
     trans: toolbarTrans,
     formClass: 'playlists-search-form media-search-form',
+    hideSearchForm: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
   });
 
   // Append template to the search main div

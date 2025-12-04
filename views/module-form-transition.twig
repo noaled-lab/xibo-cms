@@ -75,13 +75,33 @@
         <div class="col-md-12">
             <form id="moduleTransitionEditForm" class="XiboForm form-horizontal" method="put" action="{{ url_for("module.widget.transition.edit", {type: type, id: widget.widgetId}) }}">
                 {% if type == "in" %}
-                    {% set transitionsWithEmpty = [{code: "", transition: ""}]|merge(transitions.in) %}
+                    {% set transitionsTranslated = [] %}
+                    {% for t in transitions.in %}
+                        {% set translatedName = t.transition %}
+                        {% if t.transition == "Fade In" %}
+                            {% set translatedName = "페이드 인" %}
+                        {% elseif t.transition == "Fly" %}
+                            {% set translatedName = "이동" %}
+                        {% endif %}
+                        {% set transitionsTranslated = transitionsTranslated|merge([{code: t.code, transition: translatedName, hasDuration: t.hasDuration, hasDirection: t.hasDirection}]) %}
+                    {% endfor %}
+                    {% set transitionsWithEmpty = [{code: "", transition: "없음"}]|merge(transitionsTranslated) %}
                     {% set trans = widget.getOptionValue("transIn", null) %}
                     {% set transDuration = widget.getOptionValue("transInDuration", null) %}
                     {% set transDirection = widget.getOptionValue("transInDirection", null) %}
                     {% set helpText %}{% trans "What transition should be applied when this item starts?" %}{% endset %}
                 {% elseif type == "out" %}
-                    {% set transitionsWithEmpty = [{transitionId: null, transition: ""}]|merge(transitions.out) %}
+                    {% set transitionsTranslated = [] %}
+                    {% for t in transitions.out %}
+                        {% set translatedName = t.transition %}
+                        {% if t.transition == "Fade Out" %}
+                            {% set translatedName = "페이드 아웃" %}
+                        {% elseif t.transition == "Fly" %}
+                            {% set translatedName = "이동" %}
+                        {% endif %}
+                        {% set transitionsTranslated = transitionsTranslated|merge([{code: t.code, transition: translatedName, hasDuration: t.hasDuration, hasDirection: t.hasDirection}]) %}
+                    {% endfor %}
+                    {% set transitionsWithEmpty = [{code: "", transition: "없음"}]|merge(transitionsTranslated) %}
                     {% set trans = widget.getOptionValue("transOut", null) %}
                     {% set transDuration = widget.getOptionValue("transOutDuration", null) %}
                     {% set transDirection = widget.getOptionValue("transOutDirection", null) %}
