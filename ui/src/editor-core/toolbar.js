@@ -131,16 +131,11 @@ Toolbar.prototype.init = function(
 
   // Filter module list to create the types for the filter
   modulesList.forEach((el) => {
-    // Hide specific modules for non-Super Admin users
+    // Skip specific modules for non-Super Admin users
     if (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1) {
-      const hiddenModules = [
-        'countdown', 'hls', 'interactive', 'worldclock',
-        'localvideo', 'videoin', 'shellcommand', 'webpage', 'embedded',
-        'emergency-alert', 'mastodon', 'menuboard-category', 'menuboard-product',
-        'rss-ticker', 'dataset', 'notificationview', 'ics-calendar'
-      ];
-      if (hiddenModules.includes(el.type)) {
-        return;
+      const allowedModules = ['clock', 'webpage', 'embedded'];
+      if (!allowedModules.includes(el.type)) {
+        return; // Skip this module
       }
     }
 
@@ -221,6 +216,17 @@ Toolbar.prototype.init = function(
 
     // Check if module.group is an object
     if (typeof module.group == 'object' && !(module.group instanceof Array)) {
+      // Skip group modules for non-Super Admin users
+      if (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1) {
+        const allowedModules = ['clock', 'webpage', 'embedded'];
+        if (!allowedModules.includes(module.group.id)) {
+          // Remove module from list and skip
+          moduleListFiltered.splice(i, 1);
+          i--;
+          continue;
+        }
+      }
+
       if (!moduleGroups[module.group.id]) {
         moduleGroups[module.group.id] = {
           name: module.group.name,
@@ -318,40 +324,41 @@ Toolbar.prototype.init = function(
       itemIcon: 'image',
       itemTitle: toolbarTrans.menuItems.imageTitle,
       contentType: 'media',
-      filters: {
-        name: {
-          value: '',
-          key: 'media',
+      filters: Object.assign(
+        {
+          name: {
+            value: '',
+            key: 'media',
+          },
+          type: {
+            value: 'image',
+            locked: true,
+          },
         },
-        tag: {
-          value: '',
-          key: 'tags',
-          dataRole: 'tagsinput',
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-        type: {
-          value: 'image',
-          locked: true,
-        },
-        folder: {
-          value: '',
-          key: 'folders',
-          dataRole: 'foldersList',
-          searchUrl: urlsForApi.folders.get.url,
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-        owner: {
-          value: '',
-          key: 'users',
-          dataRole: 'usersList',
-          searchUrl: urlsForApi.user.get.url,
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-        orientation: {
-          value: '',
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-      },
+        // Add tag, folder, owner, orientation only for Super Admin
+        (typeof currentUserTypeId !== 'undefined' && currentUserTypeId === 1) ? {
+          tag: {
+            value: '',
+            key: 'tags',
+            dataRole: 'tagsinput',
+          },
+          folder: {
+            value: '',
+            key: 'folders',
+            dataRole: 'foldersList',
+            searchUrl: urlsForApi.folders.get.url,
+          },
+          owner: {
+            value: '',
+            key: 'users',
+            dataRole: 'usersList',
+            searchUrl: urlsForApi.user.get.url,
+          },
+          orientation: {
+            value: '',
+          },
+        } : {}
+      ),
       sort: {
         mediaId: 'numeric',
         name: 'alpha',
@@ -374,36 +381,38 @@ Toolbar.prototype.init = function(
       itemIcon: 'volume-up',
       itemTitle: toolbarTrans.menuItems.audioTitle,
       contentType: 'media',
-      filters: {
-        name: {
-          value: '',
-          key: 'media',
+      filters: Object.assign(
+        {
+          name: {
+            value: '',
+            key: 'media',
+          },
+          type: {
+            value: 'audio',
+            locked: true,
+          },
         },
-        tag: {
-          value: '',
-          key: 'tags',
-          dataRole: 'tagsinput',
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-        type: {
-          value: 'audio',
-          locked: true,
-        },
-        folder: {
-          value: '',
-          key: 'folders',
-          dataRole: 'foldersList',
-          searchUrl: urlsForApi.folders.get.url,
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-        owner: {
-          value: '',
-          key: 'users',
-          dataRole: 'usersList',
-          searchUrl: urlsForApi.user.get.url,
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-      },
+        // Add tag, folder, owner only for Super Admin
+        (typeof currentUserTypeId !== 'undefined' && currentUserTypeId === 1) ? {
+          tag: {
+            value: '',
+            key: 'tags',
+            dataRole: 'tagsinput',
+          },
+          folder: {
+            value: '',
+            key: 'folders',
+            dataRole: 'foldersList',
+            searchUrl: urlsForApi.folders.get.url,
+          },
+          owner: {
+            value: '',
+            key: 'users',
+            dataRole: 'usersList',
+            searchUrl: urlsForApi.user.get.url,
+          },
+        } : {}
+      ),
       sort: {
         mediaId: 'numeric',
         name: 'alpha',
@@ -423,40 +432,41 @@ Toolbar.prototype.init = function(
       itemIcon: 'video',
       itemTitle: toolbarTrans.menuItems.videoTitle,
       contentType: 'media',
-      filters: {
-        name: {
-          value: '',
-          key: 'media',
+      filters: Object.assign(
+        {
+          name: {
+            value: '',
+            key: 'media',
+          },
+          type: {
+            value: 'video',
+            locked: true,
+          },
         },
-        tag: {
-          value: '',
-          key: 'tags',
-          dataRole: 'tagsinput',
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-        type: {
-          value: 'video',
-          locked: true,
-        },
-        folder: {
-          value: '',
-          key: 'folders',
-          dataRole: 'foldersList',
-          searchUrl: urlsForApi.folders.get.url,
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-        owner: {
-          value: '',
-          key: 'users',
-          dataRole: 'usersList',
-          searchUrl: urlsForApi.user.get.url,
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-        orientation: {
-          value: '',
-          locked: (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1),
-        },
-      },
+        // Add tag, folder, owner, orientation only for Super Admin
+        (typeof currentUserTypeId !== 'undefined' && currentUserTypeId === 1) ? {
+          tag: {
+            value: '',
+            key: 'tags',
+            dataRole: 'tagsinput',
+          },
+          folder: {
+            value: '',
+            key: 'folders',
+            dataRole: 'foldersList',
+            searchUrl: urlsForApi.folders.get.url,
+          },
+          owner: {
+            value: '',
+            key: 'users',
+            dataRole: 'usersList',
+            searchUrl: urlsForApi.user.get.url,
+          },
+          orientation: {
+            value: '',
+          },
+        } : {}
+      ),
       sort: {
         mediaId: 'numeric',
         name: 'alpha',
@@ -473,7 +483,8 @@ Toolbar.prototype.init = function(
       state: '',
       itemCount: 0,
     },
-    {
+    // Include library menu only for Super Admin users
+    ...((typeof currentUserTypeId !== 'undefined' && currentUserTypeId === 1) ? [{
       name: 'library',
       itemName: toolbarTrans.menuItems.libraryName,
       itemIcon: 'archive',
@@ -518,7 +529,7 @@ Toolbar.prototype.init = function(
       sortDir: 'asc',
       state: '',
       itemCount: 0,
-    },
+    }] : []),
     {
       name: 'playlists',
       itemName: toolbarTrans.menuItems.playlistsName,
@@ -588,14 +599,6 @@ Toolbar.prototype.init = function(
       defaultMenuItems.findIndex((item) => item.name === 'playlists'),
       1,
     );
-  }
-
-  // Remove library menu for non-Super Admin users
-  if (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1) {
-    const libraryIndex = defaultMenuItems.findIndex((item) => item.name === 'library');
-    if (libraryIndex !== -1) {
-      defaultMenuItems.splice(libraryIndex, 1);
-    }
   }
 
   // Menu items
