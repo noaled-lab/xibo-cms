@@ -39,7 +39,9 @@
         <div class="col-md-12">
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item"><a class="nav-link active" href="#general" role="tab" data-toggle="tab"><span>{% trans "General" %}</span></a></li>
+                {% if currentUser.userTypeId == 1 %}
                 <li class="nav-item"><a class="nav-link" href="#description" role="tab" data-toggle="tab"><span>{% trans "Description" %}</span></a></li>
+                {% endif %}
             </ul>
             <form id="layoutCopyForm" class="XiboForm form-horizontal" method="post" action="{{ url_for("layout.copy", {id: layout.layoutId}) }}")>
                 <div class="tab-content">
@@ -55,6 +57,7 @@
                         {% set layoutName %}{{ layout.layout }} 2{% endset %}
                         {{ forms.input("name", title, layoutName, helpText) }}
 
+                        {% if currentUser.userTypeId == 1 %}
                         {% set title %}{% trans "Make new copies of all media?" %}{% endset %}
                         {% set helpText %}{% trans "This will duplicate all media that is currently assigned to the item being copied." %}{% endset %}
                         {% if settings.LAYOUT_COPY_MEDIA_CHECKB == 1 %}
@@ -63,12 +66,15 @@
                             {% set checked = 0 %}
                         {% endif %}
                         {{ forms.checkbox("copyMediaFiles", title, checked, helpText) }}
+                        {% endif %}
                     </div>
+                    {% if currentUser.userTypeId == 1 %}
                     <div class="tab-pane" id="description">
                         {% set title %}{% trans "Description" %}{% endset %}
                         {% set helpText %}{% trans "An optional description (1 - 250 characters)" %}{% endset %}
                         {{ forms.textarea("description", title, layout.description, helpText) }}
                     </div>
+                    {% endif %}
                 </div>
             </form>
         </div>
