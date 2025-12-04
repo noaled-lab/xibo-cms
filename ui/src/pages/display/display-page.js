@@ -383,7 +383,7 @@ $(function() {
             return '';
           }
         },
-        visible: true,
+        visible: false,
         orderable: false,
       },
       {
