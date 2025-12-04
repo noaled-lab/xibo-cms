@@ -8,7 +8,7 @@ $(document).ready(function() {
   table = $('#campaigns').DataTable({
     language: dataTablesLanguage,
     serverSide: true,
-    stateSave: true,
+    stateSave: false,
     stateDuration: 0,
     responsive: true,
     dom: dataTablesTemplate,

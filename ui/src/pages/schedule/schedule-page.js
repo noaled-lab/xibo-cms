@@ -114,7 +114,7 @@ $(function() {
     language: dataTablesLanguage,
     dom: dataTablesTemplate,
     serverSide: true,
-    stateSave: true,
+    stateSave: false,
     responsive: true,
     stateDuration: 0,
     stateLoadCallback: dataTableStateLoadCallback,

@@ -9,7 +9,7 @@ $(function() {
     language: dataTablesLanguage,
     dom: dataTablesTemplate,
     serverSide: true,
-    stateSave: true,
+    stateSave: false,
     stateDuration: 0,
     responsive: true,
     stateLoadCallback: dataTableStateLoadCallback,
