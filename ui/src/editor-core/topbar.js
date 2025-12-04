@@ -174,10 +174,11 @@ Topbar.prototype.render = function() {
       .toggle(activeDropdown);
   }
 
-  // Set layout jumpList if exists
+  // Set layout jumpList if exists (only for Super Admin)
   if (
     !$.isEmptyObject(this.jumpList) &&
-    self.DOMObject.find('#layoutJumpList').length == 0
+    self.DOMObject.find('#layoutJumpList').length == 0 &&
+    self.showOptions
   ) {
     self.setupJumpList();
   }
