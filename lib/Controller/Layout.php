@@ -1884,7 +1884,7 @@ class Layout extends Base
                 ];
             }
 
-            if ($this->getUser()->featureEnabled('campaign.view')) {
+            if ($this->getUser()->featureEnabled('campaign.view') && $this->getUser()->userTypeId == 1) {
                 $layout->buttons[] = [
                     'id' => 'layout_button_campaign_jump',
                     'linkType' => '_self', 'external' => true,
@@ -1893,7 +1893,7 @@ class Layout extends Base
                 ];
             }
 
-            if ($this->getUser()->featureEnabled('library.view')) {
+            if ($this->getUser()->featureEnabled('library.view') && $this->getUser()->userTypeId == 1) {
                 $layout->buttons[] = [
                     'id' => 'layout_button_media_jump',
                     'linkType' => '_self', 'external' => true,
@@ -1983,21 +1983,23 @@ class Layout extends Base
                     ];
                 }
 
-                // Set Enable Stat
-                $layout->buttons[] = [
-                    'id' => 'layout_button_setenablestat',
-                    'url' => $this->urlFor($request, 'layout.setenablestat.form', ['id' => $layout->layoutId]),
-                    'text' => __('Enable stats collection?'),
-                    'multi-select' => true,
-                    'dataAttributes' => [
-                        ['name' => 'commit-url', 'value' => $this->urlFor($request, 'layout.setenablestat', ['id' => $layout->layoutId])],
-                        ['name' => 'commit-method', 'value' => 'put'],
-                        ['name' => 'id', 'value' => 'layout_button_setenablestat'],
-                        ['name' => 'text', 'value' => __('Enable stats collection?')],
-                        ['name' => 'rowtitle', 'value' => $layout->layout],
-                        ['name' => 'form-callback', 'value' => 'setEnableStatMultiSelectFormOpen']
-                    ]
-                ];
+                // Set Enable Stat (Super Admin only)
+                if ($this->getUser()->userTypeId == 1) {
+                    $layout->buttons[] = [
+                        'id' => 'layout_button_setenablestat',
+                        'url' => $this->urlFor($request, 'layout.setenablestat.form', ['id' => $layout->layoutId]),
+                        'text' => __('Enable stats collection?'),
+                        'multi-select' => true,
+                        'dataAttributes' => [
+                            ['name' => 'commit-url', 'value' => $this->urlFor($request, 'layout.setenablestat', ['id' => $layout->layoutId])],
+                            ['name' => 'commit-method', 'value' => 'put'],
+                            ['name' => 'id', 'value' => 'layout_button_setenablestat'],
+                            ['name' => 'text', 'value' => __('Enable stats collection?')],
+                            ['name' => 'rowtitle', 'value' => $layout->layout],
+                            ['name' => 'form-callback', 'value' => 'setEnableStatMultiSelectFormOpen']
+                        ]
+                    ];
+                }
 
                 $layout->buttons[] = ['divider' => true];
 
@@ -2010,8 +2012,8 @@ class Layout extends Base
                     );
                 }
 
-                // Export Button
-                if ($this->getUser()->featureEnabled('layout.export')) {
+                // Export Button (Super Admin only)
+                if ($this->getUser()->featureEnabled('layout.export') && $this->getUser()->userTypeId == 1) {
                     $layout->buttons[] = array(
                         'id' => 'layout_button_export',
                         'url' => $this->urlFor($request, 'layout.export.form', ['id' => $layout->layoutId]),
