@@ -26,6 +26,11 @@
             .XiboFilter {
                 display: none !important;
             }
+            /* Hide stats collection field in widget forms */
+            .form-group:has(#widget_enableStat),
+            .form-group:has([name="enableStat"]) {
+                display: none !important;
+            }
         </style>
         <script nonce="{{ cspNonce }}">
             // Toggle filters with Ctrl+Shift+F
