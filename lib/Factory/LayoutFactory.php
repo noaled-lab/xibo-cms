@@ -2650,7 +2650,15 @@ class LayoutFactory extends BaseFactory
             $layout->statusMessage = $parsedRow->getString('statusMessage');
             $layout->enableStat = $parsedRow->getInt('enableStat');
             $layout->publishedStatusId = $parsedRow->getInt('publishedStatusId');
-            $layout->publishedStatus = $parsedRow->getString('publishedStatus');
+            
+            // Map status to Korean text
+            $statusMap = [
+                1 => __('게시됨'),
+                2 => __('초안'),
+                3 => __('승인 대기')
+            ];
+            $layout->publishedStatus = $statusMap[$layout->publishedStatusId] ?? $parsedRow->getString('publishedStatus');
+            
             $layout->publishedDate = $parsedRow->getString('publishedDate');
             $layout->autoApplyTransitions = $parsedRow->getInt('autoApplyTransitions');
             $layout->code = $parsedRow->getString('code');
