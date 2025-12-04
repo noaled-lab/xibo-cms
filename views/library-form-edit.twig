@@ -111,7 +111,9 @@
                         { id: "On", value: onOption },
                         { id: "Inherit", value: inheritOption }
                     ] %}
+                    {% if currentUser.userTypeId == 1 %}
                     {{ forms.dropdown("enableStat", "single", title, media.enableStat, options, "id", "value", helpText) }}
+                    {% endif %}
 
                     {% set title %}{% trans "Orientation" %}{% endset %}
                     {% set helpText %}{% trans "Set intended orientation for this Media, this is for filtering purpose only." %}{% endset %}

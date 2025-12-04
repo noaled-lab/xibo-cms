@@ -101,9 +101,11 @@
                         {% set helpText %}{% trans "Retire this layout or not? It will no longer be visible in lists" %}{% endset %}
                         {{ forms.checkbox("retired", title, layout.retired, helpText, "", "", "", "retired-form") }}
 
+                        {% if currentUser.userTypeId == 1 %}
                         {% set title %}{% trans "Enable Stats Collection?" %}{% endset %}
                         {% set helpText %}{% trans "Enable the collection of Proof of Play statistics for this Layout. Ensure that 'Enable Stats Collection' is set to 'On' in the Display Settings." %}{% endset %}
                         {{ forms.checkbox("enableStat", title, layout.enableStat, helpText) }}
+                        {% endif %}
                         {% endif %}
                     </div>
                     {% if currentUser.userTypeId == 1 %}
