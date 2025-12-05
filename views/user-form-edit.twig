@@ -43,11 +43,15 @@
                 {% if currentUser.featureEnabled("folder.userHome") %}
                     <li class="nav-item"><a class="nav-link" href="#home-folder" role="tab" data-toggle="tab"><span>{% trans "Home Folder" %}</span></a></li>
                 {% endif %}
-                <li class="nav-item"><a class="nav-link" href="#reference" role="tab" data-toggle="tab"><span>{% trans "Reference" %}</span></a></li>
+                {% if currentUser.userTypeId == 1 %}
+                    <li class="nav-item"><a class="nav-link" href="#reference" role="tab" data-toggle="tab"><span>{% trans "Reference" %}</span></a></li>
+                {% endif %}
                 {% if currentUser.userTypeId == 1 %}
                     <li class="nav-item"><a class="nav-link" href="#notifications" role="tab" data-toggle="tab"><span>{% trans "Notifications" %}</span></a></li>
                 {% endif %}
-                <li class="nav-item"><a class="nav-link" href="#optionsTab" role="tab" data-toggle="tab"><span>{% trans "Options" %}</span></a></li>
+                {% if currentUser.userTypeId == 1 %}
+                    <li class="nav-item"><a class="nav-link" href="#optionsTab" role="tab" data-toggle="tab"><span>{% trans "Options" %}</span></a></li>
+                {% endif %}
             </ul>
             <form id="userEditForm" class="UserForm form-horizontal" data-user-id="{{ user.userId }}" method="put" action="{{ url_for("user.edit", {id: user.userId}) }}">
                 <div class="tab-content">
@@ -56,9 +60,11 @@
                         {% set helpText %}{% trans "The Username of the user." %}{% endset %}
                         {{ forms.input("userName", title, user.userName, helpText, "", "required maxlength='50'") }}
 
-                        {% set title %}{% trans "Email" %}{% endset %}
-                        {% set helpText %}{% trans "The Email Address for this user." %}{% endset %}
-                        {{ forms.email("email", title, user.email, helpText) }}
+                        {% if currentUser.userTypeId == 1 %}
+                            {% set title %}{% trans "Email" %}{% endset %}
+                            {% set helpText %}{% trans "The Email Address for this user." %}{% endset %}
+                            {{ forms.email("email", title, user.email, helpText) }}
+                        {% endif %}
 
                         {% if currentUser.userTypeId == 1 %}
                             {# This is an admin user and can therefore change the users password and two factor setting#}
@@ -75,17 +81,19 @@
                             {{ forms.checkbox("disableTwoFactor", title, 0, helpText) }}
                         {% endif %}
 
-                        {% set title %}{% trans "Homepage" %}{% endset %}
-                        {% set helpText %}{% trans "Homepage for this user. This is the page they will be taken to when they login." %}{% endset %}
-                        <div class="form-group row">
-                            <label class="col-sm-2 control-label" for="homePageId">{{ title }}</label>
-                            <div class="col-sm-10">
-                                <select name="homePageId" class="form-control homepage-select" required data-search-url="{{ url_for("user.homepages.search") }}">
-                                    <option value="{{ options.homepage.homepage }}" selected>{{ options.homepage.title }}</option>
-                                </select>
-                                <span class="help-block">{{ helpText }}</span>
+                        {% if currentUser.userTypeId == 1 %}
+                            {% set title %}{% trans "Homepage" %}{% endset %}
+                            {% set helpText %}{% trans "Homepage for this user. This is the page they will be taken to when they login." %}{% endset %}
+                            <div class="form-group row">
+                                <label class="col-sm-2 control-label" for="homePageId">{{ title }}</label>
+                                <div class="col-sm-10">
+                                    <select name="homePageId" class="form-control homepage-select" required data-search-url="{{ url_for("user.homepages.search") }}">
+                                        <option value="{{ options.homepage.homepage }}" selected>{{ options.homepage.title }}</option>
+                                    </select>
+                                    <span class="help-block">{{ helpText }}</span>
+                                </div>
                             </div>
-                        </div>
+                        {% endif %}
 
                         {% if currentUser.isSuperAdmin() %}
                             {% set title %}{% trans "User Type" %}{% endset %}
@@ -93,26 +101,30 @@
                             {{ forms.dropdown("userTypeId", "single", title, user.userTypeId, options.userTypes, "userTypeId", "userType", helpText) }}
                         {% endif %}
 
-                        {% set title %}{% trans "Library Quota" %}{% endset %}
-                        {% set helpText %}{% trans "The quota that should be applied. Enter 0 for no quota." %}{% endset %}
-                        <div class="form-group row">
-                            <label class="col-sm-2 control-label" for="libraryQuota">{{ title }}</label>
-                            <div class="col-sm-6">
-                                <input class="form-control" name="libraryQuota" type="number" id="libraryQuota" min="0" value="{{ user.libraryQuota }}" />
-                                <span class="help-block">{{ helpText }}</span>
+                        {% if currentUser.userTypeId == 1 %}
+                            {% set title %}{% trans "Library Quota" %}{% endset %}
+                            {% set helpText %}{% trans "The quota that should be applied. Enter 0 for no quota." %}{% endset %}
+                            <div class="form-group row">
+                                <label class="col-sm-2 control-label" for="libraryQuota">{{ title }}</label>
+                                <div class="col-sm-6">
+                                    <input class="form-control" name="libraryQuota" type="number" id="libraryQuota" min="0" value="{{ user.libraryQuota }}" />
+                                    <span class="help-block">{{ helpText }}</span>
+                                </div>
+                                <div class="col-sm-4">
+                                    <select name="libraryQuotaUnits" class="form-control">
+                                        <option value="kb">KiB</option>
+                                        <option value="mb">MiB</option>
+                                        <option value="gb">GiB</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-sm-4">
-                                <select name="libraryQuotaUnits" class="form-control">
-                                    <option value="kb">KiB</option>
-                                    <option value="mb">MiB</option>
-                                    <option value="gb">GiB</option>
-                                </select>
-                            </div>
-                        </div>
+                        {% endif %}
 
-                        {% set title %}{% trans "Retired?" %}{% endset %}
-                        {% set helpText %}{% trans "Is this user retired?" %}{% endset %}
-                        {{ forms.checkbox("retired", title, user.retired, helpText) }}
+                        {% if currentUser.userTypeId == 1 %}
+                            {% set title %}{% trans "Retired?" %}{% endset %}
+                            {% set helpText %}{% trans "Is this user retired?" %}{% endset %}
+                            {{ forms.checkbox("retired", title, user.retired, helpText) }}
+                        {% endif %}
                     </div>
                     {% if currentUser.featureEnabled("folder.userHome") %}
                         <div class="tab-pane" id="home-folder">
@@ -121,7 +133,8 @@
                             <div id="container-form-folder-tree" class="card card-body bg-light"></div>
                         </div>
                     {% endif %}
-                    <div class="tab-pane" id="reference">
+                    {% if currentUser.userTypeId == 1 %}
+                        <div class="tab-pane" id="reference">
                         {% set title %}{% trans "First Name" %}{% endset %}
                         {% set helpText %}{% trans "The User's First Name." %}{% endset %}
                         {{ forms.input("firstName", title, user.firstName, helpText, "", "maxlength='254'") }}
@@ -153,7 +166,8 @@
                         {% set title %}{% trans "Reference 5" %}{% endset %}
                         {% set helpText %}{% trans "A reference field for custom user data" %}{% endset %}
                         {{ forms.input("ref5", title, user.ref5, helpText, "", "maxlength='254'") }}
-                    </div>
+                        </div>
+                    {% endif %}
                     {% if currentUser.userTypeId == 1 %}
                         <div class="tab-pane" id="notifications">
                             <table class="table table-bordered">
@@ -273,7 +287,8 @@
                         </div>
                     {% endif %}
 
-                    <div class="tab-pane" id="optionsTab">
+                    {% if currentUser.userTypeId == 1 %}
+                        <div class="tab-pane" id="optionsTab">
                         {% set title %}{% trans "Hide navigation?" %}{% endset %}
                         {% set helpText %}{% trans "Should the navigation side bar be hidden for this User?" %}{% endset %}
                         {{ forms.checkbox("hideNavigation", title, user.getOptionValue("hideNavigation", "0"), helpText) }}
@@ -285,7 +300,8 @@
                         {% set title %}{% trans "Force Password Change" %}{% endset %}
                         {% set helpText %}{% trans "Should this User be forced to change password next time they log in?" %}{% endset %}
                         {{ forms.checkbox("isPasswordChangeRequired", title, user.isPasswordChangeRequired, helpText) }}
-                    </div>
+                        </div>
+                    {% endif %}
                 </div>
             </form>
         </div>
