@@ -341,6 +341,7 @@
         var showThumbnailColumn = "{{ currentUser.getOptionValue('showThumbnailColumn', 1) }}";
         var SHOW_DISPLAY_AS_VNCLINK = "{{ settings.SHOW_DISPLAY_AS_VNCLINK }}";
         var SHOW_DISPLAY_AS_VNC_TGT = "{{ settings.SHOW_DISPLAY_AS_VNC_TGT }}";
+        var isSystemUser = {{ currentUser.userTypeId == 1 ? 'true' : 'false' }};
 
         {# Custom translations #}
         var displayPageTrans = {

@@ -818,9 +818,9 @@ class Display extends Base
             // Is a transfer to another CMS in progress?
             $display->setUnmatchedProperty('isCmsTransferInProgress', (!empty($display->newCmsAddress)));
 
-            // Edit and Delete buttons first
-            if ($this->getUser()->featureEnabled('displays.modify')
-                && $this->getUser()->checkEditable($display)
+            // Manage button (displays.limitedView)
+            if ($this->getUser()->featureEnabled('displays.limitedView')
+                && $this->getUser()->checkViewable($display)
             ) {
                 // Manage
                 $display->buttons[] = [
@@ -831,7 +831,12 @@ class Display extends Base
                 ];
 
                 $display->buttons[] = ['divider' => true];
+            }
 
+            // Edit and Delete buttons first
+            if ($this->getUser()->featureEnabled('displays.modify')
+                && $this->getUser()->checkEditable($display)
+            ) {
                 // Edit
                 $display->buttons[] = [
                     'id' => 'display_button_edit',

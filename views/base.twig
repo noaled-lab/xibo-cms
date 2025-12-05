@@ -42,6 +42,12 @@
                         if (style) {
                             style.disabled = !style.disabled;
                         }
+                        // Toggle column visibility button if it exists
+                        var colVisButton = document.querySelector('.buttons-colvis');
+                        if (colVisButton) {
+                            colVisButton.classList.remove('d-none');
+                            colVisButton.style.display = '';
+                        }
                     }
                 });
             });

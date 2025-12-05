@@ -419,6 +419,7 @@ $(function() {
         data: 'countFaults',
         name: 'countFaults',
         responsivePriority: 3,
+        visible: (typeof isSystemUser !== 'undefined' && isSystemUser === true),
         render: function(data, type, row) {
           if (row.clientCode < 300) {
             return '';
