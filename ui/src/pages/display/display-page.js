@@ -55,7 +55,7 @@ $(function() {
     columns: [
       {data: 'displayId', responsivePriority: 2},
       {data: 'display', responsivePriority: 2},
-      {data: 'displayType', responsivePriority: 2},
+      {data: 'displayType', visible: false, responsivePriority: 2},
       {data: 'address', visible: false, responsivePriority: 5},
       {
         data: 'mediaInventoryStatus',
@@ -85,9 +85,9 @@ $(function() {
       },
       {
         data: 'currentLayout',
-        visible: false,
+        visible: true,
         sortable: false,
-        responsivePriority: 5,
+        responsivePriority: 3,
       },
       {
         data: 'storageAvailableSpace',
