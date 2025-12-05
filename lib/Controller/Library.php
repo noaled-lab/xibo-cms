@@ -799,8 +799,9 @@ class Library extends Base
                 );
             }
 
-            // Schedule
-            if ($this->getUser()->featureEnabled('schedule.add')
+            // Schedule - Only for system users
+            if ($this->getUser()->userTypeId == 1
+                && $this->getUser()->featureEnabled('schedule.add')
                 && in_array($media->mediaType, ['image', 'video'])
                 && ($this->getUser()->checkEditable($media)
                     || $this->getConfig()->getSetting('SCHEDULE_WITH_VIEW_PERMISSION') == 1)
