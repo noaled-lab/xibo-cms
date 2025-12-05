@@ -61,13 +61,13 @@ class FontFactory extends BaseFactory
         $font = $this->createEmpty();
         $fontLib = \FontLib\Font::load($file);
 
-        // check embed flag
-        $embed = intval($fontLib->getData('OS/2', 'fsType'));
+        // check embed flag (disabled for noaled customization)
+        // $embed = intval($fontLib->getData('OS/2', 'fsType'));
 
         // if it's not embeddable, throw exception
-        if ($embed != 0 && $embed != 8) {
-            throw new InvalidArgumentException(__('Font file is not embeddable due to its permissions'));
-        }
+        // if ($embed != 0 && $embed != 8) {
+        //     throw new InvalidArgumentException(__('Font file is not embeddable due to its permissions'));
+        // }
 
         $name = ($name == '') ? $fontLib->getFontName() . ' ' . $fontLib->getFontSubfamily() : $name;
 
