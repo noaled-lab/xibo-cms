@@ -8,7 +8,9 @@
 {% endblock %}
 
 {% block formButtons %}
-    {% trans "Retire" %}, XiboSwapDialog("{{ url_for("layout.retire.form", {id: layout.layoutId}) }}")
+    {% if currentUser.userTypeId == 1 %}
+        {% trans "Retire" %}, XiboSwapDialog("{{ url_for("layout.retire.form", {id: layout.layoutId}) }}")
+    {% endif %}
     {% trans "No" %}, XiboDialogClose()
     {% trans "Yes" %}, $("#layoutDeleteForm").submit()
 {% endblock %}
