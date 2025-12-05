@@ -3142,7 +3142,7 @@ class Display extends Base
     {
         $display = $this->displayFactory->getById($id);
 
-        if (!$this->getUser()->checkViewable($display) || !$this->getUser()->isSuperAdmin()) {
+        if (!$this->getUser()->checkViewable($display) || !$this->getUser()->featureEnabled('displays.modify')) {
             throw new AccessDeniedException();
         }
 
@@ -3190,7 +3190,7 @@ class Display extends Base
     {
         $display = $this->displayFactory->getById($id);
 
-        if (!$this->getUser()->checkViewable($display) || !$this->getUser()->isSuperAdmin()) {
+        if (!$this->getUser()->checkViewable($display) || !$this->getUser()->featureEnabled('displays.modify')) {
             throw new AccessDeniedException();
         }
 
