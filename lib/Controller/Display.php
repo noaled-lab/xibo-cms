@@ -1092,6 +1092,13 @@ class Display extends Base
                 ];
 
                 if ($this->getUser()->checkEditable($display)) {
+                    // Purge All - available for users with edit permission
+                    $display->buttons[] = [
+                        'id' => 'display_button_purgeAll',
+                        'url' => $this->urlFor($request, 'display.purge.all.form', ['id' => $display->displayId]),
+                        'text' => __('Purge All')
+                    ];
+
                     // Trigger webhook - Only show for SuperAdmin users
                     if ($this->getUser()->isSuperAdmin()) {
                         $display->buttons[] = [
@@ -1119,12 +1126,6 @@ class Display extends Base
                                 ['name' => 'rowtitle', 'value' => $display->display],
                                 ['name' => 'form-callback', 'value' => 'triggerWebhookMultiSelectFormOpen']
                             ]
-                        ];
-
-                        $display->buttons[] = [
-                            'id' => 'display_button_purgeAll',
-                            'url' => $this->urlFor($request, 'display.purge.all.form', ['id' => $display->displayId]),
-                            'text' => __('Purge All')
                         ];
                     }
 
