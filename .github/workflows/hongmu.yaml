@@ -37,4 +37,4 @@ jobs:
           file: ./Dockerfile
           push: true
           load: false
-          tags: ghcr.io/noaled-lab/xibo-cms:latest,ghcr.io/noaled-lab/xibo-cms:hongmu
+          tags: ghcr.io/noaled-lab/xibo-cms:hongmu
