@@ -131,10 +131,20 @@ Toolbar.prototype.init = function(
 
   // Filter module list to create the types for the filter
   modulesList.forEach((el) => {
+    // Check if we have valid extension on settings (always do this first)
+    for (let index = 0; index < el.settings.length; index++) {
+      const setting = el.settings[index];
+
+      if (setting.id == 'validExtensions') {
+        el.validExtensions =
+          (setting.value) ? setting.value : setting.default;
+      }
+    }
+
     // Skip specific modules for non-Super Admin users
     if (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1) {
-      // Only allow clock-related modules
-      const allowedModules = ['clock-digital', 'clock-analogue', 'clock-flip'];
+      // Allow basic media types and clock-related modules
+      const allowedModules = ['image', 'audio', 'video', 'clock-digital', 'clock-analogue', 'clock-flip'];
       if (!allowedModules.includes(el.type)) {
         return; // Skip this module
       }
@@ -149,16 +159,6 @@ Toolbar.prototype.init = function(
       return;
     }
 
-    // Check if we have valid extension on settings
-    for (let index = 0; index < el.settings.length; index++) {
-      const setting = el.settings[index];
-
-      if (setting.id == 'validExtensions') {
-        el.validExtensions =
-          (setting.value) ? setting.value : setting.default;
-      }
-    }
-
     // Create new list with "other" modules
     if (
       el.assignable == 1 &&
@@ -169,6 +169,7 @@ Toolbar.prototype.init = function(
         type: el.type,
         name: el.name,
         hasThumbnail: el.hasThumbnail,
+        validExtensions: el.validExtensions,
       });
 
       // Add to types
