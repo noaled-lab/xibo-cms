@@ -114,6 +114,7 @@ $(document).ready(function() {
         {
           data: 'targetType',
           responsivePriority: 3,
+          visible: false,
           render: function(data, type) {
             if (data === 'plays') {
               return campaignPageTrans.plays;
@@ -127,19 +128,23 @@ $(document).ready(function() {
         },
         {
           data: 'target',
+          visible: false,
           responsivePriority: 3,
         },
         {
           data: 'plays',
           responsivePriority: 6,
+          visible: false,
         },
         {
           data: 'spend',
           responsivePriority: 6,
+          visible: false,
         },
         {
           data: 'impressions',
           responsivePriority: 6,
+          visible: false,
         },
       ] : []),
       {
