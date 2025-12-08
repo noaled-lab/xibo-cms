@@ -52,12 +52,14 @@ $(document).ready(function() {
         {
           data: 'startDt',
           responsivePriority: 2,
-          render: dataTableDateFromUnix,
+           render: dataTableDateFromUnix,
+           visible: false,
         },
         {
           data: 'endDt',
           responsivePriority: 2,
-          render: dataTableDateFromUnix,
+           render: dataTableDateFromUnix,
+           visible: false,
         },
       ] : []),
       {data: 'numberLayouts', responsivePriority: 2},
