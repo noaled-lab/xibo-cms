@@ -30,32 +30,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="public-path" content="{{ theme.rootUri() }}"/>
         
-        <link rel="shortcut icon" type="image/png" href="{{ theme.uri("img/noalogo.png") }}" />
-        
-        {# 레이아웃 불투명도 및 밝기 조절을 위한 CSS #}
-        <style type="text/css">
-            /* 레이아웃 전체 불투명도 조절 */
-            #content {
-                /* 기본값: opacity: 1; (완전 불투명) */
-                /* 조절하려면 아래 주석을 해제하고 원하는 값을 설정하세요 */
-                /* opacity: 0.8; */
-            }
-            
-            /* 레이아웃 전체 밝기 조절 */
-            #content {
-                /* 기본값: filter: brightness(1); (원본 밝기) */
-                /* 조절하려면 아래 주석을 해제하고 원하는 값을 설정하세요 */
-                /* filter: brightness(1.2); */ /* 1.2 = 20% 더 밝게 */
-                /* filter: brightness(0.8); */ /* 0.8 = 20% 더 어둡게 */
-            }
-            
-            /* 레이아웃 배경 불투명도 조절 (배경 이미지/색상만) */
-            body {
-                /* 기본값: opacity: 1; */
-                /* 조절하려면 아래 주석을 해제하고 원하는 값을 설정하세요 */
-                /* opacity: 0.9; */
-            }
-        </style>
+        <link rel="shortcut icon" href="{{ theme.uri("img/favicon.ico") }}" />
     </head>
     <body>
         {# Import JS bundle from dist #}
