@@ -888,29 +888,30 @@ class Display extends Base
             if ($this->getUser()->featureEnabled('displays.modify')
                 && $this->getUser()->checkEditable($display)
             ) {
-                // Authorise
-                $display->buttons[] = [
-                    'id' => 'display_button_authorise',
-                    'url' => $this->urlFor($request, 'display.authorise.form', ['id' => $display->displayId]),
-                    'text' => __('Authorise'),
-                    'multi-select' => true,
-                    'dataAttributes' => [
-                        ['name' => 'auto-submit', 'value' => true],
-                        [
-                            'name' => 'commit-url',
-                            'value' => $this->urlFor(
-                                $request,
-                                'display.authorise',
-                                ['id' => $display->displayId]
-                            )
-                        ],
-                        ['name' => 'commit-method', 'value' => 'put'],
-                        ['name' => 'id', 'value' => 'display_button_authorise'],
-                        ['name' => 'sort-group', 'value' => 2],
-                        ['name' => 'text', 'value' => __('Toggle Authorise')],
-                        ['name' => 'rowtitle', 'value' => $display->display]
-                    ]
-                ];
+                if ($this->getUser()->userTypeId != 3) {
+                    $display->buttons[] = [
+                        'id' => 'display_button_authorise',
+                        'url' => $this->urlFor($request, 'display.authorise.form', ['id' => $display->displayId]),
+                        'text' => __('Authorise'),
+                        'multi-select' => true,
+                        'dataAttributes' => [
+                            ['name' => 'auto-submit', 'value' => true],
+                            [
+                                'name' => 'commit-url',
+                                'value' => $this->urlFor(
+                                    $request,
+                                    'display.authorise',
+                                    ['id' => $display->displayId]
+                                )
+                            ],
+                            ['name' => 'commit-method', 'value' => 'put'],
+                            ['name' => 'id', 'value' => 'display_button_authorise'],
+                            ['name' => 'sort-group', 'value' => 2],
+                            ['name' => 'text', 'value' => __('Toggle Authorise')],
+                            ['name' => 'rowtitle', 'value' => $display->display]
+                        ]
+                    ];
+                }
 
                 // Default Layout
                 $display->buttons[] = [
