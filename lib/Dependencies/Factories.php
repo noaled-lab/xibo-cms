@@ -531,6 +531,14 @@ class Factories
                 $repository->useBaseDependenciesService($c->get('RepositoryBaseDependenciesService'));
                 return $repository;
             },
+            'camearaFactory' => function (ContainerInterface $c) {
+                $repository = new \Xibo\Factory\CameraFactory(
+                    $c->get('user'),
+                    $c->get('userFactory')
+                );
+                $repository->useBaseDependenciesService($c->get('RepositoryBaseDependenciesService'));
+                return $repository;
+            },
         ];
     }
 }
