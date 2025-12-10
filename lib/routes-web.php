@@ -273,6 +273,7 @@ $app->get('/library/form/usage/{id}', ['\Xibo\Controller\Library','usageForm'])
 $app->group('', function(\Slim\Routing\RouteCollectorProxy $group) {
     $group->get('/display/map', ['\Xibo\Controller\Display', 'displayMap'])->setName('display.map');
     $group->get('/display/view', ['\Xibo\Controller\Display', 'displayPage'])->setName('display.view');
+    $group->get('/camera', ['\Xibo\Controller\Camera', 'displayPage'])->setName('camera.view');
     $group->get('/display/manage/{id}', ['\Xibo\Controller\Display', 'displayManage'])->setName('display.manage');
     $group->get('/display/form/screenshot/{id}', ['\Xibo\Controller\Display','requestScreenShotForm'])->setName('display.screenshot.form');
     $group->get('/display/form/wol/{id}', ['\Xibo\Controller\Display','wakeOnLanForm'])->setName('display.wol.form');
