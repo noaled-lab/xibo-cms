@@ -61,6 +61,10 @@
                 <li class="sidebar-list"><a href="{{ url_for("display.view") }}">{% trans "Displays" %}</a></li>
             {% endif %}
 
+            {% if currentUser.featureEnabled("displays.view") %}
+                <li class="sidebar-list"><a href="{{ url_for("camera.view") }}">카메라</a></li>
+            {% endif %}
+
             {% if currentUser.featureEnabled("displaygroup.view") %}
                 <li class="sidebar-list"><a href="{{ url_for("displaygroup.view") }}">{% trans "Display Groups" %}</a></li>
             {% endif %}

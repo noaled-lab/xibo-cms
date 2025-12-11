@@ -267,6 +267,15 @@ $app->get('/library/form/usage/{id}', ['\Xibo\Controller\Library','usageForm'])
     ->addMiddleware(new FeatureAuth($app->getContainer(), ['schedule.view', 'layout.view']))
     ->setName('library.usage.form');
 
+// 카메라
+$app->get('/camera/view', ['\Xibo\Controller\Camera', 'displayPage'])
+    ->addMiddleware(new FeatureAuth($app->getContainer(), ['displays.view'])) // 임시로 디스플레이 보기 권한으로 지정 (추후 DB 마이그레이션하여하여 권한 추가 필요)
+    ->setName('camera.view');
+$app->get('/camera/form/add', ['\Xibo\Controller\Camera', 'addForm'])->setName('camera.add.form');
+$app->get('/camera/form/edit/{id}', ['\Xibo\Controller\Camera', 'editForm'])->setName('camera.edit.form');
+$app->get('/camera/form/delete/{id}', ['\Xibo\Controller\Camera', 'deleteForm'])->setName('camera.delete.form');
+
+
 //
 // display
 //
