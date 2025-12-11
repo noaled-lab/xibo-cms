@@ -310,7 +310,10 @@ function displayCameras(cameras) {
             if (videoEl && camera.url) {
                 if (!videoPlayers[cameraId]) {
                     console.log('Starting video for camera:', cameraId);
-                    videoPlayers[cameraId] = startPlay(videoEl, camera.url);
+                    // WebSocket URL 구성: ws://현재호스트:8083/경로
+                    const wsUrl = `ws://${window.location.hostname}:8083${camera.url}`;
+                    console.log('WebSocket URL:', wsUrl);
+                    videoPlayers[cameraId] = startPlay(videoEl, wsUrl);
                 } else {
                     console.log('Video already playing for camera:', cameraId);
                 }
