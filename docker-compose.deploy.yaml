@@ -60,6 +60,14 @@ services:
         restart: always
         networks:
                 - app
+    rtsp-to-web:
+        image: ghcr.io/deepch/rtsptoweb:v2.4.3
+        volumes:
+            - "./config.json:/config/config.json"
+        networks:
+            - app
+        ports:
+            - "8083:8083"
 
 networks:
   app:

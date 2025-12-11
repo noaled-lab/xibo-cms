@@ -1,0 +1,37 @@
+{
+  "channel_defaults": {},
+  "server": {
+    "debug": true,
+    "http_debug": false,
+    "http_demo": true,
+    "http_dir": "",
+    "http_login": "",
+    "http_password": "",
+    "http_port": ":8083",
+    "https": false,
+    "https_auto_tls": false,
+    "https_auto_tls_name": "",
+    "https_cert": "",
+    "https_key": "",
+    "https_port": "",
+    "ice_credential": "",
+    "ice_servers": [],
+    "ice_username": "",
+    "log_level": "info",
+    "rtsp_port": "",
+    "token": {
+      "backend": "",
+      "enable": false
+    },
+    "webrtc_port_max": 0,
+    "webrtc_port_min": 0
+  },
+  "streams": {
+    "noaled": {
+      "channels": {
+
+      },
+      "name": "노아엘이디"
+    }
+  }
+}

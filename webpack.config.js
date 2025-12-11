@@ -169,6 +169,7 @@ const pageConfig = Object.assign({}, config, {
     'display-page': './ui/src/pages/display/display-page.js',
     'schedule-page': './ui/src/pages/schedule/schedule-page.js',
     'campaign-page': './ui/src/pages/campaign/campaign-page.js',
+    'camera-page': './ui/src/pages/camera/camera-page.js',
     'developer-template-page':
       './ui/src/pages/developer-template/developer-template-page.js',
     'welcome-page': './ui/src/pages/welcome/welcome-page.js',

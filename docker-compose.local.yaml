@@ -35,6 +35,7 @@ services:
             - XMR_HOST=cms-xmr
             - CMS_USE_MEMCACHED=true
             - MEMCACHED_HOST=cms-memcached
+            - RTSP_WEB_HOST=rtsp-to-web:8083
         env_file: config.env
         ports:
             - "80:80"
@@ -50,7 +51,15 @@ services:
         image: ianw/quickchart
         restart: always
         networks:
-                - app
+            - app
+    rtsp-to-web:
+        image: ghcr.io/deepch/rtsptoweb:v2.4.3
+        volumes:
+            - "./config.json:/config/config.json"
+        networks:
+            - app
+        ports:
+            - "8083:8083"
 
 networks:
   app:

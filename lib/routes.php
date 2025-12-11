@@ -375,6 +375,12 @@ $app->group('', function (RouteCollectorProxy $group) {
     $group->post('/library/{id}/untag', ['\Xibo\Controller\Library','untag'])->setName('library.untag');
 })->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['tag.tagging']));
 
+// Camera
+$app->get('/camera/search', ['\Xibo\Controller\Camera', 'search'])->setName('camera.search');
+$app->post('/camera/add', ['\Xibo\Controller\Camera', 'add'])->setName('camera.add');
+$app->put('/camera/edit/{id}', ['\Xibo\Controller\Camera', 'edit'])->setName('camera.edit');
+$app->delete('/camera/delete/{id}', ['\Xibo\Controller\Camera', 'delete'])->setName('camera.delete');
+
 /**
  * Displays
  * @SWG\Tag(
