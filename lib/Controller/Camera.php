@@ -77,7 +77,7 @@ class Camera extends Base
     // WebSocket URL 생성 헬퍼 함수
     private function generateWebSocketUrl($streamId, $channelId) {
         // 브라우저에서 접근 가능한 주소 사용 (127.0.0.1 또는 실제 서버 IP)
-        return "ws://127.0.0.1:8083/stream/{$streamId}/channel/{$channelId}/mse?uuid={$streamId}&channel={$channelId}";
+        return "ws://rtsp-to-web:8083/stream/{$streamId}/channel/{$channelId}/mse?uuid={$streamId}&channel={$channelId}";
     }
 
     // 채널 추가 폼
