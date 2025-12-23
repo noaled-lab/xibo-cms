@@ -1,0 +1,44 @@
+{% extends "form-base.twig" %}
+{% import "forms.twig" as forms %}
+
+{% block formTitle %}
+    {% trans "스트림 수정" %}
+{% endblock %}
+
+{% block formButtons %}
+    {% trans "취소" %}, XiboDialogClose()
+    {% trans "저장" %}, $("#cameraEditForm").submit()
+{% endblock %}
+
+{% block formHtml %}
+    <div class="row">
+        <div class="col-md-12">
+            <form id="cameraEditForm" class="XiboForm form-horizontal" method="put" action="{{ url_for("camera.edit", {id: camera.streamId ~ ':' ~ camera.channelId}) }}">
+
+                <!-- 숨겨진 필드: onDemand는 항상 true -->
+                <input type="hidden" name="onDemand" value="1">
+
+                {% set title %}{% trans "이름" %}{% endset %}
+                {% set helpText %}{% trans "카메라 채널의 이름을 입력하세요" %}{% endset %}
+                {{ forms.input("name", title, camera.name, helpText, "", "required") }}
+
+                {% set title %}{% trans "채널 번호" %}{% endset %}
+                {% set helpText %}{% trans "카메라 채널 번호" %}{% endset %}
+                {{ forms.disabled("channelId", title, camera.channelId, helpText) }}
+
+                {% set title %}{% trans "RTSP URL" %}{% endset %}
+                {% set helpText %}{% trans "카메라의 RTSP URL을 입력하세요 (예: rtsp://admin:admin@192.168.1.100/stream1)" %}{% endset %}
+                {{ forms.input("url", title, camera.url, helpText, "", "required") }}
+
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javaScript %}
+<script type="text/javascript" nonce="{{ cspNonce }}">
+    window.cameraEditFormOpen = function() {
+        console.log('Camera edit form opened');
+    };
+</script>
+{% endblock %}
