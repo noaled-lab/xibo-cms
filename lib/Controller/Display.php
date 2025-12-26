@@ -3137,6 +3137,26 @@ class Display extends Base
     /**
      * @param Request $request
      * @param Response $response
+     * @param int $id displayId
+     * @return \Psr\Http\Message\ResponseInterface|Response
+     * @throws \Xibo\Support\Exception\AccessDeniedException
+     * @throws \Xibo\Support\Exception\InvalidArgumentException
+     * @throws \Xibo\Support\Exception\NotFoundException
+     */
+    public function downloadProgress(Request $request, Response $response, $id)
+    {
+        $display = $this->displayFactory->getById($id);
+
+        if (!$this->getUser()->checkViewable($display)) {
+            throw new AccessDeniedException();
+        }
+
+        return $response->withJson($display->getDownloadProgress($this->pool));
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
      * @param $id
      * @return \Psr\Http\Message\ResponseInterface|Response
      * @throws AccessDeniedException

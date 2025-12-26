@@ -118,6 +118,18 @@
     <message name="NotifyStatusResponse">
         <part name="success" type="xsd:boolean" />
     </message>
+    <message name="NotifyDownloadProgressRequest">
+        <part name="serverKey" type="xsd:string" />
+        <part name="hardwareKey" type="xsd:string" />
+        <part name="fileType" type="xsd:string" />
+        <part name="fileId" type="xsd:int" />
+        <part name="saveAs" type="xsd:string" />
+        <part name="bytesDownloaded" type="xsd:double" />
+        <part name="bytesTotal" type="xsd:double" />
+    </message>
+    <message name="NotifyDownloadProgressResponse">
+        <part name="success" type="xsd:boolean" />
+    </message>
     <message name="SubmitScreenShotRequest">
         <part name="serverKey" type="xsd:string" />
         <part name="hardwareKey" type="xsd:string" />
@@ -202,6 +214,11 @@
             <documentation>Report back the current status</documentation>
             <input message="tns:NotifyStatusRequest"/>
             <output message="tns:NotifyStatusResponse"/>
+        </operation>
+        <operation name="NotifyDownloadProgress">
+            <documentation>Report back current download progress</documentation>
+            <input message="tns:NotifyDownloadProgressRequest"/>
+            <output message="tns:NotifyDownloadProgressResponse"/>
         </operation>
         <operation name="SubmitScreenShot">
             <documentation>Submit a screen shot for a display</documentation>
@@ -309,6 +326,15 @@
         </operation>
         <operation name="NotifyStatus">
             <soap:operation soapAction="urn:xmds#NotifyStatus" style="rpc"/>
+            <input>
+                <soap:body use="encoded" namespace="urn:xmds" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+            </input>
+            <output>
+                <soap:body use="encoded" namespace="urn:xmds" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+            </output>
+        </operation>
+        <operation name="NotifyDownloadProgress">
+            <soap:operation soapAction="urn:xmds#NotifyDownloadProgress" style="rpc"/>
             <input>
                 <soap:body use="encoded" namespace="urn:xmds" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
             </input>

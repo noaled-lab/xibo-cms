@@ -1486,6 +1486,20 @@ $('body').on('click', '.display-screenshot', function(el) {
   const clientCode = el.target.dataset.clientCode;
 
   const statusWindowData = {};
+  const renderStatusWindow = function() {
+    if (!statusWindowData.data && !statusWindowData.downloadProgress) {
+      return;
+    }
+
+    $('.modal-body').append(
+      templates.display.statusWindow({
+        ...statusWindowData,
+        ...{
+          trans: displayPageTrans,
+        },
+      }),
+    );
+  };
 
   $.ajax({
     url: '/display/status/' + displayId,
@@ -1511,16 +1525,41 @@ $('body').on('click', '.display-screenshot', function(el) {
 
         statusWindowData['data'] = data;
         statusWindowData['type'] = displayType;
-
-        $('.modal-body').append(
-          templates.display.statusWindow({
-            ...statusWindowData,
-            ...{
-              trans: displayPageTrans,
-            },
-          }),
-        );
       }
+
+      $.ajax({
+        url: '/display/download-progress/' + displayId,
+        method: 'GET',
+        dataType: 'json',
+      })
+        .done(function(progress) {
+          if (progress && Object.keys(progress).length > 0) {
+            if (progress.percent != null) {
+              progress.hasPercent = true;
+              progress.percentValue = progress.percent;
+              progress.percentDisplay = progress.percent + '%';
+            }
+
+            if (
+              progress.bytesDownloaded != null &&
+              progress.bytesTotal != null
+            ) {
+              progress.bytesDownloadedFormatted = formatBytes(
+                progress.bytesDownloaded,
+                2,
+              );
+              progress.bytesTotalFormatted = formatBytes(
+                progress.bytesTotal,
+                2,
+              );
+            }
+
+            statusWindowData['downloadProgress'] = progress;
+          }
+        })
+        .always(function() {
+          renderStatusWindow();
+        });
     },
   });
 });

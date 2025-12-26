@@ -1566,6 +1566,39 @@ class Display implements \JsonSerializable
     }
 
     /**
+     * @param PoolInterface $pool
+     * @return array
+     */
+    public function getDownloadProgress($pool)
+    {
+        $item = $pool->getItem('/downloadProgress/' . $this->displayId);
+
+        if ($item->isMiss()) {
+            return [];
+        }
+
+        return $item->get();
+    }
+
+    /**
+     * @param PoolInterface $pool
+     * @param array $progress
+     * @return $this
+     */
+    public function setDownloadProgress($pool, $progress)
+    {
+        $this->getLog()->debug('Caching downloadProgress with Pool');
+
+        $item = $pool->getItem('/downloadProgress/' . $this->displayId);
+        $item->set($progress);
+        $item->expiresAfter(new \DateInterval('PT15M'));
+
+        $pool->saveDeferred($item);
+
+        return $this;
+    }
+
+    /**
      * Check if this Display is set as Lead Display on any Sync Group
      * @return bool
      */

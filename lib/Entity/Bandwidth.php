@@ -49,6 +49,7 @@ class Bandwidth
     public static $SCREENSHOT = 11;
     public static $GET_DATA = 12;
     public static $GET_DEPENDENCY = 13;
+    public static $DOWNLOAD_PROGRESS = 14;
 
     public $displayId;
     public $type;

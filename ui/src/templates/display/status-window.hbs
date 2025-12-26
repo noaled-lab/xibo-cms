@@ -1,4 +1,34 @@
 <div style="margin-top:5px; max-height: 400px; overflow-y: auto;"></div>
+    {{#if downloadProgress}}
+        <div class="card p-3 mb-3 bg-light">
+            <div class="mb-2">Download progress</div>
+            {{#if downloadProgress.hasPercent}}
+                <div class="progress mb-2">
+                    <div class="progress-bar" role="progressbar" style="width: {{downloadProgress.percentValue}}%;" aria-valuenow="{{downloadProgress.percentValue}}" aria-valuemin="0" aria-valuemax="100">{{downloadProgress.percentDisplay}}</div>
+                </div>
+            {{/if}}
+            <ul>
+                {{#if downloadProgress.fileType}}
+                    <li>fileType: {{downloadProgress.fileType}}</li>
+                {{/if}}
+                {{#if downloadProgress.fileId}}
+                    <li>fileId: {{downloadProgress.fileId}}</li>
+                {{/if}}
+                {{#if downloadProgress.saveAs}}
+                    <li>file: {{downloadProgress.saveAs}}</li>
+                {{/if}}
+                {{#if downloadProgress.bytesDownloadedFormatted}}
+                    <li>downloaded: {{downloadProgress.bytesDownloadedFormatted}}</li>
+                {{/if}}
+                {{#if downloadProgress.bytesTotalFormatted}}
+                    <li>total: {{downloadProgress.bytesTotalFormatted}}</li>
+                {{/if}}
+                {{#if downloadProgress.updatedAt}}
+                    <li>updated: {{downloadProgress.updatedAt}}</li>
+                {{/if}}
+            </ul>
+        </div>
+    {{/if}}
     {{#if data}}
     {{trans.playerStatusWindow}}:
         {{#eq type "android"}}

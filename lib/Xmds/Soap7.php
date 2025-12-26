@@ -22,6 +22,7 @@
 
 namespace Xibo\Xmds;
 
+use Carbon\Carbon;
 use Xibo\Entity\Bandwidth;
 use Xibo\Event\XmdsWeatherRequestEvent;
 use Xibo\Helper\LinkSigner;
@@ -53,6 +54,96 @@ class Soap7 extends Soap6
     public function GetResource($serverKey, $hardwareKey, $layoutId, $regionId, $mediaId)
     {
         return $this->doGetResource($serverKey, $hardwareKey, $layoutId, $regionId, $mediaId, true);
+    }
+
+    /**
+     * Notify download progress for a file.
+     * @param string $serverKey
+     * @param string $hardwareKey
+     * @param string $fileType
+     * @param int $fileId
+     * @param string $saveAs
+     * @param float $bytesDownloaded
+     * @param float $bytesTotal
+     * @return bool
+     * @throws \SoapFault
+     */
+    public function NotifyDownloadProgress(
+        $serverKey,
+        $hardwareKey,
+        $fileType,
+        $fileId,
+        $saveAs,
+        $bytesDownloaded,
+        $bytesTotal
+    ) {
+        $this->logProcessor->setRoute('NotifyDownloadProgress');
+
+        $sanitizer = $this->getSanitizer([
+            'serverKey' => $serverKey,
+            'hardwareKey' => $hardwareKey,
+            'fileType' => $fileType,
+            'fileId' => $fileId,
+            'saveAs' => $saveAs,
+            'bytesDownloaded' => $bytesDownloaded,
+            'bytesTotal' => $bytesTotal,
+        ]);
+
+        // Sanitize
+        $serverKey = $sanitizer->getString('serverKey');
+        $hardwareKey = $sanitizer->getString('hardwareKey');
+        $fileType = $sanitizer->getString('fileType', ['default' => null]);
+        $fileId = $sanitizer->getInt('fileId', ['default' => null]);
+        $saveAs = $sanitizer->getString('saveAs', ['default' => null]);
+        $bytesDownloaded = $sanitizer->getDouble('bytesDownloaded', ['default' => 0]);
+        $bytesTotal = $sanitizer->getDouble('bytesTotal', ['default' => 0]);
+
+        // Check the serverKey matches
+        if ($serverKey != $this->getConfig()->getSetting('SERVER_KEY')) {
+            throw new \SoapFault(
+                'Sender',
+                'The Server key you entered does not match with the server key at this address'
+            );
+        }
+
+        // Auth this request...
+        if (!$this->authDisplay($hardwareKey)) {
+            throw new \SoapFault('Receiver', 'This Display is not authorised.');
+        }
+
+        // Now that we authenticated the Display, make sure we are sticking to our bandwidth limit
+        if (!$this->checkBandwidth($this->display->displayId)) {
+            throw new \SoapFault('Receiver', 'Bandwidth Limit exceeded');
+        }
+
+        if ($bytesDownloaded < 0) {
+            $bytesDownloaded = 0;
+        }
+
+        if ($bytesTotal < 0) {
+            $bytesTotal = 0;
+        }
+
+        $percent = null;
+        if ($bytesTotal > 0) {
+            $percent = min(100, round(($bytesDownloaded / $bytesTotal) * 100, 1));
+        }
+
+        $progress = [
+            'fileType' => $fileType,
+            'fileId' => $fileId,
+            'saveAs' => $saveAs,
+            'bytesDownloaded' => $bytesDownloaded,
+            'bytesTotal' => $bytesTotal,
+            'percent' => $percent,
+            'updatedAt' => Carbon::now()->toIso8601String(),
+        ];
+
+        $this->display->setDownloadProgress($this->getPool(), $progress);
+
+        $this->logBandwidth($this->display->displayId, Bandwidth::$DOWNLOAD_PROGRESS, strlen(json_encode($progress)));
+
+        return true;
     }
 
     /**
