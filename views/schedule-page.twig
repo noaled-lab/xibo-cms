@@ -52,6 +52,7 @@
                         <form class="form-inline">
                             {% set title %}{% trans "Range" %}{% endset %}
                             {% set range %}{% trans "Select a range" %}{% endset %}
+                            {% set all %}{% trans "All" %}{% endset %}
                             {% set day %}{% trans "Today" %}{% endset %}
                             {% set week %}{% trans "This Week" %}{% endset %}
                             {% set month %}{% trans "This Month" %}{% endset %}
@@ -63,6 +64,7 @@
                             {% set agenda %}{% trans "Agenda" %}{% endset %}
                             {% set options = [
                                 { name: "custom", range: range },
+                                { name: "all", range: all },
                                 { name: "day", range: day },
                                 { name: "week", range: week },
                                 { name: "month", range: month },
@@ -73,7 +75,7 @@
                                 { name: "lastyear", range: lastyear },
                                 { name: "agenda", range: agenda}
                             ] %}
-                            {{ inline.dropdown("range", "single", title, "month", options, "name", "range", "", "date-range-input") }}
+                            {{ inline.dropdown("range", "single", title, "all", options, "name", "range", "", "date-range-input") }}
 
                             {% set title %}{% trans 'From Date' %}{% endset %}
                             {{ inline.dateTime("fromDt", title, "", "", "custom-date-range", "", "") }}
