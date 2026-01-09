@@ -8,7 +8,8 @@ function toggleVideoSize(wrapper, button) {
     if (isExpanded) {
         // 축소
         wrapper.css({
-            'width': '320px',
+            'width': '100%',
+            'max-width': '320px',
             'position': 'relative'
         });
         wrapper.data('expanded', false);
@@ -18,6 +19,7 @@ function toggleVideoSize(wrapper, button) {
         // 확대
         wrapper.css({
             'width': '100%',
+            'max-width': 'none',
             'position': 'relative'
         });
         wrapper.data('expanded', true);
@@ -216,7 +218,8 @@ function displayCameras(cameras) {
         const videoCell = $('<td>');
         const videoWrapper = $('<div>').css({
             'position': 'relative',
-            'width': '320px',
+            'width': '100%',
+            'max-width': '320px',
             'background': '#000',
             'display': 'inline-block'
         });
