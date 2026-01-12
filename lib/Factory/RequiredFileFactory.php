@@ -38,6 +38,7 @@ class RequiredFileFactory extends BaseFactory
 
     private $hydrate = [
         'intProperties' => ['bytesRequested', 'complete'],
+        'doubleProperties' => ['bytesDownloaded'],
         'stringProperties' => ['realId'],
     ];
 
