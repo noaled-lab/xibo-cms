@@ -37,23 +37,7 @@ jobs:
           file: ./Dockerfile
           push: true
           load: false
-          tags: ghcr.io/noaled-lab/xibo-cms:latest,ghcr.io/noaled-lab/xibo-cms:yangsan
+          tags: ghcr.io/noaled-lab/xibo-cms:latest,ghcr.io/noaled-lab/xibo-cms:yangsan-${{ github.run_number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Clean up untagged GHCR images
-        run: |
-          # GitHub CLI 로그인
-          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-
-          # 모든 버전 조회
-          versions=$(gh api /user/packages/container/xibo-cms/versions | jq -r '.[] | "\(.id) \(.metadata.container.tags[]?)"')
-
-          # 반복하여 태그가 없는 버전 삭제
-          echo "$versions" | while read id tag; do
-            if [ -z "$tag" ]; then
-              echo "Deleting untagged version $id"
-              gh api -X DELETE /user/packages/container/xibo-cms/versions/$id
-            fi
-          done
 
