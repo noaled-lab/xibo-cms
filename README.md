@@ -1,4 +1,14 @@
 ### 데이터베이스 마이그레이션
 ```bash
-docker compose exec dev-cms-web bash -c "cd /var/www/cms && php vendor/bin/phinx migrate"
+docker compose -f docker-compose.local.yaml exec cms-web bash -c "cd /var/www/cms && php vendor/bin/phinx migrate"
+```
+
+
+### 개발 환경
+```bash
+# 최소 1회
+docker compose -f docker-compose.local.yaml build
+
+# 코드 수정 후
+docker compose -f docker-compose.local.yaml up
 ```

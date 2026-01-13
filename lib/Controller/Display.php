@@ -358,22 +358,30 @@ class Display extends Base
         ';
 
         foreach ($this->store->select($sql, ['displayId' => $id, 'type' => 'M']) as $row) {
-            $rf = $this->requiredFileFactory->getByDisplayAndMedia($id, $row['mediaId']);
-
             $totalSize = $totalSize + $row['fileSize'];
             $totalCount++;
 
-            if ($rf->complete) {
+            if (intval($row['complete']) === 1) {
                 $completeSize = $completeSize + $row['fileSize'];
                 $completeCount = $completeCount + 1;
             }
 
-            $rf = $rf->toArray();
-            $rf['name'] = $row['name'];
-            $rf['type'] = $row['mediaType'];
-            $rf['storedAs'] = $row['storedAs'];
-            $rf['size'] = $row['fileSize'];
-            $media[] = $rf;
+            $media[] = [
+                'rfId' => $row['rfId'],
+                'displayId' => $row['displayId'],
+                'type' => $row['type'],
+                'itemId' => $row['itemId'],
+                'name' => $row['name'],
+                'type' => $row['mediaType'],
+                'storedAs' => $row['storedAs'],
+                'size' => $row['fileSize'],
+                'bytesRequested' => $row['bytesRequested'],
+                'bytesDownloaded' => $row['bytesDownloaded'],
+                'complete' => $row['complete'],
+                'released' => $row['released'],
+                'path' => $row['path'],
+                'fileType' => $row['fileType'],
+            ];
         }
 
         // Widgets
@@ -464,6 +472,65 @@ class Display extends Base
         ]);
 
         return $this->render($request, $response);
+    }
+
+    /**
+     * 디스플레이의 미디어 목록을 JSON으로 반환 (AJAX 새로고침용)
+     * @param Request $request
+     * @param Response $response
+     * @param int $displayId
+     * @return Response
+     * @throws GeneralException
+     * @throws NotFoundException
+     * @throws AccessDeniedException
+     */
+    public function mediaGrid(Request $request, Response $response, int $displayId): Response
+    {
+        // 디스플레이 권한 확인
+        $display = $this->displayFactory->getById($displayId);
+
+        if (!$this->getUser()->checkViewable($display)) {
+            throw new AccessDeniedException();
+        }
+
+        // 미디어 데이터 조회
+        $media = [];
+        $sql = '
+          SELECT mediaId, `name`, fileSize, media.type AS mediaType, storedAs, `requiredfile`.*
+              FROM `media`
+                INNER JOIN `requiredfile`
+                ON `requiredfile`.itemId = `media`.mediaId
+           WHERE `requiredfile`.displayId = :displayId
+            AND `requiredfile`.type = :type
+          ORDER BY `name`
+        ';
+
+        foreach ($this->store->select($sql, ['displayId' => $displayId, 'type' => 'M']) as $row) {
+            $media[] = [
+                'rfId' => $row['rfId'],
+                'displayId' => $row['displayId'],
+                'type' => $row['type'],
+                'itemId' => $row['itemId'],
+                'name' => $row['name'],
+                'type' => $row['mediaType'],
+                'storedAs' => $row['storedAs'],
+                'size' => $row['fileSize'],
+                'bytesRequested' => $row['bytesRequested'],
+                'bytesDownloaded' => $row['bytesDownloaded'],
+                'complete' => $row['complete'],
+                'released' => $row['released'],
+                'path' => $row['path'],
+                'fileType' => $row['fileType'],
+            ];
+        }
+
+        // 미디어 테이블 HTML을 직접 렌더링해서 반환
+        $html = $this->getView()->fetch('display-page-media-table.twig', [
+            'media' => $media
+        ]);
+
+        $response->getBody()->write($html);
+        return $response->withHeader('Content-Type', 'text/html');
     }
 
     /**
