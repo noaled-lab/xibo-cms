@@ -157,10 +157,11 @@
         <div class="col-lg-6">
             <div class="widget">
                 <div class="widget-title">
+                    <button id="refreshMedia" class="btn btn-sm pull-right"><span class="fa fa-refresh"></span></button>
                     {% trans "Media" %}
                 </div>
                 <div class="widget-body medium no-padding">
-                    <table class="table table-striped">
+                    <table id="mediaTable" class="table table-striped">
                         <thead>
                         <tr>
                             <th>{% trans "ID" %}</th>
@@ -175,7 +176,7 @@
                         </thead>
                         <tbody>
                             {% for item in inventory.media %}
-                                <tr>
+                                <tr class="media-row" data-media-id="{{ item.itemId }}" style="cursor: pointer;">
                                     <td>{{ item.itemId }}</td>
                                     <td>{{ item.name }}</td>
                                     <td>{{ item.type }}</td>
@@ -187,6 +188,27 @@
                                     <td>{{ item.bytesRequested|byteFormat }}</td>
                                     <td>
                                         <span class="fa {% if item.released == 1 %}fa-check{% elseif item.released == 0  %}fa-cogs{% elseif item.released == 2  %}fa-times{% endif %}"></span>
+                                    </td>
+                                </tr>
+                                {# 진행률 표시줄 행 #}
+                                <tr class="progress-row" data-media-id="{{ item.itemId }}" style="display: {% if item.complete != 1 %}table-row{% else %}none{% endif %};">
+                                    <td colspan="8" style="padding: 8px 15px 12px 15px; background-color: #f9f9f9;">
+                                        {# complete = 1이면 무조건 100%, 아니면 실제 진행률 계산 #}
+                                        {% set downloadPercent = item.complete == 1 ? 100 : (item.size > 0 ? ((item.bytesDownloaded / item.size) * 100)|round(1) : 0) %}
+                                        {% if downloadPercent < 30 %}
+                                            {% set barColor = '#d9534f' %}
+                                        {% elseif downloadPercent < 70 %}
+                                            {% set barColor = '#f0ad4e' %}
+                                        {% else %}
+                                            {% set barColor = '#5cb85c' %}
+                                        {% endif %}
+                                        <div style="position: relative; background: #e9ecef; border-radius: 8px; height: 32px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);">
+                                            <div style="position: absolute; left: 0; top: 0; height: 100%; background: {{ barColor }}; width: {{ downloadPercent }}%; transition: width 0.3s ease; border-radius: 8px;"></div>
+                                            <div style="position: relative; display: flex; align-items: center; justify-content: space-between; height: 100%; padding: 0 12px; z-index: 1;">
+                                                <span style="font-weight: 600; color: {% if downloadPercent > 50 %}#fff{% else %}#333{% endif %}; text-shadow: {% if downloadPercent > 50 %}0 1px 2px rgba(0,0,0,0.3){% else %}none{% endif %};">{{ downloadPercent }}%</span>
+                                                <span style="font-size: 13px; color: {% if downloadPercent > 50 %}rgba(255,255,255,0.9){% else %}#666{% endif %}; text-shadow: {% if downloadPercent > 50 %}0 1px 2px rgba(0,0,0,0.3){% else %}none{% endif %};">{{ item.complete == 1 ? item.size|byteFormat : item.bytesDownloaded|byteFormat }} / {{ item.size|byteFormat }}</span>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -370,6 +392,54 @@
         }
 
         $(document).ready(function() {
+
+            // 미디어 클릭 시 진행률 토글
+            $('.media-row').on('click', function() {
+                var mediaId = $(this).data('media-id');
+                $('.progress-row[data-media-id="' + mediaId + '"]').toggle();
+            });
+
+            // 미디어 테이블 새로고침 함수
+            function refreshMediaTable() {
+                var $btn = $('#refreshMedia');
+                var $icon = $btn.find('.fa');
+
+                // 버튼 비활성화 및 로딩 애니메이션
+                $btn.prop('disabled', true);
+                $icon.addClass('fa-spin');
+
+                // 미디어 테이블 HTML을 서버에서 가져오기
+                $.ajax({
+                    url: "{{ url_for("display.media.search", {"displayId": display.displayId}) }}",
+                    type: 'GET',
+                    success: function(html) {
+                        // 서버에서 받은 HTML로 tbody 교체
+                        $('#mediaTable tbody').html(html);
+
+                        // 미디어 행 클릭 이벤트 재등록
+                        $('.media-row').off('click').on('click', function() {
+                            var mediaId = $(this).data('media-id');
+                            $('.progress-row[data-media-id="' + mediaId + '"]').toggle();
+                        });
+                    },
+                    error: function() {
+                        toastr.error('{% trans "Failed to refresh media table" %}');
+                    },
+                    complete: function() {
+                        // 버튼 활성화 및 로딩 애니메이션 제거
+                        $btn.prop('disabled', false);
+                        $icon.removeClass('fa-spin');
+                    }
+                });
+            }
+
+            // 미디어 테이블 새로고침 버튼 클릭 이벤트
+            $('#refreshMedia').on('click', function() {
+                refreshMediaTable();
+            });
+
+            // 5초마다 자동 새로고침
+            setInterval(refreshMediaTable, 5000);
 
             {% if currentUser.featureEnabled("displays.reporting") %}
             setBandwidthChart();
