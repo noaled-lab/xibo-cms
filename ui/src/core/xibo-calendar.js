@@ -305,8 +305,21 @@ $(function() {
     };
 
     $('#range').on('change', function() {
-      if (calendar != undefined) {
-        let range = $('#range').val();
+      const rangeValue = $('#range').val();
+
+      // Hide calendar tab when 'all' is selected
+      if (rangeValue === 'all') {
+        $('#calendar-tab').parent().hide();
+        // Switch to grid view if currently on calendar
+        if ($('#calendar-view').hasClass('active')) {
+          $('#grid-tab').trigger('click');
+        }
+      } else {
+        $('#calendar-tab').parent().show();
+      }
+
+      if (calendar != undefined && rangeValue !== 'all') {
+        let range = rangeValue;
         const isPast = range.includes('last');
 
         if (range === 'custom') {
