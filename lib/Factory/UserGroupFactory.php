@@ -813,7 +813,22 @@ class UserGroupFactory extends BaseFactory
                 'command.view' => [
                     'feature' => 'command.view',
                     'group' => 'displays',
-                    'title' => __('Page to view/add/edit/delete Commands')
+                    'title' => __('Page to view Commands')
+                ],
+                'command.add' => [
+                    'feature' => 'command.add',
+                    'group' => 'displays',
+                    'title' => __('Include "Add Command" button to allow for additional Commands to be added to the platform')
+                ],
+                'command.modify' => [
+                    'feature' => 'command.modify',
+                    'group' => 'displays',
+                    'title' => __('Allow edits including deletion for all created Commands')
+                ],
+                'command.send' => [
+                    'feature' => 'command.send',
+                    'group' => 'displays',
+                    'title' => __('Allow sending Commands to Displays and Display Groups')
                 ],
                 'display.syncView' => [
                     'feature' => 'display.syncView',

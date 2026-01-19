@@ -40,7 +40,9 @@
         <div class="col-md-12">
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item"><a class="nav-link active" href="#general" role="tab" data-toggle="tab"><span>{% trans "General" %}</span></a></li>
+                {% if currentUser.userTypeId == 1 %}
                 <li class="nav-item"><a class="nav-link" href="#description" role="tab" data-toggle="tab"><span>{% trans "Description" %}</span></a></li>
+                {% endif %}
             </ul>
             <form id="templateAddForm" class="form-horizontal" method="post" action="{{ url_for("template.add") }}" data-redirect="{{ url_for("layout.designer", {id: ':id'}) }}?isTemplateEditor=1" data-gettag="{{ url_for("tag.getByName") }}">
                 <div class="tab-content">
@@ -86,7 +88,9 @@
                         {% set helpText %}{% trans "Choose the resolution this Template should be designed for." %}{% endset %}
                         {{ forms.dropdown("resolutionId", "single", title, "", resolutions, "resolutionId", "resolution", helpText, "resolution-group") }}
 
+                        {% if currentUser.userTypeId == 1 %}
                         {{ forms.message("You can also add a template from an existing Layout from the Layout Editor."|trans, "alert alert-info") }}
+                        {% endif %}
                     </div>
                     <div class="tab-pane" id="description">
                         {% set title %}{% trans "Description" %}{% endset %}

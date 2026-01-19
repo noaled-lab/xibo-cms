@@ -80,6 +80,7 @@
                                     </label>
                                 </div>
                             {% endfor %}
+                            {% if currentUser.userTypeId == 1 %}
                             <div class="radio">
                                 <label>
                                     <input type="radio" name="groupId" value="manual">
@@ -88,6 +89,7 @@
                                     create user."|trans }}
                                 </label>
                             </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -109,9 +111,11 @@
                         {% set helpText %}{% trans "The Password for this user." %}{% endset %}
                         {{ forms.password("password", title, "", helpText, "", "required") }}
 
+                        {% if currentUser.userTypeId == 1 %}
                         {% set title %}{% trans "Email" %}{% endset %}
                         {% set helpText %}{% trans "The Email Address for this user." %}{% endset %}
                         {{ forms.email("email", title, "", helpText) }}
+                        {% endif %}
                     </div>
                 </div>
 

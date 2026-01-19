@@ -2401,10 +2401,10 @@ window.SystemMessage = function(messageText, success) {
   } else {
     const dialog = bootbox.dialog({
       message: messageText,
-      title: 'Application Message',
+      title: '메시지',
       size: 'large',
       buttons: [{
-        label: 'Close',
+        label: '닫기',
         className: 'btn-bb-close',
         callback: function() {
           dialog.modal('hide');
@@ -3011,6 +3011,7 @@ window.updateRangeFilter = function($element, $from, $to, callBack) {
   let from;
   let to;
   const isCustom = value === 'custom';
+  const isAll = value === 'all';
   const isPast = value.includes('last');
 
   if (value === 'agenda') {
@@ -3019,22 +3020,35 @@ window.updateRangeFilter = function($element, $from, $to, callBack) {
 
   if (isCustom) {
     $('.custom-date-range').removeClass('d-none');
+    // Re-enable date fields for custom range
+    $from.prop('disabled', false);
+    $to.prop('disabled', false);
   } else {
     $('.custom-date-range').addClass('d-none');
 
-    if (!isPast) {
-      from = moment().startOf(value).format(jsDateFormat);
-      to = moment().endOf(value).format(jsDateFormat);
+    if (isAll) {
+      // For 'all', disable date fields so they're not submitted
+      $from.prop('disabled', true).val('');
+      $to.prop('disabled', true).val('');
     } else {
-      const pastValue = value.replace('last', '');
-      from = moment().startOf(pastValue)
-        .subtract(1, pastValue + 's').format(jsDateFormat);
-      to = moment().endOf(pastValue)
-        .subtract(1, pastValue + 's').format(jsDateFormat);
-    }
+      // Re-enable date fields
+      $from.prop('disabled', false);
+      $to.prop('disabled', false);
 
-    updateDatePicker($from, from, jsDateFormat, true);
-    updateDatePicker($to, to, jsDateFormat, true);
+      if (!isPast) {
+        from = moment().startOf(value).format(jsDateFormat);
+        to = moment().endOf(value).format(jsDateFormat);
+      } else {
+        const pastValue = value.replace('last', '');
+        from = moment().startOf(pastValue)
+          .subtract(1, pastValue + 's').format(jsDateFormat);
+        to = moment().endOf(pastValue)
+          .subtract(1, pastValue + 's').format(jsDateFormat);
+      }
+
+      updateDatePicker($from, from, jsDateFormat, true);
+      updateDatePicker($to, to, jsDateFormat, true);
+    }
   }
 
   (typeof callBack === 'function') && callBack();

@@ -91,20 +91,6 @@
                 </test>
             </visibility>
         </property>
-        <property id="opacity" type="number">
-            <title>Opacity</title>
-            <helpText>Image opacity (0-100). 100 = fully opaque, 0 = fully transparent.</helpText>
-            <default>100</default>
-            <min>0</min>
-            <max>100</max>
-        </property>
-        <property id="brightness" type="number">
-            <title>Brightness</title>
-            <helpText>Image brightness (50-200). 100 = original brightness, 150 = 50% brighter, 50 = 50% darker.</helpText>
-            <default>100</default>
-            <min>50</min>
-            <max>200</max>
-        </property>
     </properties>
     <preview>
         <twig><![CDATA[
@@ -120,8 +106,7 @@
 {% endif %}
 <div class="img-container" style="display:table; width:100%; height: {{ height }}px">
     <div class="img-sub-container" style="text-align:{{ options.alignId }}; display: table-cell; vertical-align: {{ options.valignId }};">
-        <img src="{{ downloadUrl }}&width={{ width }}&height={{ height }}&proportional={{ proportional }}&fit={{ fit }}" 
-             style="opacity: {{ (options.opacity|default(100)) / 100 }}; filter: brightness({{ (options.brightness|default(100)) / 100 }});" />
+        <img src="{{ downloadUrl }}&width={{ width }}&height={{ height }}&proportional={{ proportional }}&fit={{ fit }}" />
     </div>
 </div>
 		]]></twig>

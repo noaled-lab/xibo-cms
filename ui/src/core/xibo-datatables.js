@@ -46,22 +46,8 @@ window.XiboInitDatatables = function(scope, options) {
 
     // Check to see if this grid is already in the local storage
     if (gridName != undefined) {
-      // Populate the filter according to the values we already have.
-      let formValues;
-      try {
-        formValues = JSON.parse(localStorage.getItem(gridName));
-
-        if (formValues == null) {
-          localStorage.setItem(
-            gridName,
-            JSON.stringify(form.serializeArray()),
-          );
-          formValues = JSON.parse(localStorage.getItem(gridName));
-        }
-      } catch (e) {
-        console.warn(e);
-        formValues = [];
-      }
+      // Disabled: Always use empty formValues (no localStorage)
+      let formValues = [];
 
       // flatten the array
       // if we have multiple items with the same name.
@@ -110,11 +96,9 @@ window.XiboInitDatatables = function(scope, options) {
     }
 
     const filterRefresh = _.debounce(function() {
+      // Disabled: Do not save filter to localStorage
       if (gridName != undefined) {
-        localStorage.setItem(
-          gridName,
-          JSON.stringify(form.serializeArray()),
-        );
+        // localStorage save disabled
       }
 
       $target.closest('.XiboGrid').find('table.dataTable')
@@ -261,7 +245,10 @@ window.dataTableDraw = function(e, settings, callBack) {
   const $folderController =
     target.closest('.XiboGrid').find('.folder-controller');
 
-  if (enabledButtons.length > 0) {
+  // Skip multi-select buttons for non-system users
+  const shouldShowMultiSelect = typeof isSystemUser === 'undefined' || isSystemUser;
+
+  if (enabledButtons.length > 0 && shouldShowMultiSelect) {
     const searchByKey = function(array, item, key) {
       // return Object from array where array[object].item matches key
       for (const i in array) {
@@ -1002,12 +989,10 @@ window.adjustDatatableSize = function(reload) {
       $('#grid-folder-filter').closest('.XiboGrid').find('table.dataTable')
         .DataTable().ajax.reload();
     }
-    // set current state of the folder tree visibility to local storage,
-    // this is then used to hide/show the tree when User navigates
-    // to a different grid or reloads this page
-    localStorage.setItem(
-      'hideFolderTree', JSON.stringify($('#grid-folder-filter').is(':hidden')),
-    );
+    // Disabled: Do not save folder tree state to localStorage
+    // localStorage.setItem(
+    //   'hideFolderTree', JSON.stringify($('#grid-folder-filter').is(':hidden')),
+    // );
   });
 };
 
@@ -1228,15 +1213,14 @@ window.initJsTreeAjax = function(
         },
       },
     }).bind('ready.jstree', function(e, data) {
-      // depending on the state of folder tree
-      // hide/show as needed when we load the grid page
-      if (localStorage.getItem('hideFolderTree') !== undefined &&
-        localStorage.getItem('hideFolderTree') !== null &&
-        JSON.parse(localStorage.getItem('hideFolderTree')) !==
-        $('#grid-folder-filter').is(':hidden')
-      ) {
-        adjustDatatableSize(false);
-      }
+      // Disabled: Do not restore folder tree state from localStorage
+      // if (localStorage.getItem('hideFolderTree') !== undefined &&
+      //   localStorage.getItem('hideFolderTree') !== null &&
+      //   JSON.parse(localStorage.getItem('hideFolderTree')) !==
+      //   $('#grid-folder-filter').is(':hidden')
+      // ) {
+      //   adjustDatatableSize(false);
+      // }
       // if node has children and User does not have
       // suitable permissions, disable the node
       // If node does NOT have children and User does
@@ -1260,8 +1244,8 @@ window.initJsTreeAjax = function(
         if (e.type !== undefined && e.type === 'home') {
           homeNodeId = e.id;
 
-          // check state
-          const currentState = localStorage.getItem(id + '_folder_tree');
+          // Disabled: Do not use localStorage for folder tree state
+          const currentState = null; // localStorage.getItem(id + '_folder_tree');
           // if we have no state saved, select the homeFolderId in the tree.
           if (
             (currentState === undefined || currentState === null) &&

@@ -1249,6 +1249,11 @@ const formHelpers = function() {
       return;
     }
 
+    // Only show replace button for system users
+    if (typeof isSystemUser !== 'undefined' && !isSystemUser) {
+      return;
+    }
+
     // Create a new button
     const footer = dialog.find('.button-container');
     const mediaId = dialog.find('form').data().mediaId;

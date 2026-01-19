@@ -29,7 +29,7 @@
 {% block actionMenu %}
     <div class="widget-action-menu pull-right">
         {% if currentUser.featureEnabled("schedule.add") %}
-            {% if currentUser.featureEnabled("schedule.sync") %}
+            {% if currentUser.featureEnabled("schedule.sync") and currentUser.userTypeId == 1 %}
                 <button class="btn btn-white XiboFormButton btns" title="{% trans "Add a new Sync event" %}"
                         href="{{ url_for("schedule.add.sync.form") }}"><span
                             class="fa fa-plus"></span> {% trans "Add Synchronised Event" %}</button>
@@ -52,6 +52,7 @@
                         <form class="form-inline">
                             {% set title %}{% trans "Range" %}{% endset %}
                             {% set range %}{% trans "Select a range" %}{% endset %}
+                            {% set all %}{% trans "All" %}{% endset %}
                             {% set day %}{% trans "Today" %}{% endset %}
                             {% set week %}{% trans "This Week" %}{% endset %}
                             {% set month %}{% trans "This Month" %}{% endset %}
@@ -63,6 +64,7 @@
                             {% set agenda %}{% trans "Agenda" %}{% endset %}
                             {% set options = [
                                 { name: "custom", range: range },
+                                { name: "all", range: all },
                                 { name: "day", range: day },
                                 { name: "week", range: week },
                                 { name: "month", range: month },
@@ -73,7 +75,7 @@
                                 { name: "lastyear", range: lastyear },
                                 { name: "agenda", range: agenda}
                             ] %}
-                            {{ inline.dropdown("range", "single", title, "month", options, "name", "range", "", "date-range-input") }}
+                            {{ inline.dropdown("range", "single", title, "all", options, "name", "range", "", "date-range-input") }}
 
                             {% set title %}{% trans 'From Date' %}{% endset %}
                             {{ inline.dateTime("fromDt", title, "", "", "custom-date-range", "", "") }}
@@ -192,11 +194,13 @@
                             <a class="schedule-nav nav-link active" id="grid-tab" href="#grid-view" role="tab"
                                data-toggle="tab"><span>{% trans "Grid" %}</span></a>
                         </li>
+                        {% if currentUser.userTypeId == 1 %}
                         <li class="nav-item">
                             <a class="schedule-nav nav-link" id="calendar-tab" href="#calendar-view"
                                data-calendar-view="month" role="tab"
                                data-toggle="tab"><span>{% trans "Calendar" %}</span></a>
                         </li>
+                        {% endif %}
                     </ul>
                 </div>
 

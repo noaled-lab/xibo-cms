@@ -132,18 +132,18 @@
                         {{ forms.checkbox("syncTimezone", title, event.syncTimezone, helpText) }}
 
                         {% if recurringEvent %}
-                            <div class="card p-3 mb-3 bg-light text-primary text-center form-error">
-                                <p>This is an instance of a scheduled recurring event:
-                                    <span class="fa fa-info-circle"
-                                          data-toggle="popover"
-                                          data-trigger="hover"
-                                          data-placement="bottom"
-                                          data-content="{% trans "Editing the Start and or End date/time will create a new Recurring Event across the Schedule. Any previously deleted instances of this event will be recreated with edits made here." %}"></span></p>
-                                <p>
-                                    Starting from <span class="text-warning"><b id="instanceStartDate">-</b></span> to <span class="text-warning"><b id="instanceEndDate">-</b></span>
-                                </p>
-                                <div id="recurringInfo"></div>
-                            </div>
+                                                    <div class="card p-3 mb-3 bg-light text-primary text-center form-error">
+                                                        <p>이 일정은 반복 이벤트의 인스턴스입니다:
+                                                            <span class="fa fa-info-circle"
+                                                                  data-toggle="popover"
+                                                                  data-trigger="hover"
+                                                                  data-placement="bottom"
+                                                                  data-content="시작 또는 종료 날짜/시간을 수정하면 전체 일정에 새로운 반복 이벤트가 생성됩니다. 이전에 삭제된 인스턴스도 여기서 수정하면 다시 생성됩니다."></span></p>
+                                                        <p>
+                                                            시작: <span class="text-warning"><b id="instanceStartDate">-</b></span> ~ 종료: <span class="text-warning"><b id="instanceEndDate">-</b></span>
+                                                        </p>
+                                                        <div id="recurringInfo"></div>
+                                                    </div>
                         {% endif %}
                     </div>
 

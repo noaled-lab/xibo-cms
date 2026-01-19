@@ -8,7 +8,7 @@ $(document).ready(function() {
   table = $('#campaigns').DataTable({
     language: dataTablesLanguage,
     serverSide: true,
-    stateSave: true,
+    stateSave: false,
     stateDuration: 0,
     responsive: true,
     dom: dataTablesTemplate,
@@ -52,12 +52,14 @@ $(document).ready(function() {
         {
           data: 'startDt',
           responsivePriority: 2,
-          render: dataTableDateFromUnix,
+           render: dataTableDateFromUnix,
+           visible: false,
         },
         {
           data: 'endDt',
           responsivePriority: 2,
-          render: dataTableDateFromUnix,
+           render: dataTableDateFromUnix,
+           visible: false,
         },
       ] : []),
       {data: 'numberLayouts', responsivePriority: 2},
@@ -75,6 +77,7 @@ $(document).ready(function() {
       {
         name: 'cyclePlaybackEnabled',
         responsivePriority: 3,
+        visible: false,
         data: function(data, type) {
           if (type != 'display') {
             return data.cyclePlaybackEnabled;
@@ -93,6 +96,7 @@ $(document).ready(function() {
       {
         name: 'playCount',
         responsivePriority: 3,
+        visible: false,
         data: function(data, type) {
           if (type !== 'display') {
             return data.playCount;
@@ -110,6 +114,7 @@ $(document).ready(function() {
         {
           data: 'targetType',
           responsivePriority: 3,
+          visible: false,
           render: function(data, type) {
             if (data === 'plays') {
               return campaignPageTrans.plays;
@@ -123,19 +128,23 @@ $(document).ready(function() {
         },
         {
           data: 'target',
+          visible: false,
           responsivePriority: 3,
         },
         {
           data: 'plays',
           responsivePriority: 6,
+          visible: false,
         },
         {
           data: 'spend',
           responsivePriority: 6,
+          visible: false,
         },
         {
           data: 'impressions',
           responsivePriority: 6,
+          visible: false,
         },
       ] : []),
       {

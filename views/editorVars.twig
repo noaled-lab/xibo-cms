@@ -25,6 +25,9 @@
             navbarPosition = 'horizontal';
         {% endif %}
 
+        // Current user type (1 = Super Admin, 2 = Group Admin, 3 = User)
+        var currentUserTypeId = {{ currentUser.userTypeId }};
+
         // MODULES LIST
         var modulesList = [];
         {% for module in modules %}

@@ -11,7 +11,9 @@
                     href="{{ url_for("layout.add") }}">
                 <i class="fa fa-plus-circle" aria-hidden="true"></i> {% trans "Add Layout" %}
             </button>
-            <button class="btn btn-info" id="layoutUploadForm" title="{% trans "Import a Layout from a ZIP file." %}" href="#"> <i class="fa fa-cloud-download" aria-hidden="true"></i> {% trans "Import" %}</button>
+            {% if currentUser.userTypeId == 1 %}
+                <button class="btn btn-info" id="layoutUploadForm" title="{% trans "Import a Layout from a ZIP file." %}" href="#"> <i class="fa fa-cloud-download" aria-hidden="true"></i> {% trans "Import" %}</button>
+            {% endif %}
         {% endif %}
         <button class="btn btn-primary" id="refreshGrid" title="{% trans "Refresh the Table" %}" href="#"><i class="fa fa-refresh" aria-hidden="true"></i></button>
     </div>
@@ -210,7 +212,7 @@
                 lengthMenu: [10, 25, 50, 100, 250, 500],
                 dom: dataTablesTemplate,
                 serverSide: true,
-                stateSave: true,
+                stateSave: false,
                 stateDuration: 0,
                 responsive: true,
                 stateLoadCallback: dataTableStateLoadCallback,
@@ -257,6 +259,7 @@
                         "name": "description",
                         "data": null,
                         responsivePriority: 10,
+                        visible: false,
                         "render": {"_": "description", "display": "descriptionFormatted", "sort": "description"}
                     },
                     {
@@ -306,6 +309,7 @@
                     {
                         "name": "status",
                         responsivePriority: 3,
+                        visible: false,
                         "data": function (data, type) {
                             if (type != "display")
                                 return data.status;
@@ -326,6 +330,7 @@
                     {
                         "name": "enableStat",
                         responsivePriority: 4,
+                        visible: false,
                         "data": function (data) {
 
                             var icon = "";

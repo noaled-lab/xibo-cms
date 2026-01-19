@@ -42,7 +42,11 @@
         <div class="col-md-12">
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item"><a class="nav-link active" href="#tab-general" role="tab" data-toggle="tab"><span>{% trans "General" %}</span></a></li>
+                {% if currentUser.userTypeId == 1 %}
                 <li class="nav-item"><a class="nav-link" href="#tab-refs" role="tab" data-toggle="tab"><span>{% trans "Reference" %}</span></a></li>
+                {% else %}
+                <li class="nav-item" style="display: none;"><a class="nav-link" href="#tab-refs" role="tab" data-toggle="tab"><span>{% trans "Reference" %}</span></a></li>
+                {% endif %}
                 <li class="nav-item"><a class="nav-link" href="#tab-layouts" role="tab" data-toggle="tab"><span>{% trans "Layouts" %}</span></a></li>
             </ul>
             <form id="campaignEditForm" class="XiboForm form-horizontal" method="put"
@@ -50,6 +54,9 @@
                   data-gettag="{{ url_for("tag.getByName") }}">
                 <div class="tab-content">
                     <div class="tab-pane active" id="tab-general">
+                        {% if currentUser.userTypeId != 1 %}
+                        <div style="display: none;">
+                        {% endif %}
                         {% if currentUser.featureEnabled('folder.view') %}
                         <div class="form-group row">
                             <label class="col-sm-2 control-label">{% trans "Current Folder" %}</label>
@@ -67,11 +74,17 @@
                         </div>
                         {{ forms.hidden('folderId', campaign.folderId) }}
                         {% endif %}
+                        {% if currentUser.userTypeId != 1 %}
+                        </div>
+                        {% endif %}
 
                         {% set title %}{% trans "Name" %}{% endset %}
                         {% set helpText %}{% trans "The Name for this Campaign" %}{% endset %}
                         {{ forms.input("name", title, campaign.campaign, helpText) }}
 
+                        {% if currentUser.userTypeId != 1 %}
+                        <div style="display: none;">
+                        {% endif %}
                         {% if currentUser.featureEnabled("tag.tagging") %}
                             {% set title %}{% trans "Tags" %}{% endset %}
                             {% set helpText %}{% trans "Tags for this Campaign - Comma separated string of Tags or Tag|Value format. If you choose a Tag that has associated values, they will be shown for selection below." %}{% endset %}
@@ -92,7 +105,13 @@
                                 <p>{% trans "This tag requires a set value, please select one from the Tag value dropdown or provide Tag value in the dedicated field." %}</p>
                             </div>
                         {% endif %}
+                        {% if currentUser.userTypeId != 1 %}
+                        </div>
+                        {% endif %}
 
+                        {% if currentUser.userTypeId != 1 %}
+                        <div style="display: none;">
+                        {% endif %}
                         {% set title %}{% trans "Enable cycle based playback" %}{% endset %}
                         {% set helpText %}{% trans "When cycle based playback is enabled only 1 Layout from this Campaign will be played each time it is in a Schedule loop. The same Layout will be shown until the 'Play count' is achieved." %}{% endset %}
                         {{ forms.checkbox("cyclePlaybackEnabled", title, campaign.cyclePlaybackEnabled, helpText, "campaign-type-list", null, false, "input-cycle-playback-enabled") }}
@@ -108,6 +127,9 @@
                             { id: "block", name: "Block"|trans },
                         ] %}
                         {{ forms.dropdown("listPlayOrder", "single", title, campaign.listPlayOrder, options, "id", "name", helpText, "campaign-type-list no-cycle-based-playback") }}
+                        {% if currentUser.userTypeId != 1 %}
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="tab-pane" id="tab-refs">
                         {{ forms.message("Add reference fields if needed"|trans) }}
@@ -140,7 +162,11 @@
                                 </div>
 
                                 <div class="XiboGrid" id="{{ random() }}" data-grid-name="layoutAssignView">
+                                    {% if currentUser.userTypeId == 1 %}
                                     <div class="layoutAssignFilterOptions XiboFilter">
+                                    {% else %}
+                                    <div class="layoutAssignFilterOptions XiboFilter" style="display: none;">
+                                    {% endif %}
                                         <div class="form-inline">
                                             {% set title %}{% trans "ID" %}{% endset %}
                                             {{ inline.number("campaignId", title) }}

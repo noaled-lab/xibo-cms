@@ -823,7 +823,7 @@ class ModuleFactory extends BaseFactory
             if ($groupNode instanceof \DOMElement) {
                 $module->group['id'] = $groupNode->getAttribute('id');
                 $module->group['icon'] = $groupNode->getAttribute('icon');
-                $module->group['name'] = $groupNode->textContent;
+                $module->group['name'] = __($groupNode->textContent);
             }
         }
 

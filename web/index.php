@@ -33,7 +33,7 @@ require PROJECT_ROOT . '/vendor/autoload.php';
 
 // Enable/Disable logging
 if (\Xibo\Helper\Environment::isDevMode() || \Xibo\Helper\Environment::isForceDebugging()) {
-    error_reporting(E_ALL);
+    error_reporting(E_ALL & ~E_DEPRECATED);
     ini_set('display_errors', 1);
 } else {
     error_reporting(0);

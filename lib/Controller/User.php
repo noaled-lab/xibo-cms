@@ -126,12 +126,7 @@ class User extends Base
      */
     public function home(Request $request, Response $response)
     {
-        // Should we show this user the welcome page?
-        if ($this->getUser()->newUserWizard == 0) {
-            return $response->withRedirect($this->urlFor($request, 'welcome.view'));
-        }
-
-        // User wizard seen, go to home page
+        // Skip welcome page, go directly to homepage
         $this->getLog()->debug('Showing the homepage: ' . $this->getUser()->homePageId);
 
         try {

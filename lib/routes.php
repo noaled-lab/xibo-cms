@@ -375,6 +375,12 @@ $app->group('', function (RouteCollectorProxy $group) {
     $group->post('/library/{id}/untag', ['\Xibo\Controller\Library','untag'])->setName('library.untag');
 })->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['tag.tagging']));
 
+// Camera
+$app->get('/camera/search', ['\Xibo\Controller\Camera', 'search'])->setName('camera.search');
+$app->post('/camera/add', ['\Xibo\Controller\Camera', 'add'])->setName('camera.add');
+$app->put('/camera/edit/{id}', ['\Xibo\Controller\Camera', 'edit'])->setName('camera.edit');
+$app->delete('/camera/delete/{id}', ['\Xibo\Controller\Camera', 'delete'])->setName('camera.delete');
+
 /**
  * Displays
  * @SWG\Tag(
@@ -391,6 +397,7 @@ $app->group('', function (RouteCollectorProxy $group) {
     $group->get('/display/screenshot/{id}', ['\Xibo\Controller\Display','screenShot'])->setName('display.screenShot');
     $group->get('/display/status/{id}', ['\Xibo\Controller\Display','statusWindow'])->setName('display.statusWindow');
     $group->get('/display/faults[/{displayId}]', ['\Xibo\Controller\PlayerFault','grid'])->setName('display.faults.search');
+    $group->get('/display/media/{displayId}', ['\Xibo\Controller\Display','mediaGrid'])->setName('display.media.search');
 })->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['displays.view']));
 
 $app->group('', function (RouteCollectorProxy $group) {
@@ -425,7 +432,7 @@ $app->post('/displaygroup', ['\Xibo\Controller\DisplayGroup','add'])
 $app->post('/displaygroup/criteria/{displayGroupId}', ['\Xibo\Controller\DisplayGroup','pushCriteriaUpdate'])->setName('displayGroup.criteria.push');
 
 $app->post('/displaygroup/{id}/action/collectNow', ['\Xibo\Controller\DisplayGroup','collectNow'])
-    ->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['displaygroup.view']))
+    ->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['displays.view']))
     ->setName('displayGroup.action.collectNow');
 
 $app->group('', function (RouteCollectorProxy $group) {
@@ -450,8 +457,7 @@ $app->group('', function (RouteCollectorProxy $group) {
 })->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['displaygroup.modify']));
 
 $app->post('/displaygroup/{id}/action/command', ['\Xibo\Controller\DisplayGroup','command'])
-    ->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['displaygroup.modify']))
-    ->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['command.view']))
+    ->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['command.send']))
     ->setName('displayGroup.action.command');
 /**
  * Display Profile

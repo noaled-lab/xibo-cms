@@ -2349,6 +2349,13 @@ class Soap
                 // File complete?
                 $complete = $node->getAttribute('complete');
                 $requiredFile->complete = $complete;
+
+                // Bytes downloaded (for progress tracking, reported by player)
+                $bytesDownloaded = $node->getAttribute('bytesDownloaded');
+                if ($bytesDownloaded !== null && $bytesDownloaded !== '') {
+                    $requiredFile->bytesDownloaded = $bytesDownloaded;
+                }
+
                 $requiredFile->save();
 
                 // If this item is a 0 then set not complete

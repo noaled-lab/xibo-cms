@@ -25,7 +25,7 @@
 {% import "forms.twig" as forms %}
 
 {% block formTitle %}
-    {% trans "Title" %}
+    해상도 편집
 {% endblock %}
 
 {% block formButtons %}
@@ -49,9 +49,7 @@
                         {% set helpText %}{% trans "The Height for this Resolution" %}{% endset %}
                         {{ forms.input("height", title, resolution.height, helpText) }}
 
-                        {% set title %}{% trans "Enable?" %}{% endset %}
-                        {% set helpText %}{% trans "Is the Resolution enabled for use?" %}{% endset %}
-                        {{ forms.checkbox("enabled", title, resolution.enabled, helpText) }}
+                        {{ forms.hidden("enabled", resolution.enabled) }}
             </form>
         </div>
     </div>

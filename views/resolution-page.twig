@@ -80,7 +80,7 @@
                 "language": dataTablesLanguage,
                 dom: dataTablesTemplate,
                 serverSide: true,
-                stateSave: true,
+                stateSave: false,
                 responsive: true,
                 stateDuration: 0,
                 stateLoadCallback: dataTableStateLoadCallback,
@@ -99,7 +99,7 @@
                     {"data": "resolution"},
                     {"data": "width"},
                     {"data": "height"},
-                    {"data": "enabled"},
+                    {"data": "enabled", visible: false},
                     {
                         "orderable": false,
                         responsivePriority: 1,

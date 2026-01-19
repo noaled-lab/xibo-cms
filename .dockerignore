@@ -37,3 +37,5 @@ web/settings.php
 # Our own build files
 build.sh
 build-composer.sh
+
+shared/

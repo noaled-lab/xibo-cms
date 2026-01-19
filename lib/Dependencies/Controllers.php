@@ -78,6 +78,13 @@ class Controllers
                 $controller->useBaseDependenciesService($c->get('ControllerBaseDependenciesService'));
                 return $controller;
             },
+            '\Xibo\Controller\Camera' => function (ContainerInterface $c) {
+                $controller = new \Xibo\Controller\Camera(
+                    $c->get('ControllerBaseDependenciesService')
+                );
+                $controller->useBaseDependenciesService($c->get('ControllerBaseDependenciesService'));
+                return $controller;
+            },
             '\Xibo\Controller\Connector' => function (ContainerInterface $c) {
                 $controller = new \Xibo\Controller\Connector(
                     $c->get('connectorFactory'),
@@ -526,7 +533,8 @@ class Controllers
                     $c->get('layoutFactory'),
                     $c->get('userGroupFactory'),
                     $c->get('transitionFactory'),
-                    $c->get('userFactory')
+                    $c->get('userFactory'),
+                    $c->get('displayGroupFactory')
                 );
                 $controller->useBaseDependenciesService($c->get('ControllerBaseDependenciesService'));
                 return $controller;

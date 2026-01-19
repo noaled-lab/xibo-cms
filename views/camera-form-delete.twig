@@ -1,0 +1,37 @@
+{% extends "form-base.twig" %}
+{% import "forms.twig" as forms %}
+
+{% block formTitle %}
+    {% trans "스트림 삭제" %}
+{% endblock %}
+
+{% block formButtons %}
+    {% trans "취소" %}, XiboDialogClose()
+    {% trans "삭제" %}, $("#cameraDeleteForm").submit()
+{% endblock %}
+
+{% block formHtml %}
+    <div class="row">
+        <div class="col-md-12">
+            <form id="cameraDeleteForm" class="XiboForm form-horizontal" method="delete" action="{{ url_for("camera.delete", {id: camera.streamId ~ ':' ~ camera.channelId}) }}">
+
+                <p>{% trans "정말 이 카메라를 삭제하시겠습니까?" %}</p>
+
+                {% set title %}{% trans "스트림 ID" %}{% endset %}
+                {{ forms.disabled("streamId", title, camera.streamId, "") }}
+
+                {% set title %}{% trans "채널 ID" %}{% endset %}
+                {{ forms.disabled("channelId", title, camera.channelId, "") }}
+
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javaScript %}
+<script type="text/javascript" nonce="{{ cspNonce }}">
+    window.cameraDeleteFormOpen = function() {
+        console.log('Camera delete form opened');
+    };
+</script>
+{% endblock %}

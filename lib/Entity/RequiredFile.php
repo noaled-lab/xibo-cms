@@ -46,6 +46,7 @@ class RequiredFile implements \JsonSerializable
     public $size = 0;
     public $path;
     public $bytesRequested = 0;
+    public $bytesDownloaded = 0;
     public $complete = 0;
     public $released = 1;
     public $fileType;
@@ -72,7 +73,9 @@ class RequiredFile implements \JsonSerializable
     {
         if ($this->rfId == null) {
             $this->add();
-        } else if ($this->hasPropertyChanged('bytesRequested') || $this->hasPropertyChanged('complete')) {
+        } else if ($this->hasPropertyChanged('bytesRequested')
+            || $this->hasPropertyChanged('bytesDownloaded')
+            || $this->hasPropertyChanged('complete')) {
             $this->edit($options);
         }
 
@@ -85,13 +88,14 @@ class RequiredFile implements \JsonSerializable
     private function add()
     {
         $this->rfId = $this->store->insert('
-            INSERT INTO `requiredfile` (`displayId`, `type`, `itemId`, `bytesRequested`, `complete`, `size`, `path`, `released`, `fileType`, `realId`)
-              VALUES (:displayId, :type, :itemId, :bytesRequested, :complete, :size, :path, :released, :fileType, :realId)
+            INSERT INTO `requiredfile` (`displayId`, `type`, `itemId`, `bytesRequested`, `bytesDownloaded`, `complete`, `size`, `path`, `released`, `fileType`, `realId`)
+              VALUES (:displayId, :type, :itemId, :bytesRequested, :bytesDownloaded, :complete, :size, :path, :released, :fileType, :realId)
         ', [
             'displayId' => $this->displayId,
             'type' => $this->type,
             'itemId' => $this->itemId,
             'bytesRequested' => $this->bytesRequested,
+            'bytesDownloaded' => $this->bytesDownloaded,
             'complete' => $this->complete,
             'size' => $this->size,
             'path' => $this->path,
@@ -113,11 +117,12 @@ class RequiredFile implements \JsonSerializable
 
         try {
             $this->store->updateWithDeadlockLoop('
-            UPDATE `requiredfile` SET complete = :complete, bytesRequested = :bytesRequested
+            UPDATE `requiredfile` SET complete = :complete, bytesRequested = :bytesRequested, bytesDownloaded = :bytesDownloaded
              WHERE rfId = :rfId
         ', [
                 'rfId' => $this->rfId,
                 'bytesRequested' => $this->bytesRequested,
+                'bytesDownloaded' => $this->bytesDownloaded,
                 'complete' => $this->complete
             ], $options['connection'], $options['useTransaction']);
         } catch (DeadlockException $deadlockException) {

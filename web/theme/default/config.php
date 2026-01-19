@@ -25,7 +25,7 @@
  */
 $config = array(
     'theme_name' => 'Xibo Default Theme',
-    'theme_title' => 'Xibo Digital Signage',
+    'theme_title' => 'Noa Digital Signage',
     'app_name' => 'Xibo',
     'theme_url' => 'https://xibosignage.com',
     'cms_source_url' => 'https://github.com/xibosignage/xibo/',

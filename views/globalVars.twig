@@ -47,10 +47,21 @@
     var accountId = "{{ accountId }}";
     var currentUserName = "{{ currentUser.userName }}";
     var currentUserEmail = "{{ currentUser.email }}";
+    var isSystemUser = {{ currentUser.userTypeId == 1 ? 'true' : 'false' }};
 
     var dataTablesTemplate = "<'row'<'dataTables_folder col-sm-12 col-lg-5'><'col-sm-12 col-lg-7 text-right'<'d-inline-block mr-2'l><'dataTables_buttons d-inline-block'>>>" +
         "<'row'<'col-sm-12'tr>>" +
         "<'row'<'col-sm-12 col-lg-5'i><'col-lg-7 col-sm-12'p>>";
+    
+    // Simplified template for non-system users (no buttons, but keep page info 'i')
+    var dataTablesTemplateSimple = "<'row'<'dataTables_folder col-sm-12 col-lg-5'><'col-sm-12 col-lg-7 text-right'<'d-inline-block mr-2'l>>>" +
+        "<'row'<'col-sm-12'tr>>" +
+        "<'row'<'col-sm-12 col-lg-5'i><'col-lg-7 col-sm-12'p>>";
+    
+    // Use appropriate template based on user type
+    if (!isSystemUser) {
+        dataTablesTemplate = dataTablesTemplateSimple;
+    }
 
     // User preference regarding Folder tree state
     var rememberFolderTreeStateGlobally = {{ currentUser.getOptionValue("rememberFolderTreeStateGlobally", "1") }}

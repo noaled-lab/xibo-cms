@@ -108,7 +108,7 @@
                 "language": dataTablesLanguage,
                 dom: dataTablesTemplate,
                 serverSide: true,
-                stateSave: true,
+                stateSave: false,
                 responsive: true,
                 stateDuration: 0,
                 stateLoadCallback: dataTableStateLoadCallback,
@@ -127,18 +127,21 @@
                     {
                         "data": "homePage",
                         "sortable": false,
-                        responsivePriority: 3
+                        responsivePriority: 3,
+                        "visible": false
                     },
                     {
                         data: 'homeFolder',
-                        responsivePriority: 4
+                        responsivePriority: 4,
+                        "visible": false
                     },
-                    {"data": "email", responsivePriority: 3},
+                    {"data": "email", responsivePriority: 3, "visible": false},
                     {
                         "name": "libraryQuota",
                          responsivePriority: 3,
                         "data": null,
-                        "render": {"_": "libraryQuota", "display": "libraryQuotaFormatted", "sort": "libraryQuota"}
+                        "render": {"_": "libraryQuota", "display": "libraryQuotaFormatted", "sort": "libraryQuota"},
+                        "visible": false
                     },
                     {"data": "lastAccessed", "visible": false, responsivePriority: 4},
                     {
@@ -151,7 +154,8 @@
                     {
                         "data": "retired",
                          responsivePriority: 3,
-                        "render": dataTableTickCrossColumn
+                        "render": dataTableTickCrossColumn,
+                        "visible": false
                     },
                     {
                         "data": "twoFactorTypeId",

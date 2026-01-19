@@ -351,7 +351,16 @@ class Schedule extends Base
 
             // Show all Hourly repeats on the day view
             if ($row->recurrenceType == 'Minute' || ($diff > 1 && $row->recurrenceType == 'Hour')) {
-                $title .= __(', Repeats every %s %s', $row->recurrenceDetail, $row->recurrenceType);
+                $translationMap = [
+                    'Minute' => '분',
+                    'Hour' => '시간',
+                    'Day' => '일',
+                    'Week' => '주',
+                    'Month' => '개월',
+                    'Year' => '년'
+                ];
+                $translatedType = $translationMap[$row->recurrenceType] ?? $row->recurrenceType;
+                $title .= sprintf(', %s %s마다 반복', $row->recurrenceDetail, $translatedType);
             }
 
             // Event URL
@@ -758,6 +767,29 @@ class Schedule extends Base
     }
 
     /**
+     * Get filtered event types based on user type
+     * @return array
+     */
+    private function getFilteredEventTypes(): array
+    {
+        $eventTypes = \Xibo\Entity\Schedule::getEventTypesForm();
+        
+        if ($this->getUser()->userTypeId != 1) {
+            // Only allow Layout, Command, and Campaign for non-system users
+            $allowedTypes = [
+                \Xibo\Entity\Schedule::$LAYOUT_EVENT,
+                \Xibo\Entity\Schedule::$COMMAND_EVENT,
+                \Xibo\Entity\Schedule::$CAMPAIGN_EVENT
+            ];
+            $eventTypes = array_filter($eventTypes, function($type) use ($allowedTypes) {
+                return in_array($type['eventTypeId'], $allowedTypes);
+            });
+        }
+        
+        return $eventTypes;
+    }
+
+    /**
      * Shows a form to add an event
      * @param Request $request
      * @param Response $response
@@ -788,7 +820,7 @@ class Schedule extends Base
             'reminders' => [],
             'defaultLat' => $defaultLat,
             'defaultLong' => $defaultLong,
-            'eventTypes' => \Xibo\Entity\Schedule::getEventTypesForm(),
+            'eventTypes' => $this->getFilteredEventTypes(),
             'isScheduleNow' => false,
             'relativeTime' => 0,
             'setDisplaysFromFilter' => true,
@@ -1405,7 +1437,7 @@ class Schedule extends Base
             'recurringEvent' => $schedule->recurrenceType != '',
             'eventStart' => $eventStart,
             'eventEnd' => $eventEnd,
-            'eventTypes' => \Xibo\Entity\Schedule::getEventTypesForm(),
+            'eventTypes' => $this->getFilteredEventTypes(),
             'scheduleCriteria' => $criteria,
             'criteriaDefaultCondition' => $criteriaDefaultCondition
         ]);
@@ -2375,13 +2407,24 @@ class Schedule extends Base
 
                 if ($event->recurrenceType === 'Week' && !empty($event->recurrenceRepeatsOn)) {
                     $weekdays = Carbon::getDays();
+                    $weekdayTranslation = [
+                        'Sunday' => '일요일',
+                        'Monday' => '월요일',
+                        'Tuesday' => '화요일',
+                        'Wednesday' => '수요일',
+                        'Thursday' => '목요일',
+                        'Friday' => '금요일',
+                        'Saturday' => '토요일',
+                    ];
                     $repeatDays = explode(',', $event->recurrenceRepeatsOn);
                     $i = 0;
                     foreach ($repeatDays as $repeatDay) {
                         // Carbon getDays starts with Sunday,
                         // return first element from that array if in our array we have 7 (Sunday)
                         $repeatDay = ($repeatDay == 7) ? 0 : $repeatDay;
-                        $repeatsOn .= $weekdays[$repeatDay];
+                        $dayName = $weekdays[$repeatDay];
+                        $translatedDayName = $weekdayTranslation[$dayName] ?? $dayName;
+                        $repeatsOn .= $translatedDayName;
                         if ($i < count($repeatDays) - 1) {
                             $repeatsOn .= ', ';
                         }
@@ -2395,7 +2438,7 @@ class Schedule extends Base
                         . $date->toAtomString());
 
                     if ($event->recurrenceMonthlyRepeatsOn === 0) {
-                        $repeatsOn = 'the ' . $date->format('jS') . ' day of the month';
+                        $repeatsOn = '매월 ' . $date->format('j') . '일';
                     } else {
                         // Which day of the month is this?
                         $firstDay = Carbon::parse('first ' . $date->format('l') . ' of ' . $date->format('F'));
@@ -2403,11 +2446,21 @@ class Schedule extends Base
                         $this->getLog()->debug('grid: the first day of the month for this date is: '
                             . $firstDay->toAtomString());
 
-                        $nth = $firstDay->diffInDays($date) / 7 + 1;
-                        $repeatWeekDayDate = $date->copy()->setDay($nth)->format('jS');
-                        $repeatsOn = 'the ' . $repeatWeekDayDate . ' '
-                            . $date->format('l')
-                            . ' of the month';
+                        $nth = floor($firstDay->diffInDays($date) / 7) + 1;
+                        
+                        $weekdayTranslation = [
+                            'Sunday' => '일요일',
+                            'Monday' => '월요일',
+                            'Tuesday' => '화요일',
+                            'Wednesday' => '수요일',
+                            'Thursday' => '목요일',
+                            'Friday' => '금요일',
+                            'Saturday' => '토요일',
+                        ];
+                        $dayName = $date->format('l');
+                        $translatedDayName = $weekdayTranslation[$dayName] ?? $dayName;
+
+                        $repeatsOn = sprintf('매월 %d번째 %s', $nth, $translatedDayName);
                     }
                 }
 
@@ -2416,15 +2469,30 @@ class Schedule extends Base
                             ->format(DateFormatHelper::getSystemFormat());
                 }
 
+                $translationMap = [
+                    'Minute' => '분',
+                    'Hour' => '시간',
+                    'Day' => '일',
+                    'Week' => '주',
+                    'Month' => '개월',
+                    'Year' => '년'
+                ];
+                $translatedType = $translationMap[$event->recurrenceType] ?? $event->recurrenceType;
+
+                $description = sprintf('%s %s마다 반복', $event->recurrenceDetail, $translatedType);
+
+                if (!empty($repeatsOn)) {
+                    // The weekday names in $repeatsOn depend on server locale settings.
+                    $description .= ' ' . $repeatsOn . '에';
+                }
+
+                if (!empty($repeatsUntil)) {
+                    $description .= ' ' . $repeatsUntil . '까지';
+                }
+
                 $event->setUnmatchedProperty(
                     'recurringEventDescription',
-                    __(sprintf(
-                        'Repeats every %d %s %s %s',
-                        $event->recurrenceDetail,
-                        $event->recurrenceType . ($event->recurrenceDetail > 1 ? 's' : ''),
-                        !empty($repeatsOn) ? 'on ' . $repeatsOn : '',
-                        !empty($repeatsUntil) ? ' until ' . $repeatsUntil : ''
-                    ))
+                    $description
                 );
             } else {
                 $event->setUnmatchedProperty('recurringEventDescription', '');

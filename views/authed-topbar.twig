@@ -101,6 +101,10 @@
             {% if currentUser.featureEnabled("menuBoard.view") %}
                 <a class="{{ groupElementClass }}" href="{{ url_for("menuBoard.view") }}">{% trans "Menu Boards" %}</a>
             {% endif %}
+
+            {% if currentUser.featureEnabled("font.view") %}
+                <a class="{{ groupElementClass }}" href="{{ url_for("font.view") }}">{% trans "Fonts" %}</a>
+            {% endif %}
         {% if countViewable > 1 %}
             </div>
         {% endif %}
@@ -152,7 +156,7 @@
         {% set userMenuViewable = false %}
     {% endif %}
 
-    {% set countViewable = currentUser.featureEnabledCount(["usergroup.view", "module.view", "transition.view", "task.view"]) %}
+    {% set countViewable = currentUser.featureEnabledCount(["usergroup.view", "module.view", "transition.view", "task.view", "tag.view"]) %}
     {% set groupElementClass = (countViewable > 1 or (countViewable == 1 and userMenuViewable)) ? 'dropdown-item' : 'nav-link' %}
     {% if countViewable > 0 or userMenuViewable %}
         {% if countViewable > 1 or (countViewable == 1 and userMenuViewable) %}
@@ -245,16 +249,6 @@
                 <li class="nav-item">
                 {% endif %}
                     <a class="{{ groupElementClass }}" href="{{ url_for("folders.view") }}">{% trans "Folders" %}</a>
-                {% if countViewable == 0 %}
-                </li>
-                {% endif %}
-            {% endif %}
-
-            {% if currentUser.featureEnabled("font.view") %}
-                {% if countViewable == 0 %}
-                <li class="nav-item">
-                {% endif %}
-                    <a class="{{ groupElementClass }}" href="{{ url_for("font.view") }}">{% trans "Fonts" %}</a>
                 {% if countViewable == 0 %}
                 </li>
                 {% endif %}

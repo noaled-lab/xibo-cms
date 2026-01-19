@@ -1121,6 +1121,24 @@
                                     {% endif %}
                                 {% endif %}
 
+                                {% if theme.isSettingVisible("ADMIN_USERGROUP") %}
+                                    {% set title %}{% trans "Admin User Group" %}{% endset %}
+                                    {% set helpText %}{% trans "The User Group with administrative privileges" %}{% endset %}
+
+                                    {% if theme.isSettingEditable("ADMIN_USERGROUP") %}
+                                        {% set attributes = [
+                                            { name: "data-width", value: "100%" },
+                                            { name: "data-search-url", value: url_for("group.search") },
+                                            { name: "data-search-term", value: "group" },
+                                            { name: "data-id-property", value: "groupId" },
+                                            { name: "data-text-property", value: "group" }
+                                        ] %}
+                                        {{ forms.dropdown("ADMIN_USERGROUP", "single", title, adminUserGroup ? adminUserGroup.groupId : null, adminUserGroup ? [adminUserGroup] : [], "groupId", "group", helpText, "pagedSelect", "", "", "", attributes, "", "", "", not theme.isSettingEditable("ADMIN_USERGROUP")) }}
+                                    {% else %}
+                                        {{ forms.disabled("ADMIN_USERGROUP", title, theme.getSetting("ADMIN_USERGROUP"), helpText) }}
+                                    {% endif %}
+                                {% endif %}
+
                                 {% if theme.isSettingVisible("DEFAULT_USERGROUP") %}
                                     {% set title %}{% trans "Default User Group" %}{% endset %}
                                     {% set helpText %}{% trans "The default User Group for new Users" %}{% endset %}

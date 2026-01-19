@@ -41,19 +41,22 @@
         <div class="col-md-12">
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item"><a class="nav-link active" href="#general" role="tab" data-toggle="tab"><span>{% trans "General" %}</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="#settings" role="tab" data-toggle="tab"><span>{% trans "Settings" %}</span></a></li>
+                {% if currentUser.isSuperAdmin() %}
                 <li class="nav-item"><a class="nav-link" href="#location" role="tab" data-toggle="tab"><span>{% trans "Details" %}</span></a></li>
                 <li class="nav-item"><a class="nav-link" href="#reference" role="tab" data-toggle="tab"><span>{% trans "Reference" %}</span></a></li>
                 <li class="nav-item"><a class="nav-link" href="#maintenance" role="tab" data-toggle="tab"><span>{% trans "Maintenance" %}</span></a></li>
                 {% if not isWolDisabled %}
                 <li class="nav-item"><a class="nav-link" href="#wol" role="tab" data-toggle="tab"><span>{% trans "Wake on LAN" %}</span></a></li>
                 {% endif %}
-                <li class="nav-item"><a class="nav-link" href="#settings" role="tab" data-toggle="tab"><span>{% trans "Settings" %}</span></a></li>
                 <li class="nav-item"><a class="nav-link" href="#remote" role="tab" data-toggle="tab"><span>{% trans "Remote" %}</span></a></li>
                 <li class="nav-item"><a class="nav-link" href="#advanced" role="tab" data-toggle="tab"><span>{% trans "Advanced" %}</span></a></li>
+                {% endif %}
             </ul>
             <form id="displayEditForm" class="DisplayForm XiboForm form-horizontal" method="put" action="{{ url_for("display.edit", {id: display.displayId}) }}" data-gettag="{{ url_for("tag.getByName") }}">
                 <div class="tab-content">
                     <div class="tab-pane active" id="general">
+                        {% if currentUser.isSuperAdmin() %}
                         {% if currentUser.featureEnabled('folder.view') %}
                         <div class="form-group row">
                             <label class="col-sm-2 control-label">{% trans "Current Folder" %}</label>
@@ -72,6 +75,7 @@
 
                         {{ forms.hidden('folderId', display.folderId) }}
                         {% endif %}
+                        {% endif %}
 
                         {% set title %}{% trans "Display" %}{% endset %}
                         {% if displayLockName %}
@@ -82,6 +86,58 @@
                             {{ forms.input("display", title, display.display, helpText, "", "required") }}
                         {% endif %}
 
+                        {# Keep required fields as hidden for non-SuperAdmin users #}
+                        {% if not currentUser.isSuperAdmin() %}
+                            {{ forms.hidden("license", display.license) }}
+                            {{ forms.hidden("description", display.description) }}
+                            {{ forms.hidden("licensed", display.licensed) }}
+                            
+                            {# Location/Details tab fields #}
+                            {{ forms.hidden("latitude", display.latitude) }}
+                            {{ forms.hidden("longitude", display.longitude) }}
+                            {{ forms.hidden("timeZone", display.timeZone) }}
+                            {{ forms.hidden("displayTypeId", display.displayTypeId) }}
+                            {{ forms.hidden("venueId", display.venueId) }}
+                            {{ forms.hidden("address", display.address) }}
+                            {{ forms.hidden("screenSize", display.screenSize) }}
+                            {{ forms.hidden("isMobile", display.isMobile) }}
+                            {{ forms.hidden("isOutdoor", display.isOutdoor) }}
+                            {{ forms.hidden("costPerPlay", display.costPerPlay) }}
+                            {{ forms.hidden("impressionsPerPlay", display.impressionsPerPlay) }}
+                            
+                            {# Reference tab fields #}
+                            {{ forms.hidden("ref1", display.ref1) }}
+                            {{ forms.hidden("ref2", display.ref2) }}
+                            {{ forms.hidden("ref3", display.ref3) }}
+                            {{ forms.hidden("ref4", display.ref4) }}
+                            {{ forms.hidden("ref5", display.ref5) }}
+                            {{ forms.hidden("customId", display.customId) }}
+                            
+                            {# Maintenance tab fields #}
+                            {{ forms.hidden("emailAlert", display.emailAlert) }}
+                            {{ forms.hidden("alertTimeout", display.alertTimeout) }}
+                            
+                            {# Wake on LAN tab fields #}
+                            {{ forms.hidden("wakeOnLanEnabled", display.wakeOnLanEnabled) }}
+                            {{ forms.hidden("broadCastAddress", display.broadCastAddress) }}
+                            {{ forms.hidden("secureOn", display.secureOn) }}
+                            {{ forms.hidden("wakeOnLanTime", display.wakeOnLanTime) }}
+                            {{ forms.hidden("cidr", display.cidr) }}
+                            
+                            {# Settings tab fields #}
+                            {{ forms.hidden("displayProfileId", display.displayProfileId) }}
+                            
+                            {# Advanced tab fields #}
+                            {{ forms.hidden("incSchedule", display.incSchedule) }}
+                            {{ forms.hidden("bandwidthLimit", display.bandwidthLimit) }}
+                            {{ forms.hidden("bandwidthLimitUnits", "") }}
+                            
+                            {# Remote tab fields #}
+                            {{ forms.hidden("teamViewerSerial", display.teamViewerSerial) }}
+                            {{ forms.hidden("webkeySerial", display.webkeySerial) }}
+                        {% endif %}
+
+                        {% if currentUser.isSuperAdmin() %}
                         {% set title %}{% trans "Display's Hardware Key" %}{% endset %}
                         {% set helpText %}{% trans "A unique identifier for this display." %}{% endset %}
                         {{ forms.input("license", title, display.license, helpText, "", "required", "", false) }}
@@ -120,6 +176,7 @@
                         { licensedid: 0, licensed: no }
                         ] %}
                         {{ forms.dropdown("licensed", "single", title, display.licensed, options, "licensedid", "licensed", helpText) }}
+                        {% endif %}
 
                         {% set title %}{% trans "Default Layout" %}{% endset %}
                         {% set helpText %}{% trans "Set the Default Layout to use when no other content is scheduled to this Display. This will override the global Default Layout as set in CMS Administrator Settings. If left blank a global Default Layout will be automatically set for this Display." %}{% endset %}
@@ -133,6 +190,7 @@
                         ] %}
                         {{ forms.dropdown("defaultLayoutId", "single", title, display.defaultLayoutId, layouts, "layoutId", "layout", helpText, "pagedSelect", "", "", "", attributes) }}
                     </div>
+                    {% if currentUser.isSuperAdmin() %}
                     <div class="tab-pane" id="location">
                         {% set title %}{% trans "Latitude" %}{% endset %}
                         {% set helpText %}{% trans "The Latitude of this display" %}{% endset %}
@@ -257,6 +315,7 @@
                         {{ forms.input("cidr", title, display.cidr, helpText) }}
                     </div>
                     {% endif %}
+                    {% endif %}
                     <div class="tab-pane" id="settings">
                         {% set title %}{% trans "Settings Profile?" %}{% endset %}
                         {% set helpText %}{% trans "What display profile should this display use? To use the default profile leave this empty." %}{% endset %}
@@ -275,6 +334,7 @@
                             </tbody>
                         </table>
                     </div>
+                    {% if currentUser.isSuperAdmin() %}
                     <div class="tab-pane" id="advanced">
                         {% set title %}{% trans "Interleave Default" %}{% endset %}
                         {% set helpText %}{% trans "Whether to always put the default layout into the cycle." %}{% endset %}
@@ -330,6 +390,7 @@
                         {% set helpText %}{% trans "If Webkey is installed on the device, enter the serial number here." %}{% endset %}
                         {{ forms.input("webkeySerial", title, display.webkeySerial, helpText) }}
                     </div>
+                    {% endif %}
                 </div>
             </form>
 
