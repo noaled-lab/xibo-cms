@@ -41,34 +41,34 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # - name: Create directory on remote server
-      #   uses: appleboy/ssh-action@v1.2.0
-      #   with:
-      #     host: ${{ secrets.REMOTE_HOST }}
-      #     username: ${{ secrets.REMOTE_USER }}
-      #     key: ${{ secrets.REMOTE_SSH_KEY }}
-      #     script: |
-      #       mkdir -p /home/${{ secrets.REMOTE_USER }}/xibo-cms
+      - name: Create directory on remote server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          script: |
+            mkdir -p /home/${{ secrets.REMOTE_USER }}/xibo-cms
 
-      # - name: Copy docker-compose.yml to remote server
-      #   uses: appleboy/scp-action@v0.1.7
-      #   with:
-      #     host: ${{ secrets.REMOTE_HOST }}
-      #     username: ${{ secrets.REMOTE_USER }}
-      #     key: ${{ secrets.REMOTE_SSH_KEY }}
-      #     source: "docker-compose.deploy.yaml"
-      #     target: "/home/${{ secrets.REMOTE_USER }}/xibo-cms/"
+      - name: Copy docker-compose.yml to remote server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          source: "docker-compose.deploy.yaml"
+          target: "/home/${{ secrets.REMOTE_USER }}/xibo-cms/"
 
-      # - name: SSH to remote server and deploy
-      #   uses: appleboy/ssh-action@v1.2.0
-      #   with:
-      #     host: ${{ secrets.REMOTE_HOST }}
-      #     username: ${{ secrets.REMOTE_USER }}
-      #     key: ${{ secrets.REMOTE_SSH_KEY }}
-      #     script: |
-      #       echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      #       cd /home/${{ secrets.REMOTE_USER }}/xibo-cms
-      #       docker compose down
-      #       echo "${{ secrets.DOT_ENV }}" | base64 --decode > /home/${{ secrets.REMOTE_USER }}/xibo-cms/config.env
-      #       docker compose -f docker-compose.deploy.yaml up -d --pull always --remove-orphans
-      #       docker image prune -f
+      - name: SSH to remote server and deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          script: |
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            cd /home/${{ secrets.REMOTE_USER }}/xibo-cms
+            docker compose down
+            echo "${{ secrets.DOT_ENV }}" | base64 --decode > /home/${{ secrets.REMOTE_USER }}/xibo-cms/config.env
+            docker compose -f docker-compose.deploy.yaml up -d --pull always --remove-orphans
+            docker image prune -f
