@@ -343,7 +343,8 @@
                         <div id="exclusions-container"
                              data-event-id="{{ event.eventId }}"
                              data-instances-url="{{ url_for('schedule.instances', {id: event.eventId}) }}"
-                             data-exclude-url="{{ url_for('schedule.recurrence.delete', {id: event.eventId}) }}">
+                             data-exclude-url="{{ url_for('schedule.recurrence.delete', {id: event.eventId}) }}"
+                             data-restore-url="{{ url_for('schedule.recurrence.restore', {id: event.eventId}) }}">
 
                             <!-- 토글 버튼 -->
                             <div class="form-group row">

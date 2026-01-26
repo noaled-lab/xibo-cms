@@ -1537,6 +1537,57 @@ class Schedule extends Base
     }
 
     /**
+     * Restore a recurring event instance (remove exclusion)
+     * @param Request $request
+     * @param Response $response
+     * @param $id
+     * @return ResponseInterface|Response
+     * @throws AccessDeniedException
+     * @throws GeneralException
+     * @throws InvalidArgumentException
+     * @throws NotFoundException
+     * @throws ControllerNotImplemented
+     */
+    public function restoreRecurrence(Request $request, Response $response, $id)
+    {
+        $schedule = $this->scheduleFactory->getById($id);
+        $schedule->load();
+
+        if (!$this->isEventEditable($schedule)) {
+            throw new AccessDeniedException();
+        }
+
+        $sanitizedParams = $this->getSanitizer($request->getParams());
+        $eventStart = $sanitizedParams->getInt('eventStart');
+        $eventEnd = $sanitizedParams->getInt('eventEnd', ['default' => 1000]);
+
+        // Find and delete the exclusion
+        $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $schedule->eventId]);
+        $found = false;
+        foreach ($scheduleExclusions as $exclusion) {
+            if ($exclusion->fromDt == $eventStart && $exclusion->toDt == $eventEnd) {
+                $exclusion->delete();
+                $found = true;
+                break;
+            }
+        }
+
+        if (!$found) {
+            throw new NotFoundException(__('Exclusion not found'));
+        }
+
+        $this->getLog()->debug('Deleted schedule exclusion record');
+
+        // Return
+        $this->getState()->hydrate([
+            'httpStatus' => 204,
+            'message' => __('Restored Event')
+        ]);
+
+        return $this->render($request, $response);
+    }
+
+    /**
      * Get recurring event instances with pagination
      * @param Request $request
      * @param Response $response
@@ -1605,18 +1656,33 @@ class Schedule extends Base
         $excludedOnly = $sanitizedParams->getInt('excludedOnly', ['default' => 0]);
 
         // Calculate appropriate date range based on recurrence type
+        // Use dynamic calculation: only calculate enough instances for pagination
         $fromDt = Carbon::now();
         $toDt = Carbon::now();
+        $needed = $start + $length + 10; // Required count + buffer
+        $recurrenceInterval = max(1, $schedule->recurrenceDetail); // Interval (e.g., every 5 minutes)
 
         switch ($schedule->recurrenceType) {
             case 'Minute':
-                $toDt->addWeek(); // 1주일 (약 10,080개)
+                $toDt->addMinutes($needed * $recurrenceInterval);
                 break;
             case 'Hour':
-                $toDt->addMonth(); // 1개월 (약 720개)
+                $toDt->addHours($needed * $recurrenceInterval);
+                break;
+            case 'Day':
+                $toDt->addDays($needed * $recurrenceInterval);
+                break;
+            case 'Week':
+                $toDt->addWeeks($needed * $recurrenceInterval);
+                break;
+            case 'Month':
+                $toDt->addMonths($needed * $recurrenceInterval);
+                break;
+            case 'Year':
+                $toDt->addYears($needed * $recurrenceInterval);
                 break;
             default:
-                $toDt->addYear(); // 1년
+                $toDt->addYear();
                 break;
         }
 
@@ -1628,13 +1694,14 @@ class Schedule extends Base
             }
         }
 
-        // Get all instances in the date range
-        $allInstances = $schedule->getEvents($fromDt, $toDt);
+        // Get all instances in the date range (including excluded ones for display)
+        $allInstances = $schedule->getEvents($fromDt, $toDt, true);
 
         // Get exclusions
         $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $id]);
         $exclusionMap = [];
         foreach ($scheduleExclusions as $exclusion) {
+            // toDt is stored as 0 in DB for command events (null in instance)
             $key = $exclusion->fromDt . '_' . $exclusion->toDt;
             $exclusionMap[$key] = true;
         }
@@ -1642,7 +1709,9 @@ class Schedule extends Base
         // Build result array
         $data = [];
         foreach ($allInstances as $instance) {
-            $isExcluded = isset($exclusionMap[$instance->fromDt . '_' . $instance->toDt]);
+            // For command events, toDt is null but stored as 0 in exclusions table
+            $toDtForKey = $instance->toDt ?? 1000;
+            $isExcluded = isset($exclusionMap[$instance->fromDt . '_' . $toDtForKey]);
 
             // Filter based on excludedOnly parameter
             if ($excludedOnly == 1 && !$isExcluded) {

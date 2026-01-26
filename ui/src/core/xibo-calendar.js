@@ -1293,6 +1293,8 @@ const initExclusionsTab = function($container) {
   const eventId = $container.data('eventId');
   const instancesUrl = $container.data('instancesUrl');
   const excludeUrl = $container.data('excludeUrl');
+  const restoreUrl = $container.data('restoreUrl');
+  const $dialog = $container.closest('.modal');
 
   let currentPage = 0;
   let pageSize = 20;
@@ -1349,14 +1351,26 @@ const initExclusionsTab = function($container) {
       const $actions = $('<td>');
       if (!instance.isExcluded) {
         const $excludeBtn = $('<button>')
+          .attr('type', 'button')
           .addClass('btn btn-sm btn-danger')
           .html('<i class="fa fa-times"></i> 제외')
-          .on('click', function() {
-            excludeInstance(instance.fromDt, instance.toDt, $row);
+          .on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            excludeInstance(instance.fromDt, instance.toDt);
           });
         $actions.append($excludeBtn);
       } else {
-        $actions.append($('<span>').addClass('badge badge-secondary').text('제외됨'));
+        const $restoreBtn = $('<button>')
+          .attr('type', 'button')
+          .addClass('btn btn-sm btn-success')
+          .html('<i class="fa fa-undo"></i> 복원')
+          .on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            restoreInstance(instance.fromDt, instance.toDt);
+          });
+        $actions.append($restoreBtn);
       }
       $row.append($actions);
 
@@ -1364,7 +1378,15 @@ const initExclusionsTab = function($container) {
     });
   };
 
-  const excludeInstance = function(fromDt, toDt, $row) {
+  const restoreModalScroll = function() {
+    // bootbox closes and removes modal-open class from body
+    // We need to restore it for the parent modal to scroll properly
+    if ($dialog.length && $dialog.hasClass('show')) {
+      $('body').addClass('modal-open');
+    }
+  };
+
+  const excludeInstance = function(fromDt, toDt) {
     bootbox.confirm({
       title: '인스턴스 제외',
       message: '이 인스턴스를 제외하시겠습니까?',
@@ -1379,6 +1401,9 @@ const initExclusionsTab = function($container) {
         },
       },
       callback: function(result) {
+        // Restore modal scroll after bootbox closes
+        restoreModalScroll();
+
         if (!result) return;
 
         $.ajax({
@@ -1390,11 +1415,51 @@ const initExclusionsTab = function($container) {
           },
           success: function() {
             toastr.success('인스턴스가 제외되었습니다.');
-            // Update only the affected row
-            $row.find('td:last').html('<span class="badge badge-secondary">제외됨</span>');
+            // Reload to show restore button
+            loadInstances();
           },
           error: function() {
             toastr.error('제외 처리 중 오류가 발생했습니다.');
+          },
+        });
+      },
+    });
+  };
+
+  const restoreInstance = function(fromDt, toDt) {
+    bootbox.confirm({
+      title: '인스턴스 복원',
+      message: '이 인스턴스의 제외를 취소하시겠습니까?',
+      buttons: {
+        confirm: {
+          label: '복원',
+          className: 'btn-success',
+        },
+        cancel: {
+          label: '취소',
+          className: 'btn-default',
+        },
+      },
+      callback: function(result) {
+        // Restore modal scroll after bootbox closes
+        restoreModalScroll();
+
+        if (!result) return;
+
+        $.ajax({
+          url: restoreUrl,
+          method: 'POST',
+          data: {
+            eventStart: fromDt,
+            eventEnd: toDt,
+          },
+          success: function() {
+            toastr.success('인스턴스가 복원되었습니다.');
+            // Reload to show exclude button
+            loadInstances();
+          },
+          error: function() {
+            toastr.error('복원 처리 중 오류가 발생했습니다.');
           },
         });
       },

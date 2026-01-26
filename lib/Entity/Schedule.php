@@ -1187,13 +1187,14 @@ class Schedule implements \JsonSerializable
      * Get events between the provided dates.
      * @param Carbon $fromDt
      * @param Carbon $toDt
+     * @param bool $includeExcluded Include excluded instances (default: false)
      * @return ScheduleEvent[]
      * @throws ConfigurationException
      * @throws GeneralException
      * @throws InvalidArgumentException
      * @throws NotFoundException
      */
-    public function getEvents($fromDt, $toDt)
+    public function getEvents($fromDt, $toDt, $includeExcluded = false)
     {
         // Events scheduled "always" will return one event
         if ($this->isAlwaysDayPart()) {
@@ -1254,7 +1255,7 @@ class Schedule implements \JsonSerializable
         }
 
         // Keep a cache of schedule exclusions, so we look them up by eventId only one time per event
-        $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $this->eventId]);
+        $scheduleExclusions = $includeExcluded ? [] : $this->scheduleExclusionFactory->query(null, ['eventId' => $this->eventId]);
 
         // Request month cache
         while ($fromDt < $toDt) {
@@ -1271,13 +1272,15 @@ class Schedule implements \JsonSerializable
             );
 
             foreach ($this->scheduleEvents as $scheduleEvent) {
-                // Find the excluded recurring events
+                // Find the excluded recurring events (skip if includeExcluded is true)
                 $exclude = false;
-                foreach ($scheduleExclusions as $exclusion) {
-                    if ($scheduleEvent->fromDt == $exclusion->fromDt &&
-                        $scheduleEvent->toDt == $exclusion->toDt) {
-                        $exclude = true;
-                        continue;
+                if (!$includeExcluded) {
+                    foreach ($scheduleExclusions as $exclusion) {
+                        if ($scheduleEvent->fromDt == $exclusion->fromDt &&
+                            $scheduleEvent->toDt == $exclusion->toDt) {
+                            $exclude = true;
+                            continue;
+                        }
                     }
                 }
 
