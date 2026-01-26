@@ -61,7 +61,8 @@
                   data-default-lat="{{ defaultLat }}"
                   data-default-long="{{ defaultLong }}"
                   data-library-get-url="{{ url_for("library.search") }}?fullScreenScheduleCheck=true&types[]=image&types[]=video"
-                  data-playlist-get-url="{{ url_for("playlist.search") }}?fullScreenScheduleCheck=true">
+                  data-playlist-get-url="{{ url_for("playlist.search") }}?fullScreenScheduleCheck=true"
+                  data-user-type-id="{{ currentUser.userTypeId }}">
                 <div class="tab-content">
                     <div class="tab-pane active" id="general">
                         {% set title %}{% trans "Name" %}{% endset %}

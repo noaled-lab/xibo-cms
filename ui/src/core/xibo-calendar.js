@@ -1303,7 +1303,15 @@ const initExclusionsTab = function($container) {
 
   const loadInstances = function() {
     // Show loading indicator
-    const $tbody = $('#instancesTable tbody');
+    const $table = $('#instancesTable');
+    const $tbody = $table.find('tbody');
+
+    // Preserve table height during loading to prevent scroll jump
+    const currentHeight = $table.outerHeight();
+    if (currentHeight > 0) {
+      $table.css('min-height', currentHeight + 'px');
+    }
+
     $tbody.html('<tr><td colspan="3" class="text-center"><i class="fa fa-spinner fa-spin"></i> 로딩 중...</td></tr>');
 
     $.ajax({
@@ -1321,9 +1329,17 @@ const initExclusionsTab = function($container) {
           updatePagination();
           updateInfo();
         }
+        // Remove min-height after content is loaded
+        $table.css('min-height', '');
+        // Restore modal scroll after loading
+        restoreModalScroll();
       },
       error: function() {
         $tbody.html('<tr><td colspan="3" class="text-center text-danger">오류가 발생했습니다.</td></tr>');
+        // Remove min-height after content is loaded
+        $table.css('min-height', '');
+        // Restore modal scroll even on error
+        restoreModalScroll();
       },
     });
   };
@@ -1381,13 +1397,18 @@ const initExclusionsTab = function($container) {
   const restoreModalScroll = function() {
     // bootbox closes and removes modal-open class from body
     // We need to restore it for the parent modal to scroll properly
-    if ($dialog.length && $dialog.hasClass('show')) {
-      $('body').addClass('modal-open');
-    }
+    setTimeout(function() {
+      if ($dialog.length && $dialog.hasClass('show')) {
+        $('body').addClass('modal-open');
+        // Restore overflow style for scrolling
+        $('body').css('overflow', 'hidden');
+        $dialog.css('overflow-y', 'auto');
+      }
+    }, 50);
   };
 
   const excludeInstance = function(fromDt, toDt) {
-    bootbox.confirm({
+    const confirmDialog = bootbox.confirm({
       title: '인스턴스 제외',
       message: '이 인스턴스를 제외하시겠습니까?',
       buttons: {
@@ -1401,9 +1422,6 @@ const initExclusionsTab = function($container) {
         },
       },
       callback: function(result) {
-        // Restore modal scroll after bootbox closes
-        restoreModalScroll();
-
         if (!result) return;
 
         $.ajax({
@@ -1424,10 +1442,15 @@ const initExclusionsTab = function($container) {
         });
       },
     });
+
+    // Restore parent modal scroll when bootbox closes
+    confirmDialog.on('hidden.bs.modal', function() {
+      restoreModalScroll();
+    });
   };
 
   const restoreInstance = function(fromDt, toDt) {
-    bootbox.confirm({
+    const confirmDialog = bootbox.confirm({
       title: '인스턴스 복원',
       message: '이 인스턴스의 제외를 취소하시겠습니까?',
       buttons: {
@@ -1441,9 +1464,6 @@ const initExclusionsTab = function($container) {
         },
       },
       callback: function(result) {
-        // Restore modal scroll after bootbox closes
-        restoreModalScroll();
-
         if (!result) return;
 
         $.ajax({
@@ -1463,6 +1483,11 @@ const initExclusionsTab = function($container) {
           },
         });
       },
+    });
+
+    // Restore parent modal scroll when bootbox closes
+    confirmDialog.on('hidden.bs.modal', function() {
+      restoreModalScroll();
     });
   };
 
@@ -1794,6 +1819,29 @@ const processScheduleFormElements = function(el, dialog) {
         // Set the repeats/reminders tabs to visible.
         $('li.repeats', dialog).css('display', 'block');
         $('li.reminders', dialog).css('display', 'block');
+
+        // Set priority to 10 for command events
+        const $isPriority = $('#isPriority', dialog);
+        if ($isPriority.val() === '' || $isPriority.val() === '0') {
+          $isPriority.val(10);
+        }
+
+        // Hide displayOrder and priority controls for non-admin users
+        const $form = el.closest('form');
+        const userTypeId = $form.data('userTypeId');
+        if (userTypeId !== 1) {
+          $('.displayOrder-control', dialog).css('display', 'none');
+          $('.priority-control', dialog).css('display', 'none');
+        }
+      } else {
+        // Show displayOrder and priority controls when not command event
+        const $form = el.closest('form');
+        const userTypeId = $form.data('userTypeId');
+        if (userTypeId !== 1) {
+          // For non-admin users, show these controls for non-command events
+          $('.displayOrder-control', dialog).css('display', '');
+          $('.priority-control', dialog).css('display', '');
+        }
       }
 
       // Call function for the daypart ID

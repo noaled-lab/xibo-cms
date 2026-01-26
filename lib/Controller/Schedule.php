@@ -1533,6 +1533,12 @@ class Schedule extends Base
         $this->getLog()->debug('Create a schedule exclusion record');
         $scheduleExclusion->save();
 
+        // Notify displays via XMR
+        $displayNotifyService = $this->displayFactory->getDisplayNotifyService();
+        foreach ($schedule->displayGroups as $displayGroup) {
+            $displayNotifyService->collectNow()->notifyByDisplayGroupId($displayGroup->displayGroupId);
+        }
+
         // Return
         $this->getState()->hydrate([
             'httpStatus' => 204,
@@ -1588,6 +1594,12 @@ class Schedule extends Base
         }
 
         $this->getLog()->debug('Deleted schedule exclusion record');
+
+        // Notify displays via XMR
+        $displayNotifyService = $this->displayFactory->getDisplayNotifyService();
+        foreach ($schedule->displayGroups as $displayGroup) {
+            $displayNotifyService->collectNow()->notifyByDisplayGroupId($displayGroup->displayGroupId);
+        }
 
         // Return
         $this->getState()->hydrate([
@@ -1975,6 +1987,14 @@ class Schedule extends Base
             throw new AccessDeniedException();
         }
 
+        // Store original values for exclusion comparison
+        $originalFromDt = $schedule->fromDt;
+        $originalRecurrenceType = $schedule->recurrenceType;
+        $originalRecurrenceDetail = $schedule->recurrenceDetail;
+        $originalRecurrenceRepeatsOn = $schedule->recurrenceRepeatsOn;
+        $originalRecurrenceMonthlyRepeatsOn = $schedule->recurrenceMonthlyRepeatsOn;
+        $originalDayPartId = $schedule->dayPartId;
+
         $schedule->eventTypeId = $sanitizedParams->getInt('eventTypeId');
         $schedule->campaignId = $this->isFullScreenSchedule($schedule->eventTypeId)
             ? $sanitizedParams->getInt('fullScreenCampaignId')
@@ -2295,12 +2315,23 @@ class Schedule extends Base
             $this->saveReminder($schedule, $scheduleReminder);
         }
 
-        // If this is a recurring event delete all schedule exclusions
+        // If this is a recurring event, delete exclusions only if schedule timing has changed
         if ($schedule->recurrenceType != '') {
-            // Delete schedule exclusions
-            $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $schedule->eventId]);
-            foreach ($scheduleExclusions as $exclusion) {
-                $exclusion->delete();
+            $scheduleTimingChanged = (
+                $originalFromDt != $schedule->fromDt ||
+                $originalRecurrenceType != $schedule->recurrenceType ||
+                $originalRecurrenceDetail != $schedule->recurrenceDetail ||
+                $originalRecurrenceRepeatsOn != $schedule->recurrenceRepeatsOn ||
+                $originalRecurrenceMonthlyRepeatsOn != $schedule->recurrenceMonthlyRepeatsOn ||
+                $originalDayPartId != $schedule->dayPartId
+            );
+
+            if ($scheduleTimingChanged) {
+                // Delete schedule exclusions only when timing-related fields have changed
+                $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $schedule->eventId]);
+                foreach ($scheduleExclusions as $exclusion) {
+                    $exclusion->delete();
+                }
             }
         }
 
