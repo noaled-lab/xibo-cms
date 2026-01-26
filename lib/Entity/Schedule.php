@@ -1276,8 +1276,10 @@ class Schedule implements \JsonSerializable
                 $exclude = false;
                 if (!$includeExcluded) {
                     foreach ($scheduleExclusions as $exclusion) {
+                        // For command events, toDt is null but calendar saves it as fromDt in exclusions table
+                        $eventToDt = $scheduleEvent->toDt ?? $scheduleEvent->fromDt;
                         if ($scheduleEvent->fromDt == $exclusion->fromDt &&
-                            $scheduleEvent->toDt == $exclusion->toDt) {
+                            $eventToDt == $exclusion->toDt) {
                             $exclude = true;
                             continue;
                         }
@@ -1293,11 +1295,11 @@ class Schedule implements \JsonSerializable
                 }
 
                 if ($scheduleEvent->toDt == null) {
-                    if ($scheduleEvent->fromDt >= $fromTimeStamp && $scheduleEvent->toDt < $toTimeStamp) {
+                    if ($scheduleEvent->fromDt >= $fromTimeStamp && $scheduleEvent->fromDt <= $toTimeStamp) {
                         $events[] = $scheduleEvent;
                     }
                 } else {
-                    if ($scheduleEvent->fromDt <= $toTimeStamp && $scheduleEvent->toDt > $fromTimeStamp) {
+                    if ($scheduleEvent->fromDt <= $toTimeStamp && $scheduleEvent->toDt >= $fromTimeStamp) {
                         $events[] = $scheduleEvent;
                     }
                 }

@@ -1522,6 +1522,12 @@ class Schedule extends Base
         // Recurring event start/end
         $eventStart = $sanitizedParams->getInt('eventStart', ['default' => 1000]);
         $eventEnd = $sanitizedParams->getInt('eventEnd', ['default' => 1000]);
+
+        // For command events, toDt is null so JS sends null - use eventStart as eventEnd to match calendar behavior
+        if ($eventEnd === 1000 || $eventEnd === null) {
+            $eventEnd = $eventStart;
+        }
+
         $scheduleExclusion = $this->scheduleExclusionFactory->create($schedule->eventId, $eventStart, $eventEnd);
 
         $this->getLog()->debug('Create a schedule exclusion record');
@@ -1560,6 +1566,11 @@ class Schedule extends Base
         $sanitizedParams = $this->getSanitizer($request->getParams());
         $eventStart = $sanitizedParams->getInt('eventStart');
         $eventEnd = $sanitizedParams->getInt('eventEnd', ['default' => 1000]);
+
+        // For command events, toDt is null so JS sends null - use eventStart as eventEnd to match calendar behavior
+        if ($eventEnd === 1000 || $eventEnd === null) {
+            $eventEnd = $eventStart;
+        }
 
         // Find and delete the exclusion
         $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $schedule->eventId]);
@@ -1655,42 +1666,40 @@ class Schedule extends Base
         $length = $sanitizedParams->getInt('length', ['default' => 20]);
         $excludedOnly = $sanitizedParams->getInt('excludedOnly', ['default' => 0]);
 
-        // Calculate appropriate date range based on recurrence type
-        // Use dynamic calculation: only calculate enough instances for pagination
-        $fromDt = Carbon::now();
-        $toDt = Carbon::now();
-        $needed = $start + $length + 10; // Required count + buffer
-        $recurrenceInterval = max(1, $schedule->recurrenceDetail); // Interval (e.g., every 5 minutes)
+        // Use the event's actual start date as fromDt
+        $fromDt = Carbon::createFromTimestamp($schedule->fromDt);
 
-        switch ($schedule->recurrenceType) {
-            case 'Minute':
-                $toDt->addMinutes($needed * $recurrenceInterval);
-                break;
-            case 'Hour':
-                $toDt->addHours($needed * $recurrenceInterval);
-                break;
-            case 'Day':
-                $toDt->addDays($needed * $recurrenceInterval);
-                break;
-            case 'Week':
-                $toDt->addWeeks($needed * $recurrenceInterval);
-                break;
-            case 'Month':
-                $toDt->addMonths($needed * $recurrenceInterval);
-                break;
-            case 'Year':
-                $toDt->addYears($needed * $recurrenceInterval);
-                break;
-            default:
-                $toDt->addYear();
-                break;
-        }
-
-        // If recurrenceRange is set and earlier than calculated toDt, use it
+        // Calculate toDt: use recurrenceRange if set, otherwise calculate based on pagination needs
         if ($schedule->recurrenceRange > 0) {
-            $recurrenceEnd = Carbon::createFromTimestamp($schedule->recurrenceRange);
-            if ($recurrenceEnd->lessThan($toDt)) {
-                $toDt = $recurrenceEnd;
+            $toDt = Carbon::createFromTimestamp($schedule->recurrenceRange);
+        } else {
+            // No end date set - calculate enough range for pagination
+            $toDt = Carbon::createFromTimestamp($schedule->fromDt);
+            $needed = $start + $length + 10;
+            $recurrenceInterval = max(1, $schedule->recurrenceDetail);
+
+            switch ($schedule->recurrenceType) {
+                case 'Minute':
+                    $toDt->addMinutes($needed * $recurrenceInterval);
+                    break;
+                case 'Hour':
+                    $toDt->addHours($needed * $recurrenceInterval);
+                    break;
+                case 'Day':
+                    $toDt->addDays($needed * $recurrenceInterval);
+                    break;
+                case 'Week':
+                    $toDt->addWeeks($needed * $recurrenceInterval);
+                    break;
+                case 'Month':
+                    $toDt->addMonths($needed * $recurrenceInterval);
+                    break;
+                case 'Year':
+                    $toDt->addYears($needed * $recurrenceInterval);
+                    break;
+                default:
+                    $toDt->addYear();
+                    break;
             }
         }
 
@@ -1709,8 +1718,8 @@ class Schedule extends Base
         // Build result array
         $data = [];
         foreach ($allInstances as $instance) {
-            // For command events, toDt is null but stored as 0 in exclusions table
-            $toDtForKey = $instance->toDt ?? 1000;
+            // For command events, toDt is null but calendar saves it as fromDt in exclusions table
+            $toDtForKey = $instance->toDt ?? $instance->fromDt;
             $isExcluded = isset($exclusionMap[$instance->fromDt . '_' . $toDtForKey]);
 
             // Filter based on excludedOnly parameter
