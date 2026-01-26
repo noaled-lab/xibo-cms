@@ -1269,6 +1269,12 @@ window.setupScheduleForm = function(dialog) {
   }
 
   configReminderFields($(dialog));
+
+  // 제외 탭 초기화 (반복 이벤트인 경우에만)
+  const $exclusionsContainer = dialog.find('#exclusions-container');
+  if ($exclusionsContainer.length > 0) {
+    initExclusionsTab($exclusionsContainer);
+  }
 };
 
 const deleteRecurringScheduledEvent = function(id, eventStart, eventEnd) {
@@ -1278,6 +1284,169 @@ const deleteRecurringScheduledEvent = function(id, eventStart, eventEnd) {
     eventEnd: eventEnd,
   };
   XiboSwapDialog(url, data);
+};
+
+/**
+ * 제외 탭 초기화
+ */
+const initExclusionsTab = function($container) {
+  const eventId = $container.data('eventId');
+  const instancesUrl = $container.data('instancesUrl');
+  const excludeUrl = $container.data('excludeUrl');
+
+  let currentPage = 0;
+  let pageSize = 20;
+  let showExcludedOnly = false;
+  let totalRecords = 0;
+
+  const loadInstances = function() {
+    // Show loading indicator
+    const $tbody = $('#instancesTable tbody');
+    $tbody.html('<tr><td colspan="3" class="text-center"><i class="fa fa-spinner fa-spin"></i> 로딩 중...</td></tr>');
+
+    $.ajax({
+      url: instancesUrl,
+      method: 'GET',
+      data: {
+        start: currentPage * pageSize,
+        length: pageSize,
+        excludedOnly: showExcludedOnly ? 1 : 0,
+      },
+      success: function(response) {
+        if (response.data) {
+          renderInstancesTable(response.data.data);
+          totalRecords = response.data.recordsTotal;
+          updatePagination();
+          updateInfo();
+        }
+      },
+      error: function() {
+        $tbody.html('<tr><td colspan="3" class="text-center text-danger">오류가 발생했습니다.</td></tr>');
+      },
+    });
+  };
+
+  const renderInstancesTable = function(instances) {
+    const $tbody = $('#instancesTable tbody');
+    $tbody.empty();
+
+    if (instances.length === 0) {
+      const message = showExcludedOnly ? '제외된 항목이 없습니다.' : '인스턴스가 없습니다.';
+      $tbody.html('<tr><td colspan="3" class="text-center">' + message + '</td></tr>');
+      return;
+    }
+
+    instances.forEach(function(instance) {
+      const $row = $('<tr>');
+
+      // 시작 시간
+      $row.append($('<td>').text(instance.fromDtFormatted));
+
+      // 종료 시간 (명령 이벤트는 null 처리)
+      $row.append($('<td>').text(instance.toDtFormatted || '-'));
+
+      // 작업 버튼
+      const $actions = $('<td>');
+      if (!instance.isExcluded) {
+        const $excludeBtn = $('<button>')
+          .addClass('btn btn-sm btn-danger')
+          .html('<i class="fa fa-times"></i> 제외')
+          .on('click', function() {
+            excludeInstance(instance.fromDt, instance.toDt, $row);
+          });
+        $actions.append($excludeBtn);
+      } else {
+        $actions.append($('<span>').addClass('badge badge-secondary').text('제외됨'));
+      }
+      $row.append($actions);
+
+      $tbody.append($row);
+    });
+  };
+
+  const excludeInstance = function(fromDt, toDt, $row) {
+    bootbox.confirm({
+      title: '인스턴스 제외',
+      message: '이 인스턴스를 제외하시겠습니까?',
+      buttons: {
+        confirm: {
+          label: '제외',
+          className: 'btn-danger',
+        },
+        cancel: {
+          label: '취소',
+          className: 'btn-default',
+        },
+      },
+      callback: function(result) {
+        if (!result) return;
+
+        $.ajax({
+          url: excludeUrl,
+          method: 'DELETE',
+          data: {
+            eventStart: fromDt,
+            eventEnd: toDt,
+          },
+          success: function() {
+            toastr.success('인스턴스가 제외되었습니다.');
+            // Update only the affected row
+            $row.find('td:last').html('<span class="badge badge-secondary">제외됨</span>');
+          },
+          error: function() {
+            toastr.error('제외 처리 중 오류가 발생했습니다.');
+          },
+        });
+      },
+    });
+  };
+
+  const updatePagination = function() {
+    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+    $('#pageInfo').text((currentPage + 1) + ' / ' + totalPages);
+    $('#prevPageBtn').prop('disabled', currentPage === 0);
+    $('#nextPageBtn').prop('disabled', currentPage >= totalPages - 1 || totalRecords === 0);
+  };
+
+  const updateInfo = function() {
+    const startIdx = totalRecords > 0 ? (currentPage * pageSize + 1) : 0;
+    const endIdx = Math.min((currentPage + 1) * pageSize, totalRecords);
+    $('#instancesInfo').text('총 ' + totalRecords + '개 중 ' + startIdx + '-' + endIdx + ' 표시');
+  };
+
+  // 이벤트 핸들러
+  $('#toggleExcludedBtn').on('click', function() {
+    showExcludedOnly = !showExcludedOnly;
+    const $icon = showExcludedOnly ? '<i class="fa fa-list"></i>' : '<i class="fa fa-filter"></i>';
+    const text = showExcludedOnly ? ' 모든 항목 보기' : ' 제외된 항목만 보기';
+    $(this).html($icon + text);
+    currentPage = 0;
+    loadInstances();
+  });
+
+  $('#prevPageBtn').on('click', function() {
+    if (currentPage > 0) {
+      currentPage--;
+      loadInstances();
+    }
+  });
+
+  $('#nextPageBtn').on('click', function() {
+    const totalPages = Math.ceil(totalRecords / pageSize);
+    if (currentPage < totalPages - 1) {
+      currentPage++;
+      loadInstances();
+    }
+  });
+
+  $('#pageSizeSelect').on('change', function() {
+    pageSize = parseInt($(this).val());
+    currentPage = 0;
+    loadInstances();
+  });
+
+  // 초기 로드
+  loadInstances();
 };
 
 window.beforeSubmitScheduleForm = function(form) {

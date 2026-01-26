@@ -1537,6 +1537,148 @@ class Schedule extends Base
     }
 
     /**
+     * Get recurring event instances with pagination
+     * @param Request $request
+     * @param Response $response
+     * @param $id
+     * @return \Psr\Http\Message\ResponseInterface|Response
+     * @throws AccessDeniedException
+     * @throws GeneralException
+     * @throws InvalidArgumentException
+     * @throws NotFoundException
+     * @throws ControllerNotImplemented
+     * @SWG\Get(
+     *  path="/schedule/{eventId}/instances",
+     *  operationId="scheduleGetInstances",
+     *  tags={"schedule"},
+     *  @SWG\Parameter(
+     *      name="eventId",
+     *      in="path",
+     *      description="The Scheduled Event ID",
+     *      type="integer",
+     *      required=true
+     *   ),
+     *  @SWG\Parameter(
+     *      name="start",
+     *      in="query",
+     *      description="Start index for pagination",
+     *      type="integer",
+     *      required=false
+     *   ),
+     *  @SWG\Parameter(
+     *      name="length",
+     *      in="query",
+     *      description="Number of records to return",
+     *      type="integer",
+     *      required=false
+     *   ),
+     *  @SWG\Parameter(
+     *      name="excludedOnly",
+     *      in="query",
+     *      description="Show only excluded instances (1) or all instances (0)",
+     *      type="integer",
+     *      required=false
+     *   ),
+     *  @SWG\Response(
+     *      response=200,
+     *      description="successful operation"
+     *  )
+     * )
+     */
+    public function getInstances(Request $request, Response $response, $id)
+    {
+        $schedule = $this->scheduleFactory->getById($id);
+        $schedule->load();
+
+        if (!$this->isEventEditable($schedule)) {
+            throw new AccessDeniedException();
+        }
+
+        // Check if this is a recurring event
+        if (empty($schedule->recurrenceType)) {
+            throw new InvalidArgumentException(__('This is not a recurring event'), 'recurrenceType');
+        }
+
+        $sanitizedParams = $this->getSanitizer($request->getParams());
+        $start = $sanitizedParams->getInt('start', ['default' => 0]);
+        $length = $sanitizedParams->getInt('length', ['default' => 20]);
+        $excludedOnly = $sanitizedParams->getInt('excludedOnly', ['default' => 0]);
+
+        // Calculate appropriate date range based on recurrence type
+        $fromDt = Carbon::now();
+        $toDt = Carbon::now();
+
+        switch ($schedule->recurrenceType) {
+            case 'Minute':
+                $toDt->addWeek(); // 1주일 (약 10,080개)
+                break;
+            case 'Hour':
+                $toDt->addMonth(); // 1개월 (약 720개)
+                break;
+            default:
+                $toDt->addYear(); // 1년
+                break;
+        }
+
+        // If recurrenceRange is set and earlier than calculated toDt, use it
+        if ($schedule->recurrenceRange > 0) {
+            $recurrenceEnd = Carbon::createFromTimestamp($schedule->recurrenceRange);
+            if ($recurrenceEnd->lessThan($toDt)) {
+                $toDt = $recurrenceEnd;
+            }
+        }
+
+        // Get all instances in the date range
+        $allInstances = $schedule->getEvents($fromDt, $toDt);
+
+        // Get exclusions
+        $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $id]);
+        $exclusionMap = [];
+        foreach ($scheduleExclusions as $exclusion) {
+            $key = $exclusion->fromDt . '_' . $exclusion->toDt;
+            $exclusionMap[$key] = true;
+        }
+
+        // Build result array
+        $data = [];
+        foreach ($allInstances as $instance) {
+            $isExcluded = isset($exclusionMap[$instance->fromDt . '_' . $instance->toDt]);
+
+            // Filter based on excludedOnly parameter
+            if ($excludedOnly == 1 && !$isExcluded) {
+                continue;
+            }
+
+            $data[] = [
+                'fromDt' => $instance->fromDt,
+                'toDt' => $instance->toDt,
+                'fromDtFormatted' => Carbon::createFromTimestamp($instance->fromDt)
+                    ->format(DateFormatHelper::getSystemFormat()),
+                'toDtFormatted' => $instance->toDt != null
+                    ? Carbon::createFromTimestamp($instance->toDt)->format(DateFormatHelper::getSystemFormat())
+                    : null,
+                'isExcluded' => $isExcluded
+            ];
+        }
+
+        $recordsTotal = count($data);
+
+        // Apply pagination
+        $paginatedData = array_slice($data, $start, $length);
+
+        $this->getState()->hydrate([
+            'httpStatus' => 200,
+            'data' => [
+                'data' => $paginatedData,
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsTotal
+            ]
+        ]);
+
+        return $this->render($request, $response);
+    }
+
+    /**
      * Edits an event
      * @param Request $request
      * @param Response $response
