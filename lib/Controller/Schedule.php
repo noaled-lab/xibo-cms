@@ -1522,15 +1522,247 @@ class Schedule extends Base
         // Recurring event start/end
         $eventStart = $sanitizedParams->getInt('eventStart', ['default' => 1000]);
         $eventEnd = $sanitizedParams->getInt('eventEnd', ['default' => 1000]);
+
+        // For command events, toDt is null so JS sends null - use eventStart as eventEnd to match calendar behavior
+        if ($eventEnd === 1000 || $eventEnd === null) {
+            $eventEnd = $eventStart;
+        }
+
         $scheduleExclusion = $this->scheduleExclusionFactory->create($schedule->eventId, $eventStart, $eventEnd);
 
         $this->getLog()->debug('Create a schedule exclusion record');
         $scheduleExclusion->save();
 
+        // Notify displays via XMR
+        $displayNotifyService = $this->displayFactory->getDisplayNotifyService();
+        foreach ($schedule->displayGroups as $displayGroup) {
+            $displayNotifyService->collectNow()->notifyByDisplayGroupId($displayGroup->displayGroupId);
+        }
+
         // Return
         $this->getState()->hydrate([
             'httpStatus' => 204,
             'message' => __('Deleted Event')
+        ]);
+
+        return $this->render($request, $response);
+    }
+
+    /**
+     * Restore a recurring event instance (remove exclusion)
+     * @param Request $request
+     * @param Response $response
+     * @param $id
+     * @return ResponseInterface|Response
+     * @throws AccessDeniedException
+     * @throws GeneralException
+     * @throws InvalidArgumentException
+     * @throws NotFoundException
+     * @throws ControllerNotImplemented
+     */
+    public function restoreRecurrence(Request $request, Response $response, $id)
+    {
+        $schedule = $this->scheduleFactory->getById($id);
+        $schedule->load();
+
+        if (!$this->isEventEditable($schedule)) {
+            throw new AccessDeniedException();
+        }
+
+        $sanitizedParams = $this->getSanitizer($request->getParams());
+        $eventStart = $sanitizedParams->getInt('eventStart');
+        $eventEnd = $sanitizedParams->getInt('eventEnd', ['default' => 1000]);
+
+        // For command events, toDt is null so JS sends null - use eventStart as eventEnd to match calendar behavior
+        if ($eventEnd === 1000 || $eventEnd === null) {
+            $eventEnd = $eventStart;
+        }
+
+        // Find and delete the exclusion
+        $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $schedule->eventId]);
+        $found = false;
+        foreach ($scheduleExclusions as $exclusion) {
+            if ($exclusion->fromDt == $eventStart && $exclusion->toDt == $eventEnd) {
+                $exclusion->delete();
+                $found = true;
+                break;
+            }
+        }
+
+        if (!$found) {
+            throw new NotFoundException(__('Exclusion not found'));
+        }
+
+        $this->getLog()->debug('Deleted schedule exclusion record');
+
+        // Notify displays via XMR
+        $displayNotifyService = $this->displayFactory->getDisplayNotifyService();
+        foreach ($schedule->displayGroups as $displayGroup) {
+            $displayNotifyService->collectNow()->notifyByDisplayGroupId($displayGroup->displayGroupId);
+        }
+
+        // Return
+        $this->getState()->hydrate([
+            'httpStatus' => 204,
+            'message' => __('Restored Event')
+        ]);
+
+        return $this->render($request, $response);
+    }
+
+    /**
+     * Get recurring event instances with pagination
+     * @param Request $request
+     * @param Response $response
+     * @param $id
+     * @return \Psr\Http\Message\ResponseInterface|Response
+     * @throws AccessDeniedException
+     * @throws GeneralException
+     * @throws InvalidArgumentException
+     * @throws NotFoundException
+     * @throws ControllerNotImplemented
+     * @SWG\Get(
+     *  path="/schedule/{eventId}/instances",
+     *  operationId="scheduleGetInstances",
+     *  tags={"schedule"},
+     *  @SWG\Parameter(
+     *      name="eventId",
+     *      in="path",
+     *      description="The Scheduled Event ID",
+     *      type="integer",
+     *      required=true
+     *   ),
+     *  @SWG\Parameter(
+     *      name="start",
+     *      in="query",
+     *      description="Start index for pagination",
+     *      type="integer",
+     *      required=false
+     *   ),
+     *  @SWG\Parameter(
+     *      name="length",
+     *      in="query",
+     *      description="Number of records to return",
+     *      type="integer",
+     *      required=false
+     *   ),
+     *  @SWG\Parameter(
+     *      name="excludedOnly",
+     *      in="query",
+     *      description="Show only excluded instances (1) or all instances (0)",
+     *      type="integer",
+     *      required=false
+     *   ),
+     *  @SWG\Response(
+     *      response=200,
+     *      description="successful operation"
+     *  )
+     * )
+     */
+    public function getInstances(Request $request, Response $response, $id)
+    {
+        $schedule = $this->scheduleFactory->getById($id);
+        $schedule->load();
+
+        if (!$this->isEventEditable($schedule)) {
+            throw new AccessDeniedException();
+        }
+
+        // Check if this is a recurring event
+        if (empty($schedule->recurrenceType)) {
+            throw new InvalidArgumentException(__('This is not a recurring event'), 'recurrenceType');
+        }
+
+        $sanitizedParams = $this->getSanitizer($request->getParams());
+        $start = $sanitizedParams->getInt('start', ['default' => 0]);
+        $length = $sanitizedParams->getInt('length', ['default' => 20]);
+        $excludedOnly = $sanitizedParams->getInt('excludedOnly', ['default' => 0]);
+
+        // Use the event's actual start date as fromDt
+        $fromDt = Carbon::createFromTimestamp($schedule->fromDt);
+
+        // Calculate toDt: use recurrenceRange if set, otherwise calculate based on pagination needs
+        if ($schedule->recurrenceRange > 0) {
+            $toDt = Carbon::createFromTimestamp($schedule->recurrenceRange);
+        } else {
+            // No end date set - calculate enough range for pagination
+            $toDt = Carbon::createFromTimestamp($schedule->fromDt);
+            $needed = $start + $length + 10;
+            $recurrenceInterval = max(1, $schedule->recurrenceDetail);
+
+            switch ($schedule->recurrenceType) {
+                case 'Minute':
+                    $toDt->addMinutes($needed * $recurrenceInterval);
+                    break;
+                case 'Hour':
+                    $toDt->addHours($needed * $recurrenceInterval);
+                    break;
+                case 'Day':
+                    $toDt->addDays($needed * $recurrenceInterval);
+                    break;
+                case 'Week':
+                    $toDt->addWeeks($needed * $recurrenceInterval);
+                    break;
+                case 'Month':
+                    $toDt->addMonths($needed * $recurrenceInterval);
+                    break;
+                case 'Year':
+                    $toDt->addYears($needed * $recurrenceInterval);
+                    break;
+                default:
+                    $toDt->addYear();
+                    break;
+            }
+        }
+
+        // Get all instances in the date range (including excluded ones for display)
+        $allInstances = $schedule->getEvents($fromDt, $toDt, true);
+
+        // Get exclusions
+        $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $id]);
+        $exclusionMap = [];
+        foreach ($scheduleExclusions as $exclusion) {
+            // toDt is stored as 0 in DB for command events (null in instance)
+            $key = $exclusion->fromDt . '_' . $exclusion->toDt;
+            $exclusionMap[$key] = true;
+        }
+
+        // Build result array
+        $data = [];
+        foreach ($allInstances as $instance) {
+            // For command events, toDt is null but calendar saves it as fromDt in exclusions table
+            $toDtForKey = $instance->toDt ?? $instance->fromDt;
+            $isExcluded = isset($exclusionMap[$instance->fromDt . '_' . $toDtForKey]);
+
+            // Filter based on excludedOnly parameter
+            if ($excludedOnly == 1 && !$isExcluded) {
+                continue;
+            }
+
+            $data[] = [
+                'fromDt' => $instance->fromDt,
+                'toDt' => $instance->toDt,
+                'fromDtFormatted' => Carbon::createFromTimestamp($instance->fromDt)
+                    ->format(DateFormatHelper::getSystemFormat()),
+                'toDtFormatted' => $instance->toDt != null
+                    ? Carbon::createFromTimestamp($instance->toDt)->format(DateFormatHelper::getSystemFormat())
+                    : null,
+                'isExcluded' => $isExcluded
+            ];
+        }
+
+        $recordsTotal = count($data);
+
+        // Apply pagination
+        $paginatedData = array_slice($data, $start, $length);
+
+        $this->getState()->hydrate([
+            'httpStatus' => 200,
+            'data' => [
+                'data' => $paginatedData,
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsTotal
+            ]
         ]);
 
         return $this->render($request, $response);
@@ -1754,6 +1986,14 @@ class Schedule extends Base
         if (!$this->isEventEditable($schedule)) {
             throw new AccessDeniedException();
         }
+
+        // Store original values for exclusion comparison
+        $originalFromDt = $schedule->fromDt;
+        $originalRecurrenceType = $schedule->recurrenceType;
+        $originalRecurrenceDetail = $schedule->recurrenceDetail;
+        $originalRecurrenceRepeatsOn = $schedule->recurrenceRepeatsOn;
+        $originalRecurrenceMonthlyRepeatsOn = $schedule->recurrenceMonthlyRepeatsOn;
+        $originalDayPartId = $schedule->dayPartId;
 
         $schedule->eventTypeId = $sanitizedParams->getInt('eventTypeId');
         $schedule->campaignId = $this->isFullScreenSchedule($schedule->eventTypeId)
@@ -2075,12 +2315,23 @@ class Schedule extends Base
             $this->saveReminder($schedule, $scheduleReminder);
         }
 
-        // If this is a recurring event delete all schedule exclusions
+        // If this is a recurring event, delete exclusions only if schedule timing has changed
         if ($schedule->recurrenceType != '') {
-            // Delete schedule exclusions
-            $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $schedule->eventId]);
-            foreach ($scheduleExclusions as $exclusion) {
-                $exclusion->delete();
+            $scheduleTimingChanged = (
+                $originalFromDt != $schedule->fromDt ||
+                $originalRecurrenceType != $schedule->recurrenceType ||
+                $originalRecurrenceDetail != $schedule->recurrenceDetail ||
+                $originalRecurrenceRepeatsOn != $schedule->recurrenceRepeatsOn ||
+                $originalRecurrenceMonthlyRepeatsOn != $schedule->recurrenceMonthlyRepeatsOn ||
+                $originalDayPartId != $schedule->dayPartId
+            );
+
+            if ($scheduleTimingChanged) {
+                // Delete schedule exclusions only when timing-related fields have changed
+                $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $schedule->eventId]);
+                foreach ($scheduleExclusions as $exclusion) {
+                    $exclusion->delete();
+                }
             }
         }
 

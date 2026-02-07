@@ -43,6 +43,9 @@
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item"><a class="nav-link active" href="#general" role="tab" data-toggle="tab"><span>{% trans "General" %}</span></a></li>
                 <li class="nav-item repeats"><a class="nav-link" href="#repeats" role="tab" data-toggle="tab"><span>{% trans "Repeats" %}</span></a></li>
+                {% if event.recurrenceType %}
+                <li class="nav-item exclusions"><a class="nav-link" href="#exclusions" role="tab" data-toggle="tab"><span>{% trans "제외" %}</span></a></li>
+                {% endif %}
                 {% if currentUser.userTypeId == 1 %}
                 <li class="nav-item reminders"><a class="nav-link" href="#reminders" role="tab" data-toggle="tab"><span>{% trans "Reminder" %}</span></a></li>
                 <li class="nav-item geoSchedule"><a class="nav-link" href="#geoSchedule" role="tab" data-toggle="tab"><span>{% trans "Geo Location" %}</span></a></li>
@@ -58,7 +61,8 @@
                   data-default-lat="{{ defaultLat }}"
                   data-default-long="{{ defaultLong }}"
                   data-library-get-url="{{ url_for("library.search") }}?fullScreenScheduleCheck=true&types[]=image&types[]=video"
-                  data-playlist-get-url="{{ url_for("playlist.search") }}?fullScreenScheduleCheck=true">
+                  data-playlist-get-url="{{ url_for("playlist.search") }}?fullScreenScheduleCheck=true"
+                  data-user-type-id="{{ currentUser.userTypeId }}">
                 <div class="tab-content">
                     <div class="tab-pane active" id="general">
                         {% set title %}{% trans "Name" %}{% endset %}
@@ -334,6 +338,68 @@
                         {% set helpText %}{% trans "Provide a date and time to end the Repeat for this Event. Leave empty to Repeat indefinitely." %}{% endset %}
                         {{ forms.dateTime("recurrenceRange", title, event.recurrenceRange, helpText, "repeat-control-group", "", "") }}
                     </div>
+
+                    {% if event.recurrenceType %}
+                    <div class="tab-pane" id="exclusions">
+                        <div id="exclusions-container"
+                             data-event-id="{{ event.eventId }}"
+                             data-instances-url="{{ url_for('schedule.instances', {id: event.eventId}) }}"
+                             data-exclude-url="{{ url_for('schedule.recurrence.delete', {id: event.eventId}) }}"
+                             data-restore-url="{{ url_for('schedule.recurrence.restore', {id: event.eventId}) }}">
+
+                            <!-- 토글 버튼 -->
+                            <div class="form-group row">
+                                <div class="col-sm-12">
+                                    <button type="button" class="btn btn-secondary btn-sm" id="toggleExcludedBtn">
+                                        <i class="fa fa-filter"></i> {% trans "제외된 항목만 보기" %}
+                                    </button>
+                                    <span id="instancesInfo" class="ml-3"></span>
+                                </div>
+                            </div>
+
+                            <!-- 인스턴스 테이블 -->
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm" id="instancesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>{% trans "시작 시간" %}</th>
+                                            <th>{% trans "종료 시간" %}</th>
+                                            <th style="width: 100px;">{% trans "작업" %}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="3" class="text-center">
+                                                <i class="fa fa-spinner fa-spin"></i> {% trans "로딩 중..." %}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- 페이징 컨트롤 -->
+                            <div class="row mt-3">
+                                <div class="col-sm-6">
+                                    <button type="button" class="btn btn-default btn-sm" id="prevPageBtn" disabled>
+                                        <i class="fa fa-chevron-left"></i> {% trans "이전" %}
+                                    </button>
+                                    <span id="pageInfo" class="mx-2">1 / 1</span>
+                                    <button type="button" class="btn btn-default btn-sm" id="nextPageBtn">
+                                        {% trans "다음" %} <i class="fa fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                                <div class="col-sm-6 text-right">
+                                    <label class="d-inline-block mr-2">{% trans "페이지당 항목 수" %}:</label>
+                                    <select id="pageSizeSelect" class="form-control form-control-sm d-inline-block" style="width: auto;">
+                                        <option value="20" selected>20</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <div class="tab-pane" id="reminders">
                         {% set message %}{% trans "Use the form fields below to create a set of reminders for this event. New fields can be added by clicking on the + icon at the end of the row. Use the tick box to receive a notification by email alternatively reminders will be shown in the message center." %}{% endset %}
