@@ -1535,6 +1535,12 @@ const initExclusionsTab = function($container) {
     loadInstances();
   });
 
+  // 부모 모달이 닫힐 때 body의 인라인 overflow 스타일 제거
+  $dialog.on('hidden.bs.modal.exclusionsCleanup', function() {
+    $('body').css('overflow', '');
+    $dialog.off('hidden.bs.modal.exclusionsCleanup');
+  });
+
   // 초기 로드
   loadInstances();
 };
