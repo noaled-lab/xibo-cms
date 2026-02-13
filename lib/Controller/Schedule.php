@@ -1674,94 +1674,193 @@ class Schedule extends Base
         }
 
         $sanitizedParams = $this->getSanitizer($request->getParams());
-        $start = $sanitizedParams->getInt('start', ['default' => 0]);
         $length = $sanitizedParams->getInt('length', ['default' => 20]);
         $excludedOnly = $sanitizedParams->getInt('excludedOnly', ['default' => 0]);
+        $direction = $sanitizedParams->getString('direction', ['default' => 'future']);
+        $cursorDt = $sanitizedParams->getInt('cursorDt', ['default' => 0]);
 
-        // Use the event's actual start date as fromDt
-        $fromDt = Carbon::createFromTimestamp($schedule->fromDt);
-
-        // Calculate toDt: use recurrenceRange if set, otherwise calculate based on pagination needs
-        if ($schedule->recurrenceRange > 0) {
-            $toDt = Carbon::createFromTimestamp($schedule->recurrenceRange);
+        // Determine the anchor date: use cursor if provided, otherwise use today
+        $eventStartDt = Carbon::createFromTimestamp($schedule->fromDt);
+        if ($cursorDt > 0) {
+            $anchorDt = Carbon::createFromTimestamp($cursorDt);
+        } else if ($excludedOnly == 1) {
+            // Excluded items: start from event start date
+            $anchorDt = $eventStartDt->copy();
         } else {
-            // No end date set - calculate enough range for pagination
-            $toDt = Carbon::createFromTimestamp($schedule->fromDt);
-            $needed = $start + $length + 10;
+            // Default to today, but if event starts in the future, use event start
+            $anchorDt = Carbon::now();
+            if ($eventStartDt > $anchorDt) {
+                $anchorDt = $eventStartDt->copy();
+            }
+        }
+
+        $fetchCount = $length + 1;
+
+        if ($excludedOnly == 1) {
+            // Excluded items: query directly from DB, no need to generate instances
+            $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $id]);
+
+            // Sort by fromDt ascending
+            usort($scheduleExclusions, function ($a, $b) {
+                return $a->fromDt - $b->fromDt;
+            });
+
+            // Build data from exclusions
+            $data = [];
+            foreach ($scheduleExclusions as $exclusion) {
+                // Skip cursor item
+                if ($cursorDt > 0 && $exclusion->fromDt == $cursorDt) {
+                    continue;
+                }
+
+                // Direction filtering
+                if ($direction === 'past' && $exclusion->fromDt >= $anchorDt->format('U')) {
+                    continue;
+                }
+                if ($direction === 'future' && $exclusion->fromDt < $anchorDt->format('U')) {
+                    continue;
+                }
+
+                $data[] = [
+                    'fromDt' => $exclusion->fromDt,
+                    'toDt' => $exclusion->toDt,
+                    'fromDtFormatted' => Carbon::createFromTimestamp($exclusion->fromDt)
+                        ->format(DateFormatHelper::getSystemFormat()),
+                    'toDtFormatted' => $exclusion->toDt > 0
+                        ? Carbon::createFromTimestamp($exclusion->toDt)->format(DateFormatHelper::getSystemFormat())
+                        : null,
+                    'isExcluded' => true
+                ];
+            }
+
+            if ($direction === 'past') {
+                $hasMore = count($data) > $length;
+                $data = array_slice($data, -$length);
+                $hasPrev = $hasMore;
+                $hasNext = true;
+            } else {
+                $hasMore = count($data) > $length;
+                $data = array_slice($data, 0, $length);
+                $hasNext = $hasMore;
+                $hasPrev = $anchorDt > $eventStartDt;
+            }
+        } else {
+            // Normal mode: generate instances with cursor-based pagination
             $recurrenceInterval = max(1, $schedule->recurrenceDetail);
 
-            switch ($schedule->recurrenceType) {
-                case 'Minute':
-                    $toDt->addMinutes($needed * $recurrenceInterval);
-                    break;
-                case 'Hour':
-                    $toDt->addHours($needed * $recurrenceInterval);
-                    break;
-                case 'Day':
-                    $toDt->addDays($needed * $recurrenceInterval);
-                    break;
-                case 'Week':
-                    $toDt->addWeeks($needed * $recurrenceInterval);
-                    break;
-                case 'Month':
-                    $toDt->addMonths($needed * $recurrenceInterval);
-                    break;
-                case 'Year':
-                    $toDt->addYears($needed * $recurrenceInterval);
-                    break;
-                default:
-                    $toDt->addYear();
-                    break;
+            if ($direction === 'past') {
+                $toDt = $anchorDt->copy();
+                $fromDt = $anchorDt->copy();
+                switch ($schedule->recurrenceType) {
+                    case 'Minute':
+                        $fromDt->subMinutes($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Hour':
+                        $fromDt->subHours($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Day':
+                        $fromDt->subDays($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Week':
+                        $fromDt->subWeeks($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Month':
+                        $fromDt->subMonths($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Year':
+                        $fromDt->subYears($fetchCount * $recurrenceInterval);
+                        break;
+                    default:
+                        $fromDt->subYear();
+                        break;
+                }
+                if ($fromDt < $eventStartDt) {
+                    $fromDt = $eventStartDt->copy();
+                }
+            } else {
+                $fromDt = $anchorDt->copy();
+                $toDt = $anchorDt->copy();
+                switch ($schedule->recurrenceType) {
+                    case 'Minute':
+                        $toDt->addMinutes($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Hour':
+                        $toDt->addHours($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Day':
+                        $toDt->addDays($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Week':
+                        $toDt->addWeeks($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Month':
+                        $toDt->addMonths($fetchCount * $recurrenceInterval);
+                        break;
+                    case 'Year':
+                        $toDt->addYears($fetchCount * $recurrenceInterval);
+                        break;
+                    default:
+                        $toDt->addYear();
+                        break;
+                }
+                if ($schedule->recurrenceRange > 0) {
+                    $rangeDt = Carbon::createFromTimestamp($schedule->recurrenceRange);
+                    if ($toDt > $rangeDt) {
+                        $toDt = $rangeDt;
+                    }
+                }
+            }
+
+            $allInstances = $schedule->getEvents($fromDt, $toDt, true);
+
+            // Get exclusions for marking
+            $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $id]);
+            $exclusionMap = [];
+            foreach ($scheduleExclusions as $exclusion) {
+                $key = $exclusion->fromDt . '_' . $exclusion->toDt;
+                $exclusionMap[$key] = true;
+            }
+
+            $data = [];
+            foreach ($allInstances as $instance) {
+                if ($cursorDt > 0 && $instance->fromDt == $cursorDt) {
+                    continue;
+                }
+
+                $toDtForKey = $instance->toDt ?? $instance->fromDt;
+                $isExcluded = isset($exclusionMap[$instance->fromDt . '_' . $toDtForKey]);
+
+                $data[] = [
+                    'fromDt' => $instance->fromDt,
+                    'toDt' => $instance->toDt,
+                    'fromDtFormatted' => Carbon::createFromTimestamp($instance->fromDt)
+                        ->format(DateFormatHelper::getSystemFormat()),
+                    'toDtFormatted' => $instance->toDt != null
+                        ? Carbon::createFromTimestamp($instance->toDt)->format(DateFormatHelper::getSystemFormat())
+                        : null,
+                    'isExcluded' => $isExcluded
+                ];
+            }
+
+            if ($direction === 'past') {
+                $hasMore = count($data) > $length;
+                $data = array_slice($data, -$length);
+                $hasPrev = $hasMore;
+                $hasNext = true;
+            } else {
+                $hasMore = count($data) > $length;
+                $data = array_slice($data, 0, $length);
+                $hasNext = $hasMore;
+                $hasPrev = $anchorDt > $eventStartDt;
             }
         }
-
-        // Get all instances in the date range (including excluded ones for display)
-        $allInstances = $schedule->getEvents($fromDt, $toDt, true);
-
-        // Get exclusions
-        $scheduleExclusions = $this->scheduleExclusionFactory->query(null, ['eventId' => $id]);
-        $exclusionMap = [];
-        foreach ($scheduleExclusions as $exclusion) {
-            // toDt is stored as 0 in DB for command events (null in instance)
-            $key = $exclusion->fromDt . '_' . $exclusion->toDt;
-            $exclusionMap[$key] = true;
-        }
-
-        // Build result array
-        $data = [];
-        foreach ($allInstances as $instance) {
-            // For command events, toDt is null but calendar saves it as fromDt in exclusions table
-            $toDtForKey = $instance->toDt ?? $instance->fromDt;
-            $isExcluded = isset($exclusionMap[$instance->fromDt . '_' . $toDtForKey]);
-
-            // Filter based on excludedOnly parameter
-            if ($excludedOnly == 1 && !$isExcluded) {
-                continue;
-            }
-
-            $data[] = [
-                'fromDt' => $instance->fromDt,
-                'toDt' => $instance->toDt,
-                'fromDtFormatted' => Carbon::createFromTimestamp($instance->fromDt)
-                    ->format(DateFormatHelper::getSystemFormat()),
-                'toDtFormatted' => $instance->toDt != null
-                    ? Carbon::createFromTimestamp($instance->toDt)->format(DateFormatHelper::getSystemFormat())
-                    : null,
-                'isExcluded' => $isExcluded
-            ];
-        }
-
-        $recordsTotal = count($data);
-
-        // Apply pagination
-        $paginatedData = array_slice($data, $start, $length);
 
         $this->getState()->hydrate([
             'httpStatus' => 200,
             'data' => [
-                'data' => $paginatedData,
-                'recordsTotal' => $recordsTotal,
-                'recordsFiltered' => $recordsTotal
+                'data' => $data,
+                'hasNext' => $hasNext,
+                'hasPrev' => $hasPrev,
             ]
         ]);
 
