@@ -1861,6 +1861,7 @@ class Schedule extends Base
                 'data' => $data,
                 'hasNext' => $hasNext,
                 'hasPrev' => $hasPrev,
+                'anchorDt' => intval($anchorDt->format('U')),
             ]
         ]);
 
