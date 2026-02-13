@@ -1299,11 +1299,14 @@ const initExclusionsTab = function($container) {
   const pageSize = 50;
   let showExcludedOnly = false;
   let cursorDt = 0; // 0 = today (server default)
+  let lastDirection = 'future';
   let hasNext = false;
   let hasPrev = false;
+  let lastAnchorDt = 0;
 
   const loadInstances = function(direction) {
-    direction = direction || 'future';
+    direction = direction || lastDirection;
+    lastDirection = direction;
 
     // Show loading indicator
     const $table = $('#instancesTable');
@@ -1331,6 +1334,7 @@ const initExclusionsTab = function($container) {
           renderInstancesTable(response.data.data);
           hasNext = response.data.hasNext;
           hasPrev = response.data.hasPrev;
+          lastAnchorDt = response.data.anchorDt;
           updatePagination();
         }
         // Remove min-height after content is loaded
@@ -1512,24 +1516,18 @@ const initExclusionsTab = function($container) {
 
   $('#prevPageBtn').on('click', function() {
     if (!hasPrev) return;
-    // Use the first item's fromDt as cursor to go backwards
     const $firstRow = $('#instancesTable tbody tr:first');
     const firstFromDt = $firstRow.data('fromDt');
-    if (firstFromDt) {
-      cursorDt = firstFromDt;
-      loadInstances('past');
-    }
+    cursorDt = firstFromDt || lastAnchorDt;
+    loadInstances('past');
   });
 
   $('#nextPageBtn').on('click', function() {
     if (!hasNext) return;
-    // Use the last item's fromDt as cursor to go forwards
     const $lastRow = $('#instancesTable tbody tr:last');
     const lastFromDt = $lastRow.data('fromDt');
-    if (lastFromDt) {
-      cursorDt = lastFromDt;
-      loadInstances('future');
-    }
+    cursorDt = lastFromDt || lastAnchorDt;
+    loadInstances('future');
   });
 
   // 부모 모달이 닫힐 때 body의 인라인 overflow 스타일 제거
