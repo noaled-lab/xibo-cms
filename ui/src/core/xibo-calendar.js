@@ -1296,12 +1296,15 @@ const initExclusionsTab = function($container) {
   const restoreUrl = $container.data('restoreUrl');
   const $dialog = $container.closest('.modal');
 
-  let currentPage = 0;
-  let pageSize = 20;
+  const pageSize = 50;
   let showExcludedOnly = false;
-  let totalRecords = 0;
+  let cursorDt = 0; // 0 = today (server default)
+  let hasNext = false;
+  let hasPrev = false;
 
-  const loadInstances = function() {
+  const loadInstances = function(direction) {
+    direction = direction || 'future';
+
     // Show loading indicator
     const $table = $('#instancesTable');
     const $tbody = $table.find('tbody');
@@ -1318,16 +1321,17 @@ const initExclusionsTab = function($container) {
       url: instancesUrl,
       method: 'GET',
       data: {
-        start: currentPage * pageSize,
         length: pageSize,
         excludedOnly: showExcludedOnly ? 1 : 0,
+        direction: direction,
+        cursorDt: cursorDt,
       },
       success: function(response) {
         if (response.data) {
           renderInstancesTable(response.data.data);
-          totalRecords = response.data.recordsTotal;
+          hasNext = response.data.hasNext;
+          hasPrev = response.data.hasPrev;
           updatePagination();
-          updateInfo();
         }
         // Remove min-height after content is loaded
         $table.css('min-height', '');
@@ -1355,7 +1359,7 @@ const initExclusionsTab = function($container) {
     }
 
     instances.forEach(function(instance) {
-      const $row = $('<tr>');
+      const $row = $('<tr>').data('fromDt', instance.fromDt);
 
       // 시작 시간
       $row.append($('<td>').text(instance.fromDtFormatted));
@@ -1492,16 +1496,8 @@ const initExclusionsTab = function($container) {
   };
 
   const updatePagination = function() {
-    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
-    $('#pageInfo').text((currentPage + 1) + ' / ' + totalPages);
-    $('#prevPageBtn').prop('disabled', currentPage === 0);
-    $('#nextPageBtn').prop('disabled', currentPage >= totalPages - 1 || totalRecords === 0);
-  };
-
-  const updateInfo = function() {
-    const startIdx = totalRecords > 0 ? (currentPage * pageSize + 1) : 0;
-    const endIdx = Math.min((currentPage + 1) * pageSize, totalRecords);
-    $('#instancesInfo').text('총 ' + totalRecords + '개 중 ' + startIdx + '-' + endIdx + ' 표시');
+    $('#prevPageBtn').prop('disabled', !hasPrev);
+    $('#nextPageBtn').prop('disabled', !hasNext);
   };
 
   // 이벤트 핸들러
@@ -1510,29 +1506,30 @@ const initExclusionsTab = function($container) {
     const $icon = showExcludedOnly ? '<i class="fa fa-list"></i>' : '<i class="fa fa-filter"></i>';
     const text = showExcludedOnly ? ' 모든 항목 보기' : ' 제외된 항목만 보기';
     $(this).html($icon + text);
-    currentPage = 0;
-    loadInstances();
+    cursorDt = 0;
+    loadInstances('future');
   });
 
   $('#prevPageBtn').on('click', function() {
-    if (currentPage > 0) {
-      currentPage--;
-      loadInstances();
+    if (!hasPrev) return;
+    // Use the first item's fromDt as cursor to go backwards
+    const $firstRow = $('#instancesTable tbody tr:first');
+    const firstFromDt = $firstRow.data('fromDt');
+    if (firstFromDt) {
+      cursorDt = firstFromDt;
+      loadInstances('past');
     }
   });
 
   $('#nextPageBtn').on('click', function() {
-    const totalPages = Math.ceil(totalRecords / pageSize);
-    if (currentPage < totalPages - 1) {
-      currentPage++;
-      loadInstances();
+    if (!hasNext) return;
+    // Use the last item's fromDt as cursor to go forwards
+    const $lastRow = $('#instancesTable tbody tr:last');
+    const lastFromDt = $lastRow.data('fromDt');
+    if (lastFromDt) {
+      cursorDt = lastFromDt;
+      loadInstances('future');
     }
-  });
-
-  $('#pageSizeSelect').on('change', function() {
-    pageSize = parseInt($(this).val());
-    currentPage = 0;
-    loadInstances();
   });
 
   // 부모 모달이 닫힐 때 body의 인라인 overflow 스타일 제거
