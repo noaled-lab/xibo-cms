@@ -1,0 +1,357 @@
+<!--
+  ~ Copyright (C) 2024 Xibo Signage Ltd
+  ~
+  ~ Xibo - Digital Signage - https://xibosignage.com
+  ~
+  ~ This file is part of Xibo.
+  ~
+  ~ Xibo is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ any later version.
+  ~
+  ~ Xibo is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with Xibo.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+<module>
+    <!-- =====================================================================
+         MODULE METADATA
+         - id: 고유 식별자. DB와 라우팅에 사용됨. 'core-' 접두사는 기본 모듈 표시
+         - name: UI에 표시되는 이름
+         - type: 내부 타입 식별자 (widgetoption 조회 시 사용)
+         - renderAs: 플레이어에서 렌더링 방식 (html / native)
+         ===================================================================== -->
+    <id>core-youtube</id>
+    <name>유튜브</name>
+    <author>Core</author>
+    <description>유튜브 영상을 재생합니다.</description>
+    <icon>fa fa-youtube-play</icon>
+    <class></class>
+    <type>youtube</type>
+    <dataType></dataType>
+    <schemaVersion>1</schemaVersion>
+
+    <!-- assignable: 레이아웃/플레이리스트에 추가 가능 여부 -->
+    <assignable>1</assignable>
+    <!-- regionSpecific: 1이면 특정 리전에만 속함 (0이면 전역 가능) -->
+    <regionSpecific>1</regionSpecific>
+    <renderAs>html</renderAs>
+    <defaultDuration>60</defaultDuration>
+    <startWidth>400</startWidth>
+    <startHeight>600</startHeight>
+    <settings></settings>
+
+    <!-- =====================================================================
+         PROPERTIES (위젯 설정 패널에 표시되는 입력 필드 정의)
+
+         각 property는 DB의 widgetoption 테이블에 저장됨:
+           - widgetId: 위젯 인스턴스 ID
+           - option: property의 id 값 (예: 'transparency', 'embedHtml')
+           - type: 'attrib'(단순값) 또는 'cdata'(HTML/JS 코드)
+           - value: 사용자가 입력한 값
+
+         property type 종류:
+           - checkbox: 0 또는 1
+           - code: 코드 에디터 (variant로 언어 지정: html/css/javascript)
+           - text: 단순 텍스트 입력
+           - color: 색상 선택기
+           - number: 숫자 입력
+
+         includeInXlf="true": XLF(레이아웃 파일) 내보내기에 포함
+         allowLibraryRefs="true": [libraryId] 형식의 라이브러리 참조 허용
+         ===================================================================== -->
+    <properties>
+
+        <!-- STEP 1: 사용자가 UI에서 값을 입력/체크 -->
+        <!-- STEP 2: 저장 시 WidgetOption 레코드로 DB에 저장 -->
+        <!-- STEP 3: 렌더링 시 decorateProperties()로 로드되어 Twig 컨텍스트에 주입 -->
+
+        <!-- UI에서 숨김 처리된 내부 속성들 (visibility 조건으로 절대 표시 안 됨) -->
+        <property id="transparency" type="checkbox" includeInXlf="true">
+            <title>Background transparent?</title>
+            <helpText>Should the Widget be shown with a transparent background?</helpText>
+            <default>0</default>
+            <visibility>
+                <test><condition field="transparency" type="eq">__hidden__</condition></test>
+            </visibility>
+        </property>
+
+        <property id="scaleContent" type="checkbox">
+            <title>Scale Content?</title>
+            <helpText>Should the embedded content be scaled along with the layout?</helpText>
+            <default>0</default>
+            <visibility>
+                <test><condition field="scaleContent" type="eq">__hidden__</condition></test>
+            </visibility>
+        </property>
+
+        <property id="isPreNavigate" type="checkbox" includeInXlf="true">
+            <title>Preload?</title>
+            <helpText>Should this Widget be loaded entirely off-screen so that it is ready when shown?</helpText>
+            <default>0</default>
+            <visibility>
+                <test><condition field="isPreNavigate" type="eq">__hidden__</condition></test>
+            </visibility>
+        </property>
+
+        <property id="embedHtml" type="code" allowLibraryRefs="true" variant="html" includeInXlf="true" saveDefault="true">
+            <title>HTML</title>
+            <helpText>Add HTML to be included between the BODY tag.</helpText>
+            <default><![CDATA[<!-- BROWSER=edge -->
+<div id="player"></div>]]></default>
+            <visibility>
+                <test><condition field="embedHtml" type="eq">__hidden__</condition></test>
+            </visibility>
+        </property>
+
+        <property id="embedStyle" type="code" allowLibraryRefs="true" variant="css" saveDefault="true">
+            <title>Style Sheet</title>
+            <helpText>Add CSS to be included immediately before the closing body tag.</helpText>
+            <default><![CDATA[html, body {
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+}
+
+#player {
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+}]]></default>
+            <visibility>
+                <test><condition field="embedStyle" type="eq">__hidden__</condition></test>
+            </visibility>
+        </property>
+
+        <property id="embedJavaScript" type="code" allowLibraryRefs="true" variant="javascript">
+            <title>JavaScript</title>
+            <helpText>Add JavaScript to be included immediately before the closing body tag.</helpText>
+            <visibility>
+                <test><condition field="embedJavaScript" type="eq">__hidden__</condition></test>
+            </visibility>
+        </property>
+
+        <!-- UI에 표시되는 유일한 입력 필드 -->
+        <property id="youtubeVideoId" type="text" saveDefault="true">
+            <title>유튜브 영상 아이디</title>
+            <helpText>재생할 YouTube 영상의 ID를 입력하세요. (예: UDpeePoUmm0)</helpText>
+            <default>UDpeePoUmm0</default>
+        </property>
+
+        <property id="embedScript" type="code" variant="html" saveDefault="true">
+            <title>HEAD</title>
+            <helpText>Add additional tags to appear immediately before the closing head tag.</helpText>
+            <visibility>
+                <test><condition field="embedScript" type="eq">__hidden__</condition></test>
+            </visibility>
+            <default><![CDATA[<script>
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+var player;
+var playerState = -1;
+var readyCalled = false;
+var retryCount = 0;
+var maxRetry = 3;
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (!document.getElementById("player")) {
+        var div = document.createElement("div");
+        div.id = "player";
+        div.style.width = "100%";
+        div.style.height = "100%";
+        document.body.appendChild(div);
+    }
+});
+
+function onYouTubeIframeAPIReady() {
+    player = new YT.Player('player', {
+        width: '100%',
+        height: '100%',
+        videoId: xiboYoutubeVideoId,
+        playerVars: {
+            autoplay: 1,
+            mute: 1,
+            controls: 0,
+            rel: 0,
+            modestbranding: 1,
+            playsinline: 1,
+            vq: 'hd1080'
+        },
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange,
+            'onError': onYTError
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    readyCalled = true;
+    event.target.mute();
+    event.target.setPlaybackQuality('hd1080');
+    event.target.playVideo();
+}
+
+function onPlayerStateChange(event) {
+    playerState = event.data;
+
+    if (event.data === YT.PlayerState.PLAYING) {
+        player.setPlaybackQuality('hd1080');
+        player.unMute();
+        player.setVolume(100);
+    }
+
+    if (event.data === YT.PlayerState.BUFFERING) {
+        setTimeout(function () {
+            if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+                player.playVideo();
+            }
+        }, 3000);
+    }
+
+    if (event.data === YT.PlayerState.PAUSED && readyCalled) {
+        setTimeout(function () {
+            if (player.getPlayerState() === YT.PlayerState.PAUSED) {
+                player.playVideo();
+            }
+        }, 1500);
+    }
+
+    if (event.data === YT.PlayerState.ENDED) {
+        expireContent();
+    }
+}
+
+function onYTError(event) {
+    console.warn("YouTube Error:", event.data);
+    if (retryCount < maxRetry) {
+        retryCount++;
+        setTimeout(function () {
+            player.loadVideoById({
+                videoId: xiboYoutubeVideoId,
+                suggestedQuality: 'hd1080'
+            });
+            player.unMute();
+            player.setVolume(100);
+            player.playVideo();
+        }, 2000 * retryCount);
+    } else {
+        expireContent();
+    }
+}
+
+function expireContent() {
+    if (typeof xiboIC !== "undefined") {
+        xiboIC.expireNow();
+    }
+}
+</script>]]></default>
+        </property>
+
+    </properties>
+
+    <preview></preview>
+
+    <!-- =====================================================================
+         STENCIL (Twig 템플릿으로 실제 HTML 생성)
+
+         렌더링 흐름:
+           1. WidgetHtmlRenderer::render() 호출
+           2. decorateProperties(widget) → widgetoption 테이블에서 값 로드
+           3. Twig 샌드박스 환경에서 stencil 처리:
+              - twigSandbox.fetchFromString(stencil.twig, propertyValues)
+              - propertyValues = { embedHtml: '...', embedStyle: '...', ... }
+           4. {{propertyId|raw}} → 값을 HTML 이스케이프 없이 그대로 출력
+              ※ |raw 필터: XSS 위험이 있으나, embedded 위젯은 의도적으로 허용
+
+         <head>: 최종 HTML의 <head> 태그 직전에 삽입
+         <twig>: <body> 내용으로 렌더링 (Twig 처리 후)
+         <style>: <style> 태그로 감싸져 삽입
+         <hbs>: Handlebars 클라이언트 사이드 템플릿 (데이터셋 등에서 사용)
+         ===================================================================== -->
+    <stencil>
+        <!-- embedScript 값 → <head>에 삽입 + youtubeVideoId를 JS 변수로 주입 -->
+        <head><![CDATA[
+{{embedScript|raw}}
+<script type="text/javascript">
+    var xiboYoutubeVideoId = "{{youtubeVideoId}}";
+</script>
+        ]]></head>
+
+        <!-- embedHtml + embedJavaScript → <body>에 삽입 -->
+        <twig><![CDATA[
+{{embedHtml|raw}}
+<script type="text/javascript">
+    {{embedJavaScript|raw}}
+</script>
+        ]]></twig>
+
+        <!-- embedStyle → CSS로 삽입 -->
+        <style><![CDATA[
+{{embedStyle|raw}}
+        ]]></style>
+    </stencil>
+
+    <!-- =====================================================================
+         onInitialize (위젯 초기화 시 실행되는 JavaScript)
+
+         실행 시점: 위젯 DOM이 준비된 직후, 데이터 로드 전
+         사용 가능한 변수:
+           - id: 위젯 ID (string)
+           - target: 위젯 DOM 요소 (jQuery 객체)
+           - properties: 위젯 속성 객체 (embedHtml, embedStyle 등)
+           - meta: 메타데이터 객체
+
+         렌더링 방식:
+           widget-html-render.twig에서 아래와 같이 출력됨:
+           <script id="onInitialize-{widgetId}">
+             function onInitialize_{widgetId}(id, target, properties, meta) {
+               // 이 내용이 여기에 들어감
+             }
+           </script>
+         ===================================================================== -->
+    <onInitialize><![CDATA[
+// id: The id of the widget
+// target: The target element to render
+// properties: The properties for the widget
+// -------------------------------------------
+// EmbedInit()는 embedJavaScript 안에서 사용자가 정의할 수 있는 함수
+// 사용자 정의 초기화 함수가 있으면 실행
+if(typeof EmbedInit === 'function') {
+    EmbedInit();
+}
+    ]]></onInitialize>
+
+    <!-- =====================================================================
+         onRender (위젯 렌더링 시 실행되는 JavaScript)
+
+         실행 시점: 데이터 로드 및 Twig 렌더링 완료 후
+         사용 가능한 변수: onInitialize와 동일
+           + globalOptions: 레이아웃 전역 옵션 (width, height, scale 등)
+
+         scaleContent 속성이 체크된 경우:
+           - window.scaleContent = true 설정
+           - xiboLayoutScaler() jQuery 플러그인으로 콘텐츠 크기 자동 조정
+         ===================================================================== -->
+    <onRender><![CDATA[
+// scaleContent가 체크된 경우 레이아웃 스케일러 적용
+// properties.scaleContent: widgetoption 테이블에서 로드된 값 (0 또는 1)
+if(properties.scaleContent) {
+    window.scaleContent = true;
+    // globalOptions: 레이아웃 너비/높이/스케일 정보를 담은 전역 객체
+    $(target).xiboLayoutScaler(globalOptions);
+}
+]]></onRender>
+</module>
