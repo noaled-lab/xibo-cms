@@ -144,7 +144,7 @@ Toolbar.prototype.init = function(
     // Skip specific modules for non-Super Admin users
     if (typeof currentUserTypeId !== 'undefined' && currentUserTypeId !== 1) {
       // Allow basic media types and clock-related modules
-      const allowedModules = ['image', 'audio', 'video', 'clock-digital', 'clock-analogue', 'clock-flip'];
+      const allowedModules = ['image', 'audio', 'video', 'clock-digital', 'clock-analogue', 'clock-flip', 'youtube'];
       if (!allowedModules.includes(el.type)) {
         return; // Skip this module
       }
