@@ -284,10 +284,11 @@ function expireContent() {
     <stencil>
         <!-- embedScript 값 → <head>에 삽입 + youtubeVideoId를 JS 변수로 주입 -->
         <head><![CDATA[
-{{embedScript|raw}}
 <script type="text/javascript">
-    var xiboYoutubeVideoId = "{{youtubeVideoId}}";
+var xiboYoutubeVideoId = "{{youtubeVideoId|raw}}";
 </script>
+{{embedScript|raw}}
+
         ]]></head>
 
         <!-- embedHtml + embedJavaScript → <body>에 삽입 -->
