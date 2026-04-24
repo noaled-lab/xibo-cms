@@ -3,6 +3,7 @@ name: Build Docker Image and Push to GHCR
 on:
   push:
     branches: ["noaled"]
+  workflow_dispatch:
 
 jobs:
   build-and-push:
