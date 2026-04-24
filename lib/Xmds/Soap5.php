@@ -404,9 +404,22 @@ class Soap5 extends Soap4
 
                 // Update the Channel
                 $display->xmrChannel = $xmrChannel;
-                // Update the PUB Key only if it has been cleared
-                if ($display->xmrPubKey == '') {
-                    $display->xmrPubKey = $xmrPubKey;
+
+                // Keep the stored key in sync with the latest key provided by the same hardwareKey.
+                $existingXmrPubKey = trim((string)($display->xmrPubKey ?? ''));
+                $incomingXmrPubKey = trim((string)$xmrPubKey);
+
+                if ($incomingXmrPubKey !== '') {
+                    if ($existingXmrPubKey === '') {
+                        $display->xmrPubKey = $incomingXmrPubKey;
+                    } elseif ($existingXmrPubKey !== $incomingXmrPubKey) {
+                        $this->getLog()->notice(
+                            'RegisterDisplay: xmrPubKey changed for displayId ' . $display->displayId
+                            . ' oldMd5=' . md5($existingXmrPubKey)
+                            . ' newMd5=' . md5($incomingXmrPubKey)
+                        );
+                        $display->xmrPubKey = $incomingXmrPubKey;
+                    }
                 }
             }
         } catch (NotFoundException $e) {
