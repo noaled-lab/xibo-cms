@@ -379,24 +379,14 @@ $(function() {
         },
       },
       {
-        data: 'displayOrder',
-        className: 'align-middle',
-        responsivePriority: 3,
-      },
-      {
         data: 'isPriority',
         className: 'align-middle',
         responsivePriority: 2,
       },
       {
-        name: 'criteria',
+        data: 'displayOrder',
         className: 'align-middle',
-        visible: false,
-        responsivePriority: 2,
-        data: function(data, type, row) {
-          return (data.criteria && data.criteria.length > 0) ?
-            dataTableTickCrossColumn(1, type, row) : '';
-        },
+        responsivePriority: 3,
       },
       {
         data: 'createdOn',
