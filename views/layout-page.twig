@@ -41,7 +41,11 @@
                                     {% endif %}
 
                                     {% set title %}{% trans "Name" %}{% endset %}
+                                    {% if currentUser.isSuperAdmin() %}
                                     {{ inline.inputNameGrid('layout', title) }}
+                                    {% else %}
+                                    {{ inline.input('layout', title) }}
+                                    {% endif %}
 
                                     {% if currentUser.isSuperAdmin() %}
                                     {% if currentUser.featureEnabled("tag.tagging") %}
