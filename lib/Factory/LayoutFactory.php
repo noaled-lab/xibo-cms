@@ -2596,6 +2596,16 @@ class LayoutFactory extends BaseFactory
             }
         }
 
+        if ($parsedFilter->getInt('resolutionId') !== null) {
+            $body .= ' AND EXISTS (
+                SELECT 1 FROM `resolution`
+                 WHERE `resolution`.resolutionId = :resolutionId
+                   AND `resolution`.intended_width = layout.width
+                   AND `resolution`.intended_height = layout.height
+            ) ';
+            $params['resolutionId'] = $parsedFilter->getInt('resolutionId');
+        }
+
         if ($parsedFilter->getString('campaignType') != '') {
             $body .= ' AND campaign.type = :type ';
             $params['type'] = $parsedFilter->getString('campaignType');

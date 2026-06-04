@@ -26,19 +26,24 @@
             <div class="XiboGrid" id="{{ random() }}" data-grid-type="layout" data-grid-name="layoutView">
                 <div class="XiboFilter card mb-3 bg-light">
                     <div class="FilterDiv card-body" id="Filter">
+                        {% if currentUser.isSuperAdmin() %}
                         <ul class="nav nav-tabs" role="tablist">
                             <li class="nav-item"><a class="nav-link active" href="#general-filter" role="tab" data-toggle="tab" aria-selected="true"><span>{% trans "General" %}</span></a></li>
                             <li class="nav-item"><a class="nav-link" href="#advanced-filter" role="tab" data-toggle="tab" aria-selected="false"><span>{% trans "Advanced" %}</span></a></li>
                         </ul>
+                        {% endif %}
                         <form class="form-inline d-block">
                             <div class="tab-content">
                                 <div class="tab-pane active" id="general-filter" role="tabpanel">
+                                    {% if currentUser.isSuperAdmin() %}
                                     {% set title %}{% trans "ID" %}{% endset %}
                                     {{ inline.number("campaignId", title) }}
+                                    {% endif %}
 
                                     {% set title %}{% trans "Name" %}{% endset %}
                                     {{ inline.inputNameGrid('layout', title) }}
 
+                                    {% if currentUser.isSuperAdmin() %}
                                     {% if currentUser.featureEnabled("tag.tagging") %}
                                         {% set title %}{% trans "Tags" %}{% endset %}
                                         {% set exactTagTitle %}{% trans "Exact match?" %}{% endset %}
@@ -105,9 +110,26 @@
                                     {% set option3 = "Portrait"|trans %}
                                     {% set values = [{id: '', value: option1}, {id: 'landscape', value: option2}, {id: 'portrait', value: option3}] %}
                                     {{ inline.dropdown("orientation", "single", title, '', values, "id", "value") }}
+                                    {% endif %}{# end isSuperAdmin or isGroupAdmin #}
+
+                                    {% set title %}{% trans "Resolution" %}{% endset %}
+                                    {% set helpText %}{% trans "Filter by Resolution" %}{% endset %}
+                                    {% set attributes = [
+                                        { name: "data-width", value: "200px" },
+                                        { name: "data-allow-clear", value: "true" },
+                                        { name: "data-placeholder--id", value: null },
+                                        { name: "data-placeholder--value", value: "" },
+                                        { name: "data-search-url", value: url_for("resolution.search") ~ "?enabled=1" },
+                                        { name: "data-search-term", value: "resolution" },
+                                        { name: "data-id-property", value: "resolutionId" },
+                                        { name: "data-text-property", value: "resolution" },
+                                        { name: "data-initial-key", value: "resolutionId" },
+                                    ] %}
+                                    {{ inline.dropdown("resolutionId", "single", title, "", null, "resolutionId", "resolution", helpText, "pagedSelect", "", "", "", attributes) }}
 
                                     {{ inline.hidden("folderId") }}
                                 </div>
+                                {% if currentUser.isSuperAdmin() %}
                                 <div class="tab-pane" id="advanced-filter" role="tabpanel">
                                     {% set title %}{% trans "Retired" %}{% endset %}
                                     {% set option1 = "No"|trans %}
@@ -140,6 +162,7 @@
                                     {% set title %}{% trans "Modified Since" %}{% endset %}
                                     {{ inline.date("modifiedSinceDt", title) }}
                                 </div>
+                                {% endif %}
                             </div>
                         </form>
                     </div>
