@@ -162,18 +162,32 @@
                                 </div>
 
                                 <div class="XiboGrid" id="{{ random() }}" data-grid-name="layoutAssignView">
-                                    {% if currentUser.userTypeId == 1 %}
                                     <div class="layoutAssignFilterOptions XiboFilter">
-                                    {% else %}
-                                    <div class="layoutAssignFilterOptions XiboFilter" style="display: none;">
-                                    {% endif %}
                                         <div class="form-inline">
+                                            {% if currentUser.isSuperAdmin() %}
                                             {% set title %}{% trans "ID" %}{% endset %}
                                             {{ inline.number("campaignId", title) }}
+                                            {% endif %}
 
                                             {% set title %}{% trans "Name" %}{% endset %}
                                             {{ inline.input("layout", title) }}
 
+                                            {% set title %}{% trans "Resolution" %}{% endset %}
+                                            {% set helpText %}{% trans "Filter by Resolution" %}{% endset %}
+                                            {% set attributes = [
+                                                { name: "data-width", value: "200px" },
+                                                { name: "data-allow-clear", value: "true" },
+                                                { name: "data-placeholder--id", value: null },
+                                                { name: "data-placeholder--value", value: "" },
+                                                { name: "data-search-url", value: url_for("resolution.search") ~ "?enabled=1" },
+                                                { name: "data-search-term", value: "resolution" },
+                                                { name: "data-id-property", value: "resolutionId" },
+                                                { name: "data-text-property", value: "resolution" },
+                                                { name: "data-initial-key", value: "resolutionId" },
+                                            ] %}
+                                            {{ inline.dropdown("resolutionId", "single", title, "", null, "resolutionId", "resolution", helpText, "pagedSelect", "", "", "", attributes) }}
+
+                                            {% if currentUser.isSuperAdmin() %}
                                             {% if currentUser.featureEnabled("tag.tagging") %}
                                                 {% set title %}{% trans "Tags" %}{% endset %}
                                                 {% set exactTagTitle %}{% trans "Exact match?" %}{% endset %}
@@ -221,6 +235,7 @@
                                             {% set option3 = "Portrait"|trans %}
                                             {% set values = [{id: '', value: option1}, {id: 'landscape', value: option2}, {id: 'portrait', value: option3}] %}
                                             {{ inline.dropdown("orientation", "single", title, '', values, "id", "value") }}
+                                            {% endif %}
                                         </div>
                                     </div>
 

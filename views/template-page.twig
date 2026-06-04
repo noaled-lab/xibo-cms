@@ -39,19 +39,38 @@
         <div class="widget-title">{% trans "Templates" %}</div>
         <div class="widget-body">
             <div class="XiboGrid" id="{{ random() }}" data-grid-name="templateView">
-                <div class="XiboFilter card mb-3 bg-light">
+                <div class="XiboFilter template-page-filter card mb-3 bg-light">
                     <div class="FilterDiv card-body" id="Filter">
                         <form class="form-inline">
                             {% set title %}{% trans "Name" %}{% endset %}
+                            {% if currentUser.isSuperAdmin() %}
                             {{ inline.inputNameGrid('template', title) }}
+                            {% else %}
+                            {{ inline.input('template', title) }}
+                            {% endif %}
 
-                            {% if currentUser.featureEnabled("tag.tagging") %}
+                            {% if currentUser.isSuperAdmin() and currentUser.featureEnabled("tag.tagging") %}
                                 {% set title %}{% trans "Tags" %}{% endset %}
                                 {% set exactTagTitle %}{% trans "Exact match?" %}{% endset %}
                                 {% set logicalOperatorTitle %}{% trans "When filtering by multiple Tags, which logical operator should be used?" %}{% endset %}
                                 {% set helpText %}{% trans "A comma separated list of tags to filter by. Enter a tag|tag value to filter tags with values. Enter --no-tag to filter all items without tags. Enter - before a tag or tag value to exclude from results." %}{% endset %}
                                 {{ inline.inputWithTags("tags", title, null, helpText, null, null, null, "exactTags", exactTagTitle, logicalOperatorTitle) }}
                             {% endif %}
+
+                            {% set title %}{% trans "Resolution" %}{% endset %}
+                            {% set helpText %}{% trans "Filter by Resolution" %}{% endset %}
+                            {% set attributes = [
+                                { name: "data-width", value: "200px" },
+                                { name: "data-allow-clear", value: "true" },
+                                { name: "data-placeholder--id", value: null },
+                                { name: "data-placeholder--value", value: "" },
+                                { name: "data-search-url", value: url_for("resolution.search") ~ "?enabled=1" },
+                                { name: "data-search-term", value: "resolution" },
+                                { name: "data-id-property", value: "resolutionId" },
+                                { name: "data-text-property", value: "resolution" },
+                                { name: "data-initial-key", value: "resolutionId" },
+                            ] %}
+                            {{ inline.dropdown("resolutionId", "single", title, "", null, "resolutionId", "resolution", helpText, "pagedSelect", "", "", "", attributes) }}
 
                             {{ inline.hidden("folderId") }}
                         </form>

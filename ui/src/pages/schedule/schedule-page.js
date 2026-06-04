@@ -379,6 +379,11 @@ $(function() {
         },
       },
       {
+        data: 'displayOrder',
+        className: 'align-middle',
+        responsivePriority: 3,
+      },
+      {
         data: 'isPriority',
         className: 'align-middle',
         responsivePriority: 2,

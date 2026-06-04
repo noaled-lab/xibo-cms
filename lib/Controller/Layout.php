@@ -1585,6 +1585,7 @@ class Layout extends Base
             'folderId' => $parsedQueryParams->getInt('folderId'),
             'codeLike' => $parsedQueryParams->getString('codeLike'),
             'orientation' => $parsedQueryParams->getString('orientation', ['defaultOnEmptyString' => true]),
+            'resolutionId' => $parsedQueryParams->getInt('resolutionId'),
             'onlyMyLayouts' => $parsedQueryParams->getCheckbox('onlyMyLayouts'),
             'logicalOperator' => $parsedQueryParams->getString('logicalOperator'),
             'logicalOperatorName' => $parsedQueryParams->getString('logicalOperatorName'),
