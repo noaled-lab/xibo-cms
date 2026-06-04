@@ -376,7 +376,6 @@ class ScheduleFactory extends BaseFactory
             `schedule`.fromDt,
             `schedule`.toDt,
             `schedule`.userId,
-            `schedule`.displayOrder,
             `schedule`.is_priority AS isPriority,
             `schedule`.displayOrder,
             `schedule`.recurrence_type AS recurrenceType,
