@@ -48,7 +48,9 @@ jobs:
           file: ./Dockerfile
           push: true
           load: false
-          tags: ghcr.io/noaled-lab/xibo-cms:${{ steps.branch.outputs.tag }}
+          tags: |
+            ghcr.io/noaled-lab/xibo-cms:${{ steps.branch.outputs.tag }}
+            ghcr.io/noaled-lab/xibo-cms:${{ steps.branch.outputs.tag }}-${{ github.run_number }}
           cache-from: type=registry,ref=ghcr.io/noaled-lab/xibo-cms:cache-${{ steps.branch.outputs.tag }}
           cache-to: type=registry,ref=ghcr.io/noaled-lab/xibo-cms:cache-${{ steps.branch.outputs.tag }},mode=max
 
