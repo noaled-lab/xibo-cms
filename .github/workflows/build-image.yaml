@@ -39,6 +39,6 @@ jobs:
           push: true
           load: false
           tags: ghcr.io/noaled-lab/xibo-cms:latest,ghcr.io/noaled-lab/xibo-cms:yangsan-${{ github.run_number }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=ghcr.io/noaled-lab/xibo-cms:cache
+          cache-to: type=registry,ref=ghcr.io/noaled-lab/xibo-cms:cache,mode=max
 

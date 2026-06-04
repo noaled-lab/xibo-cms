@@ -378,6 +378,7 @@ class ScheduleFactory extends BaseFactory
             `schedule`.userId,
             `schedule`.displayOrder,
             `schedule`.is_priority AS isPriority,
+            `schedule`.displayOrder,
             `schedule`.recurrence_type AS recurrenceType,
             `schedule`.recurrence_detail AS recurrenceDetail,
             `schedule`.recurrence_range AS recurrenceRange,
