@@ -23,7 +23,7 @@
         {% if currentUser.userTypeId != 1 %}
         <style nonce="{{ cspNonce }}" id="filter-hide-style">
             /* Hide filters and advanced features for non-system users */
-            .XiboFilter:not(.layout-page-filter):not(.schedule-page-filter):not(.template-page-filter) {
+            .XiboFilter:not(.layout-page-filter):not(.schedule-page-filter):not(.template-page-filter):not(.layoutAssignFilterOptions) {
                 display: none !important;
             }
             /* Hide stats collection field in widget forms */
