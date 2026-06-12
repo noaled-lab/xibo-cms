@@ -422,9 +422,11 @@ class ScheduleFactory extends BaseFactory
             ON `daypart`.dayPartId = `schedule`.dayPartId
             LEFT OUTER JOIN `campaign`
             ON campaign.CampaignID = `schedule`.CampaignID
-            LEFT OUTER JOIN `layout` layoutSpecific
-            ON layoutSpecific.campaignId = campaign.campaignId
+            LEFT OUTER JOIN `lkcampaignlayout`
+            ON `lkcampaignlayout`.campaignId = campaign.campaignId
             AND campaign.isLayoutSpecific = 1
+            LEFT OUTER JOIN `layout` layoutSpecific
+            ON layoutSpecific.layoutId = `lkcampaignlayout`.layoutId
             AND layoutSpecific.parentId IS NULL
             LEFT OUTER JOIN `campaign` parentCampaign
             ON parentCampaign.campaignId = `schedule`.parentCampaignId
