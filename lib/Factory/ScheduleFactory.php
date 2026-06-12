@@ -793,12 +793,12 @@ class ScheduleFactory extends BaseFactory
         $sql = $select . $body . $order . $limit;
 
         try {
-            $this->getStore()->select($sql, $params);
-        } catch (\Exception $e) {
-            throw new \Exception('SQL: ' . $sql . ' | ERROR: ' . $e->getMessage());
+            $rows = $this->getStore()->select($sql, $params);
+        } catch (\PDOException $e) {
+            throw new \InvalidArgumentException('SQL_DEBUG: ' . $sql . ' | PDO_ERROR: ' . $e->getMessage() . ' | CODE: ' . implode(',', $e->errorInfo));
         }
 
-        foreach ($this->getStore()->select($sql, $params) as $row) {
+        foreach ($rows as $row) {
             $entries[] = $this->createEmpty()->hydrate($row, [
                 'intProperties' => [
                     'isPriority',
