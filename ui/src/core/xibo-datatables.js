@@ -261,6 +261,9 @@ window.dataTableDraw = function(e, settings, callBack) {
 
     // Bind a click event to our table
     target.find('tbody').off('click', 'tr').on('click', 'tr', function(ev) {
+      if ($(ev.target).closest('a, button').length > 0) {
+        return;
+      }
       $(ev.currentTarget).toggleClass('selected');
       target.data().initialised = true;
     });
