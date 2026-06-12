@@ -313,8 +313,10 @@
                         "sortable": false,
                         responsivePriority: 4,
                         "width": "120px",
-                        "data": function (data) {
-                            return '<a href="#" class="linked-layouts-btn" data-media-id="' + data.mediaId + '">{% trans "조회" %}</a><span class="linked-layouts-result"></span>';
+                        "data": null,
+                        "render": function (data, type, row) {
+                            if (type !== 'display') return '';
+                            return '<a href="#" class="linked-layouts-btn" data-media-id="' + row.mediaId + '">{% trans "조회" %}</a><span class="linked-layouts-result"></span>';
                         }
                     },
                     {
@@ -364,7 +366,7 @@
             table.on('processing.dt', dataTableProcessing);
             dataTableAddButtons(table, $('#libraryItems_wrapper').find('.dataTables_buttons'));
 
-            $('#libraryItems').on('click', '.linked-layouts-btn', function (e) {
+            $(document).on('click', '.linked-layouts-btn', function (e) {
                 e.preventDefault();
                 var link = $(this);
                 var mediaId = link.data('mediaId');
