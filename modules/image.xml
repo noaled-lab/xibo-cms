@@ -42,7 +42,7 @@
         <property id="defaultScaleTypeId" type="dropdown" mode="single">
             <title>Default Scale type</title>
             <helpText>How should images be scaled by default?</helpText>
-            <default>center</default>
+            <default>stretch</default>
             <options>
                 <option name="center">Centre</option>
                 <option name="stretch">Stretch</option>
