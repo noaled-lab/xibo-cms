@@ -398,8 +398,7 @@
             table.on('draw', dataTableDraw);
             table.on('draw', { form: $("#layouts").closest(".XiboGrid").find(".FilterDiv form") }, dataTableCreateTagEvents);
             table.on('draw', function(e, settings) {
-              $('#' + e.target.id + ' .generate-layout-thumbnail').on('click', function(e) {
-                e.preventDefault();
+              $('#' + e.target.id + ' .generate-layout-thumbnail').each(function() {
                 var $anchor = $(this);
                 $.ajax({
                   url: $anchor.attr('href'),
