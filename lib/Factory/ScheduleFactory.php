@@ -365,6 +365,16 @@ class ScheduleFactory extends BaseFactory
                     continue;
                 }
 
+                if ($sort == '`campaign`') {
+                    $newSortOrder[] = '`campaign`.`campaign`';
+                    continue;
+                }
+
+                if ($sort == '`campaign` DESC') {
+                    $newSortOrder[] = '`campaign`.`campaign` DESC';
+                    continue;
+                }
+
                 $newSortOrder[] = $sort;
             }
             $sortOrder = $newSortOrder;
@@ -386,7 +396,6 @@ class ScheduleFactory extends BaseFactory
             `schedule`.lastRecurrenceWatermark,
             campaign.campaignId,
             campaign.campaign,
-            campaign.isLayoutSpecific,
             layoutSpecific.layoutId,
             parentCampaign.campaign AS parentCampaignName,
             parentCampaign.type AS parentCampaignType,
