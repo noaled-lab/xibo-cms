@@ -247,7 +247,7 @@
                 filter: false,
                 searchDelay: 3000,
                 dataType: 'json',
-                order: [[1, "asc"]],
+                order: [[{ name: "modifiedDt" }, "desc"]],
                 ajax: {
                     url: "{{ url_for("layout.search") }}",
                     data: function (d) {
@@ -373,7 +373,7 @@
                         "data": "createdDt",
                         responsivePriority: 6,
                         "render": dataTableDateFromIso,
-                        "visible": false
+                        "visible": true
                     },
                     {
                         data: "modifiedDt",
