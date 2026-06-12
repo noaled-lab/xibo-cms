@@ -247,7 +247,7 @@
                 filter: false,
                 searchDelay: 3000,
                 dataType: 'json',
-                order: [[{ name: "modifiedDt" }, "desc"]],
+                order: [[$("#layouts thead th").filter(function() { return $(this).text().trim() === "{{ "Modified"|trans }}"; }).index(), "desc"]],
                 ajax: {
                     url: "{{ url_for("layout.search") }}",
                     data: function (d) {
