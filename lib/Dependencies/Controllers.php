@@ -73,7 +73,8 @@ class Controllers
                     $c->get('layoutFactory'),
                     $c->get('tagFactory'),
                     $c->get('folderFactory'),
-                    $c->get('displayGroupFactory')
+                    $c->get('displayGroupFactory'),
+                    $c->get('scheduleFactory')
                 );
                 $controller->useBaseDependenciesService($c->get('ControllerBaseDependenciesService'));
                 return $controller;

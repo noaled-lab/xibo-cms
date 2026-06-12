@@ -173,6 +173,23 @@ $(document).ready(function() {
         visible: false,
       },
       {
+        name: 'schedules',
+        orderable: false,
+        sortable: false,
+        responsivePriority: 3,
+        width: '120px',
+        data: function(data) {
+          if (!data.schedules || data.schedules.length === 0) {
+            return '<span class="text-muted">-</span>';
+          }
+          return data.schedules.map(function(s) {
+            var scheduleEditUrl = $('#campaigns').data('scheduleEditUrl');
+            var url = scheduleEditUrl.replace(':id', s.eventId);
+            return '<a class="XiboFormButton" href="' + url + '">' + s.name + '</a>';
+          }).join('<br>');
+        },
+      },
+      {
         data: 'createdAt',
         responsivePriority: 5,
         render: dataTableDateFromIso,

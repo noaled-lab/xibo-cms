@@ -60,6 +60,9 @@ class Campaign extends Base
     /** @var \Xibo\Factory\DisplayGroupFactory */
     private $displayGroupFactory;
 
+    /** @var \Xibo\Factory\ScheduleFactory */
+    private $scheduleFactory;
+
     /**
      * Set common dependencies.
      * @param CampaignFactory $campaignFactory
@@ -67,13 +70,14 @@ class Campaign extends Base
      * @param TagFactory $tagFactory
      * @param FolderFactory $folderFactory
      */
-    public function __construct($campaignFactory, $layoutFactory, $tagFactory, $folderFactory, $displayGroupFactory)
+    public function __construct($campaignFactory, $layoutFactory, $tagFactory, $folderFactory, $displayGroupFactory, \Xibo\Factory\ScheduleFactory $scheduleFactory)
     {
         $this->campaignFactory = $campaignFactory;
         $this->layoutFactory = $layoutFactory;
         $this->tagFactory = $tagFactory;
         $this->folderFactory = $folderFactory;
         $this->displayGroupFactory = $displayGroupFactory;
+        $this->scheduleFactory = $scheduleFactory;
     }
 
     /**
@@ -278,6 +282,15 @@ class Campaign extends Base
             } else {
                 $campaign->excludeProperty('layouts');
             }
+
+            // 연결 스케줄 목록
+            $schedules = $this->scheduleFactory->getByCampaignId($campaign->campaignId);
+            $campaign->setUnmatchedProperty('schedules', array_map(function ($s) {
+                return [
+                    'eventId' => $s->eventId,
+                    'name' => $s->name ?: $s->campaign,
+                ];
+            }, $schedules));
 
             if ($this->isApi($request)) {
                 continue;
