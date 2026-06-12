@@ -185,7 +185,7 @@ $(document).ready(function() {
           return data.schedules.map(function(s) {
             var scheduleEditUrl = $('#campaigns').data('scheduleEditUrl');
             var url = scheduleEditUrl.replace(':id', s.eventId);
-            return '<a class="XiboFormButton" href="' + url + '">' + s.name + '</a>';
+            return '<a class="XiboFormButton" href="' + url + '" style="color:#28a745;font-weight:bold;">' + s.name + '</a>';
           }).join('<br>');
         },
       },

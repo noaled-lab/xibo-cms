@@ -316,7 +316,7 @@
                         "data": null,
                         "render": function (data, type, row) {
                             if (type !== 'display') return '';
-                            return '<a href="#" class="linked-layouts-btn" data-media-id="' + row.mediaId + '">{% trans "조회" %}</a><span class="linked-layouts-result"></span>';
+                            return '<a href="#" class="linked-layouts-btn" data-media-id="' + row.mediaId + '" style="color:#28a745;font-weight:bold;">{% trans "조회" %}</a><span class="linked-layouts-result"></span>';
                         }
                     },
                     {
@@ -380,7 +380,7 @@
                         } else {
                             var html = response.data.map(function (l) {
                                 var designerUrl = '{{ url_for("layout.designer", {id: ":id"}) }}'.replace(':id', l.layoutId);
-                                return '<a class="XiboFormButton" href="' + designerUrl + '">' + l.layout + '</a>';
+                                return '<a class="XiboFormButton" href="' + designerUrl + '" style="color:#28a745;font-weight:bold;">' + l.layout + '</a>';
                             }).join('<br>');
                             resultSpan.html(html);
                         }
