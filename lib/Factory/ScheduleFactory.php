@@ -792,7 +792,11 @@ class ScheduleFactory extends BaseFactory
 
         $sql = $select . $body . $order . $limit;
 
-        $this->getLog()->debug('ScheduleFactory::query SQL: ' . $sql);
+        try {
+            $this->getStore()->select($sql, $params);
+        } catch (\Exception $e) {
+            throw new \Exception('SQL: ' . $sql . ' | ERROR: ' . $e->getMessage());
+        }
 
         foreach ($this->getStore()->select($sql, $params) as $row) {
             $entries[] = $this->createEmpty()->hydrate($row, [
