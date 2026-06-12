@@ -2205,6 +2205,31 @@ class Library extends Base
      * @throws NotFoundException
      * @throws \Xibo\Support\Exception\ControllerNotImplemented
      */
+    public function linkedLayouts(Request $request, Response $response, $id)
+    {
+        $media = $this->mediaFactory->getById($id);
+
+        if (!$this->getUser()->checkViewable($media)) {
+            throw new AccessDeniedException();
+        }
+
+        $layouts = $this->layoutFactory->query(null, [
+            'mediaId' => $id,
+            'showDrafts' => 0,
+            'disableUserCheck' => 1,
+        ]);
+
+        $result = array_map(function ($layout) {
+            return [
+                'layoutId' => $layout->layoutId,
+                'layout' => $layout->layout,
+            ];
+        }, $layouts);
+
+        $this->getState()->setData($result);
+        return $this->render($request, $response);
+    }
+
     public function usageLayouts(Request $request, Response $response, $id)
     {
         $media = $this->mediaFactory->getById($id);
