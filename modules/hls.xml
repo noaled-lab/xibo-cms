@@ -36,7 +36,7 @@
         <property id="defaultMute" type="checkbox">
             <title>Default Mute?</title>
             <helpText>Should new widgets default to Muted?</helpText>
-            <default>1</default>
+            <default>0</default>
         </property>
         <property id="defaultSubtitle" type="checkbox">
             <title>Default Subtitle?</title>
