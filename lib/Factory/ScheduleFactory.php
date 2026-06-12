@@ -365,16 +365,6 @@ class ScheduleFactory extends BaseFactory
                     continue;
                 }
 
-                if ($sort == '`campaign`') {
-                    $newSortOrder[] = '`campaign`.`campaign`';
-                    continue;
-                }
-
-                if ($sort == '`campaign` DESC') {
-                    $newSortOrder[] = '`campaign`.`campaign` DESC';
-                    continue;
-                }
-
                 $newSortOrder[] = $sort;
             }
             $sortOrder = $newSortOrder;
@@ -396,6 +386,7 @@ class ScheduleFactory extends BaseFactory
             `schedule`.lastRecurrenceWatermark,
             campaign.campaignId,
             campaign.campaign,
+            campaign.isLayoutSpecific,
             layoutSpecific.layoutId,
             parentCampaign.campaign AS parentCampaignName,
             parentCampaign.type AS parentCampaignType,
@@ -431,13 +422,10 @@ class ScheduleFactory extends BaseFactory
             ON `daypart`.dayPartId = `schedule`.dayPartId
             LEFT OUTER JOIN `campaign`
             ON campaign.CampaignID = `schedule`.CampaignID
-            LEFT OUTER JOIN (
-                SELECT campaignId, layoutId
-                FROM `layout`
-                WHERE parentId IS NULL
-            ) layoutSpecific
+            LEFT OUTER JOIN `layout` layoutSpecific
             ON layoutSpecific.campaignId = campaign.campaignId
             AND campaign.isLayoutSpecific = 1
+            AND layoutSpecific.parentId IS NULL
             LEFT OUTER JOIN `campaign` parentCampaign
             ON parentCampaign.campaignId = `schedule`.parentCampaignId
             LEFT OUTER JOIN `command`
@@ -792,13 +780,7 @@ class ScheduleFactory extends BaseFactory
 
         $sql = $select . $body . $order . $limit;
 
-        try {
-            $rows = $this->getStore()->select($sql, $params);
-        } catch (\PDOException $e) {
-            throw new \InvalidArgumentException('SQL_DEBUG: ' . $sql . ' | PDO_ERROR: ' . $e->getMessage() . ' | CODE: ' . implode(',', $e->errorInfo));
-        }
-
-        foreach ($rows as $row) {
+        foreach ($this->getStore()->select($sql, $params) as $row) {
             $entries[] = $this->createEmpty()->hydrate($row, [
                 'intProperties' => [
                     'isPriority',
