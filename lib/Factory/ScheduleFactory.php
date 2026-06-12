@@ -386,6 +386,8 @@ class ScheduleFactory extends BaseFactory
             `schedule`.lastRecurrenceWatermark,
             campaign.campaignId,
             campaign.campaign,
+            campaign.isLayoutSpecific,
+            lkcampaignlayout.layoutId,
             parentCampaign.campaign AS parentCampaignName,
             parentCampaign.type AS parentCampaignType,
             `command`.commandId,
@@ -420,6 +422,9 @@ class ScheduleFactory extends BaseFactory
             ON `daypart`.dayPartId = `schedule`.dayPartId
             LEFT OUTER JOIN `campaign`
             ON campaign.CampaignID = `schedule`.CampaignID
+            LEFT OUTER JOIN `lkcampaignlayout`
+            ON `lkcampaignlayout`.campaignId = campaign.campaignId
+            AND campaign.isLayoutSpecific = 1
             LEFT OUTER JOIN `campaign` parentCampaign
             ON parentCampaign.campaignId = `schedule`.parentCampaignId
             LEFT OUTER JOIN `command`
