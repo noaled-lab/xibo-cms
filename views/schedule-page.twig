@@ -204,6 +204,26 @@
                                 { id: 1, name: "Yes"|trans }
                             ] %}
                             {{ inline.dropdown("recurring", "single", title, "both", options, "id", "name", "", "non-agenda-filter") }}
+
+                            {% set title %}{% trans "우선순위 조건" %}{% endset %}
+                            {% set options = [
+                                { id: null, name: "전체" },
+                                { id: "gte", name: "이상" },
+                                { id: "eq", name: "일치" },
+                                { id: "lte", name: "이하" }
+                            ] %}
+                            {{ inline.dropdown("priorityOperator", "single", title, "", options, "id", "name", "", "non-agenda-filter") }}
+
+                            {% set title %}{% trans "우선순위" %}{% endset %}
+                            {{ inline.number("isPriority", title, "", "", "", "non-agenda-filter") }}
+
+                            {% set title %}{% trans "만료 여부" %}{% endset %}
+                            {% set options = [
+                                { id: null, name: "전체" },
+                                { id: "active", name: "유효" },
+                                { id: "expired", name: "만료" }
+                            ] %}
+                            {{ inline.dropdown("expiredStatus", "single", title, "", options, "id", "name", "", "non-agenda-filter") }}
                         </form>
                     </div>
                 </div>
