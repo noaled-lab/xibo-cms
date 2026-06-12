@@ -260,6 +260,7 @@ class Controllers
                     $c->get('widgetFactory'),
                     $c->get('widgetDataFactory'),
                     $c->get('playlistFactory'),
+                    $c->get('scheduleFactory'),
                 );
                 $controller->useBaseDependenciesService($c->get('ControllerBaseDependenciesService'));
                 return $controller;

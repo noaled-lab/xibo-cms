@@ -125,6 +125,7 @@ class Layout extends Base
     private $mediaService;
     private WidgetFactory $widgetFactory;
     private PlaylistFactory $playlistFactory;
+    private \Xibo\Factory\ScheduleFactory $scheduleFactory;
 
     /**
      * Set common dependencies.
@@ -157,6 +158,7 @@ class Layout extends Base
         WidgetFactory $widgetFactory,
         private readonly WidgetDataFactory $widgetDataFactory,
         PlaylistFactory $playlistFactory,
+        \Xibo\Factory\ScheduleFactory $scheduleFactory,
     ) {
         $this->session = $session;
         $this->userFactory = $userFactory;
@@ -173,6 +175,7 @@ class Layout extends Base
         $this->mediaService = $mediaService;
         $this->widgetFactory = $widgetFactory;
         $this->playlistFactory = $playlistFactory;
+        $this->scheduleFactory = $scheduleFactory;
     }
 
     /**
@@ -1762,6 +1765,29 @@ class Layout extends Base
                     (array)$layout
                 ));
             }
+
+            // 스케줄 편성 목록
+            $schedules = $this->scheduleFactory->getByCampaignId($layout->campaignId);
+            $scheduleList = array_map(function ($s) {
+                return [
+                    'eventId' => $s->eventId,
+                    'name' => $s->name ?: $s->campaign,
+                ];
+            }, $schedules);
+            $layout->setUnmatchedProperty('schedules', $scheduleList);
+
+            // 캠페인 목록 (isLayoutSpecific=0인 일반 캠페인만)
+            $campaigns = array_filter(
+                $this->campaignFactory->getByLayoutId($layout->layoutId),
+                fn($c) => $c->isLayoutSpecific === 0
+            );
+            $campaignList = array_map(function ($c) {
+                return [
+                    'campaignId' => $c->campaignId,
+                    'name' => $c->campaign,
+                ];
+            }, array_values($campaigns));
+            $layout->setUnmatchedProperty('campaigns', $campaignList);
 
             $layout->setUnmatchedProperty('statusDescription', match ($layout->status) {
                 Status::$STATUS_VALID => __('This Layout is ready to play'),
