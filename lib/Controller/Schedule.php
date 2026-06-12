@@ -2702,6 +2702,9 @@ class Schedule extends Base
                 'logicalOperatorName' => $params->getString('logicalOperatorName'),
                 'directSchedule' => $params->getCheckbox('directSchedule'),
                 'sharedSchedule' => $params->getCheckbox('sharedSchedule'),
+                'isPriority' => $params->getInt('isPriority'),
+                'priorityOperator' => $params->getString('priorityOperator'),
+                'expiredStatus' => $params->getString('expiredStatus'),
                 'gridFilter' => 1,
             ], $params)
         );
