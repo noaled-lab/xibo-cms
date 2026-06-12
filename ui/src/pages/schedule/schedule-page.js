@@ -107,7 +107,8 @@ $(function() {
   // Set up our show all selector control
   $('#showAll, #eventTypeId, #recurring, #geoAware,' +
     ' #DisplayList, #DisplayGroupList,' +
-    ' #name, #useRegexForName, #logicalOperatorName', dialog)
+    ' #name, #useRegexForName, #logicalOperatorName,' +
+    ' #isPriority, #priorityOperator, #expiredStatus', dialog)
     .on('change', function() {
       setTimeout(calendar.view(), 1000);
     });

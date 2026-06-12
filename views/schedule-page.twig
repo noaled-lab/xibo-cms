@@ -205,17 +205,19 @@
                             ] %}
                             {{ inline.dropdown("recurring", "single", title, "both", options, "id", "name", "", "non-agenda-filter") }}
 
-                            {% set title %}{% trans "우선순위 조건" %}{% endset %}
-                            {% set options = [
-                                { id: null, name: "전체" },
-                                { id: "gte", name: "이상" },
-                                { id: "eq", name: "일치" },
-                                { id: "lte", name: "이하" }
-                            ] %}
-                            {{ inline.dropdown("priorityOperator", "single", title, "", options, "id", "name", "", "non-agenda-filter") }}
-
-                            {% set title %}{% trans "우선순위" %}{% endset %}
-                            {{ inline.number("isPriority", title, "", "", "", "non-agenda-filter") }}
+                            <div class="form-group mr-1 mb-1 non-agenda-filter">
+                                <label class="control-label mr-1">{% trans "우선순위" %}</label>
+                                <div class="input-group" style="width:auto;">
+                                    <input class="form-control" name="isPriority" id="isPriority" type="number" style="width:80px;" />
+                                    <div class="input-group-append">
+                                        <select class="form-control" name="priorityOperator" id="priorityOperator">
+                                            <option value="eq" selected>일치</option>
+                                            <option value="gte">이상</option>
+                                            <option value="lte">이하</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
 
                             {% set title %}{% trans "만료 여부" %}{% endset %}
                             {% set options = [

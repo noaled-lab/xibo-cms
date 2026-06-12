@@ -522,6 +522,9 @@ $(function() {
           const nameRegEx =
             'useRegexForName=' + $('#useRegexForName').is('checked');
           const nameLogicalOperator = $('#logicalOperatorName').serialize();
+          const isPriority = $('#isPriority').serialize();
+          const priorityOperator = $('#priorityOperator').serialize();
+          const expiredStatus = $('#expiredStatus').serialize();
 
           !displayGroups && !displayLayouts && !displaySpecificGroups ?
             $calendarErrorMessage.show() :
@@ -532,7 +535,8 @@ $(function() {
           // Append the selected filters
           url += '?' + displayLayouts + '&' + eventTypes + '&' + geoAware +
             '&' + recurring + '&' + name +
-            '&' + nameRegEx + '&' + nameLogicalOperator;
+            '&' + nameRegEx + '&' + nameLogicalOperator +
+            '&' + isPriority + '&' + priorityOperator + '&' + expiredStatus;
 
           // Should we append displays?
           if (
