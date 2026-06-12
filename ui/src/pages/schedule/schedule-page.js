@@ -1,3 +1,5 @@
+import '../../campaign/campaign-assign-layouts.js';
+
 $(function() {
   // Select lists
   const dialog = 'body';
