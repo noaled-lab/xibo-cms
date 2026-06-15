@@ -489,14 +489,14 @@ class ScheduleFactory extends BaseFactory
 
         if ($parsedFilter->getString('expiredStatus') != '') {
             if ($parsedFilter->getString('expiredStatus') === 'expired') {
-                $body .= ' AND `schedule`.isAlways = 0
+                $body .= ' AND `daypart`.isAlways = 0
                     AND (
                         (`schedule`.recurrence_type IS NULL AND IFNULL(`schedule`.toDt, `schedule`.fromDt) < UNIX_TIMESTAMP())
                         OR (`schedule`.recurrence_type IS NOT NULL AND `schedule`.recurrence_range IS NOT NULL AND `schedule`.recurrence_range < UNIX_TIMESTAMP())
                     ) ';
             } else if ($parsedFilter->getString('expiredStatus') === 'active') {
                 $body .= ' AND (
-                        `schedule`.isAlways = 1
+                        `daypart`.isAlways = 1
                         OR (`schedule`.recurrence_type IS NULL AND IFNULL(`schedule`.toDt, `schedule`.fromDt) >= UNIX_TIMESTAMP())
                         OR (`schedule`.recurrence_type IS NOT NULL AND `schedule`.recurrence_range IS NULL)
                         OR (`schedule`.recurrence_type IS NOT NULL AND `schedule`.recurrence_range IS NOT NULL AND `schedule`.recurrence_range >= UNIX_TIMESTAMP())
