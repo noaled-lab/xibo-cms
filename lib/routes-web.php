@@ -267,6 +267,10 @@ $app->get('/library/form/usage/{id}', ['\Xibo\Controller\Library','usageForm'])
     ->addMiddleware(new FeatureAuth($app->getContainer(), ['schedule.view', 'layout.view']))
     ->setName('library.usage.form');
 
+$app->get('/library/{id}/layouts', ['\Xibo\Controller\Library', 'linkedLayouts'])
+    ->addMiddleware(new FeatureAuth($app->getContainer(), ['library.view']))
+    ->setName('library.linked.layouts');
+
 // 카메라
 $app->get('/camera/view', ['\Xibo\Controller\Camera', 'displayPage'])
     ->addMiddleware(new FeatureAuth($app->getContainer(), ['displays.view'])) // 임시로 디스플레이 보기 권한으로 지정 (추후 DB 마이그레이션하여하여 권한 추가 필요)

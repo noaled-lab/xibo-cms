@@ -1,3 +1,5 @@
+import '../../campaign/campaign-assign-layouts.js';
+
 $(function() {
   // Select lists
   const dialog = 'body';
@@ -105,7 +107,8 @@ $(function() {
   // Set up our show all selector control
   $('#showAll, #eventTypeId, #recurring, #geoAware,' +
     ' #DisplayList, #DisplayGroupList,' +
-    ' #name, #useRegexForName, #logicalOperatorName', dialog)
+    ' #name, #useRegexForName, #logicalOperatorName,' +
+    ' #isPriority, #priorityOperator, #expiredStatus', dialog)
     .on('change', function() {
       setTimeout(calendar.view(), 1000);
     });
@@ -244,7 +247,15 @@ $(function() {
           } else if (data.eventTypeId === 2) {
             return data.command;
           } else {
-            return data.campaign;
+            let text = data.campaign ?? '';
+            if (data.eventTypeId === 1 && data.layoutId) {
+              text += ' <a href="' + layoutDesignerUrl.replace(':id', data.layoutId) + '" target="_blank" title="디자인 편집">'
+                + '<i class="fa fa-pencil-square-o"></i></a>';
+            } else if (data.eventTypeId === 5 && data.campaignId) {
+              text += ' <a class="XiboFormButton" href="' + campaignEditFormUrl.replace(':id', data.campaignId) + '" title="캠페인 편집">'
+                + '<i class="fa fa-pencil-square-o"></i></a>';
+            }
+            return text;
           }
         },
       },

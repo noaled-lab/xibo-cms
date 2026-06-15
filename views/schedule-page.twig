@@ -64,8 +64,8 @@
                             {% set lastyear %}{% trans "Last Year" %}{% endset %}
                             {% set agenda %}{% trans "Agenda" %}{% endset %}
                             {% set options = [
-                                { name: "custom", range: range },
                                 { name: "all", range: all },
+                                { name: "custom", range: range },
                                 { name: "day", range: day },
                                 { name: "week", range: week },
                                 { name: "month", range: month },
@@ -204,6 +204,28 @@
                                 { id: 1, name: "Yes"|trans }
                             ] %}
                             {{ inline.dropdown("recurring", "single", title, "both", options, "id", "name", "", "non-agenda-filter") }}
+
+                            <div class="form-group mr-1 mb-1 non-agenda-filter">
+                                <label class="control-label mr-1">{% trans "우선순위" %}</label>
+                                <div class="input-group" style="width:auto;">
+                                    <input class="form-control" name="isPriority" id="isPriority" type="number" style="width:80px;" />
+                                    <div class="input-group-append">
+                                        <select class="form-control" name="priorityOperator" id="priorityOperator">
+                                            <option value="eq" selected>일치</option>
+                                            <option value="gte">이상</option>
+                                            <option value="lte">이하</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% set title %}{% trans "만료 여부" %}{% endset %}
+                            {% set options = [
+                                { id: null, name: "전체" },
+                                { id: "active", name: "유효" },
+                                { id: "expired", name: "만료" }
+                            ] %}
+                            {{ inline.dropdown("expiredStatus", "single", title, "", options, "id", "name", "", "non-agenda-filter") }}
                         </form>
                     </div>
                 </div>
@@ -400,6 +422,9 @@
         {# JS variables #}
         var scheduleRecurrenceDeleteUrl = "{{ url_for("schedule.recurrence.delete.form", {id:':id'}) }}";
         var layoutPreviewUrl = "{{ url_for("layout.preview", {id: ':id'}) }}";
+        var layoutDesignerUrl = "{{ url_for("layout.designer", {id: ':id'}) }}";
+        var layoutSearchURL = "{{ url_for('layout.search') }}";
+        var campaignEditFormUrl = "{{ url_for("campaign.edit.form", {id: ':id'}) }}";
         var scheduleSearchUrl = "{{ url_for("schedule.search") }}";
 
         {# Custom translations #}

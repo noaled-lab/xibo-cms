@@ -43,7 +43,7 @@
         <property id="defaultMute" type="checkbox">
             <title>Default Mute?</title>
             <helpText>Should new Video Widgets default to Muted?</helpText>
-            <default>1</default>
+            <default>0</default>
         </property>
         <property id="defaultScaleType" type="dropdown" mode="single">
             <title>Default Scale type</title>

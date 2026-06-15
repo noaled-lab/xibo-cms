@@ -207,6 +207,8 @@
                                         <th>{% trans "Sharing" %}</th>
                                         <th>{% trans "Valid?" %}</th>
                                         <th>{% trans "Stats?" %}</th>
+                                        <th>{% trans "연결 스케줄" %}</th>
+                                        <th>{% trans "연결 캠페인" %}</th>
                                         <th>{% trans "Created" %}</th>
                                         <th>{% trans "Modified" %}</th>
                                         <th>{% trans "Layout ID" %}</th>
@@ -247,7 +249,7 @@
                 filter: false,
                 searchDelay: 3000,
                 dataType: 'json',
-                order: [[1, "asc"]],
+                order: [[$("#layouts thead th").filter(function() { return $(this).text().trim() === "{{ "Modified"|trans }}"; }).index(), "desc"]],
                 ajax: {
                     url: "{{ url_for("layout.search") }}",
                     data: function (d) {
@@ -370,10 +372,42 @@
                         }
                     },
                     {
+                        "name": "schedules",
+                        "orderable": false,
+                        "sortable": false,
+                        responsivePriority: 3,
+                        "width": "120px",
+                        "data": function(data) {
+                            if (!data.schedules || data.schedules.length === 0) {
+                                return '<span class="text-muted">-</span>';
+                            }
+                            return data.schedules.map(function(s) {
+                                var url = '{{ url_for("schedule.edit.form", {id: ":id"}) }}'.replace(':id', s.eventId);
+                                return '<a class="XiboFormButton" href="' + url + '" style="color:#28a745;font-weight:bold;">' + s.name + '</a>';
+                            }).join('<br>');
+                        }
+                    },
+                    {
+                        "name": "campaigns",
+                        "orderable": false,
+                        "sortable": false,
+                        responsivePriority: 3,
+                        "width": "120px",
+                        "data": function(data) {
+                            if (!data.campaigns || data.campaigns.length === 0) {
+                                return '<span class="text-muted">-</span>';
+                            }
+                            return data.campaigns.map(function(c) {
+                                var url = '{{ url_for("campaign.edit.form", {id: ":id"}) }}'.replace(':id', c.campaignId);
+                                return '<a class="XiboFormButton" href="' + url + '" style="color:#28a745;font-weight:bold;">' + c.name + '</a>';
+                            }).join('<br>');
+                        }
+                    },
+                    {
                         "data": "createdDt",
                         responsivePriority: 6,
                         "render": dataTableDateFromIso,
-                        "visible": false
+                        "visible": true
                     },
                     {
                         data: "modifiedDt",
@@ -398,8 +432,7 @@
             table.on('draw', dataTableDraw);
             table.on('draw', { form: $("#layouts").closest(".XiboGrid").find(".FilterDiv form") }, dataTableCreateTagEvents);
             table.on('draw', function(e, settings) {
-              $('#' + e.target.id + ' .generate-layout-thumbnail').on('click', function(e) {
-                e.preventDefault();
+              $('#' + e.target.id + ' .generate-layout-thumbnail').each(function() {
                 var $anchor = $(this);
                 $.ajax({
                   url: $anchor.attr('href'),

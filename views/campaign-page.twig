@@ -103,7 +103,7 @@
                     </div>
                     <div id="datatable-container">
                         <div class="XiboData card py-3">
-                            <table id="campaigns" class="table table-striped" data-content-type="campaign" data-content-id-name="campaignId" data-state-preference-name="campaignGrid" style="width: 100%;">
+                            <table id="campaigns" class="table table-striped" data-content-type="campaign" data-content-id-name="campaignId" data-state-preference-name="campaignGrid" data-schedule-edit-url="{{ url_for('schedule.edit.form', {id: ':id'}) }}" style="width: 100%;">
                                 <thead>
                                     <tr>
                                         <th>{% trans "Name" %}</th>
@@ -129,6 +129,7 @@
                                         <th>{% trans "Ref 3" %}</th>
                                         <th>{% trans "Ref 4" %}</th>
                                         <th>{% trans "Ref 5" %}</th>
+                                        <th>{% trans "연결 스케줄" %}</th>
                                         <th>{% trans "Created At" %}</th>
                                         <th>{% trans "Modified At" %}</th>
                                         <th>{% trans "Modified By" %}</th>

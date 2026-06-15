@@ -386,6 +386,8 @@ class ScheduleFactory extends BaseFactory
             `schedule`.lastRecurrenceWatermark,
             campaign.campaignId,
             campaign.campaign,
+            campaign.isLayoutSpecific,
+            layoutSpecific.layoutId,
             parentCampaign.campaign AS parentCampaignName,
             parentCampaign.type AS parentCampaignType,
             `command`.commandId,
@@ -420,6 +422,13 @@ class ScheduleFactory extends BaseFactory
             ON `daypart`.dayPartId = `schedule`.dayPartId
             LEFT OUTER JOIN `campaign`
             ON campaign.CampaignID = `schedule`.CampaignID
+            LEFT OUTER JOIN (
+                SELECT lkcl.campaignId, lkcl.layoutId
+                  FROM `lkcampaignlayout` lkcl
+                  INNER JOIN `layout` l ON l.layoutId = lkcl.layoutId AND l.parentId IS NULL
+            ) layoutSpecific
+            ON layoutSpecific.campaignId = campaign.campaignId
+            AND campaign.isLayoutSpecific = 1
             LEFT OUTER JOIN `campaign` parentCampaign
             ON parentCampaign.campaignId = `schedule`.parentCampaignId
             LEFT OUTER JOIN `command`
@@ -463,6 +472,35 @@ class ScheduleFactory extends BaseFactory
                 $body .= ' AND `schedule`.recurrence_type IS NOT NULL ';
             } else if ($parsedFilter->getInt('recurring') === 0) {
                 $body .= ' AND `schedule`.recurrence_type IS NULL ';
+            }
+        }
+
+        if ($parsedFilter->getInt('isPriority') !== null) {
+            $operator = $parsedFilter->getString('priorityOperator');
+            if ($operator === 'gte') {
+                $body .= ' AND `schedule`.is_priority >= :isPriority ';
+            } else if ($operator === 'lte') {
+                $body .= ' AND `schedule`.is_priority <= :isPriority ';
+            } else {
+                $body .= ' AND `schedule`.is_priority = :isPriority ';
+            }
+            $params['isPriority'] = $parsedFilter->getInt('isPriority');
+        }
+
+        if ($parsedFilter->getString('expiredStatus') != '') {
+            if ($parsedFilter->getString('expiredStatus') === 'expired') {
+                $body .= ' AND `daypart`.isAlways = 0
+                    AND (
+                        (`schedule`.recurrence_type IS NULL AND IFNULL(`schedule`.toDt, `schedule`.fromDt) < UNIX_TIMESTAMP())
+                        OR (`schedule`.recurrence_type IS NOT NULL AND `schedule`.recurrence_range IS NOT NULL AND `schedule`.recurrence_range < UNIX_TIMESTAMP())
+                    ) ';
+            } else if ($parsedFilter->getString('expiredStatus') === 'active') {
+                $body .= ' AND (
+                        `daypart`.isAlways = 1
+                        OR (`schedule`.recurrence_type IS NULL AND IFNULL(`schedule`.toDt, `schedule`.fromDt) >= UNIX_TIMESTAMP())
+                        OR (`schedule`.recurrence_type IS NOT NULL AND `schedule`.recurrence_range IS NULL)
+                        OR (`schedule`.recurrence_type IS NOT NULL AND `schedule`.recurrence_range IS NOT NULL AND `schedule`.recurrence_range >= UNIX_TIMESTAMP())
+                    ) ';
             }
         }
 
