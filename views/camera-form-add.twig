@@ -29,6 +29,14 @@
                 {% set helpText %}{% trans "카메라의 RTSP URL을 입력하세요 (예: rtsp://admin:admin@192.168.1.100/stream1)" %}{% endset %}
                 {{ forms.input("url", title, "", helpText, "", "required") }}
 
+                {% set title %}{% trans "카메라 종류" %}{% endset %}
+                {% set helpText %}{% trans "어안 렌즈 카메라는 추가 후 수정 화면에서 캘리브레이션할 수 있습니다." %}{% endset %}
+                {% set options = [
+                    {id: "standard", value: "일반"},
+                    {id: "fisheye", value: "어안"}
+                ] %}
+                {{ forms.dropdown("type", "dropdown", title, "standard", options, "id", "value", helpText) }}
+
             </form>
         </div>
     </div>

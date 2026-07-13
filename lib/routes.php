@@ -386,6 +386,10 @@ $app->get('/camera/search', ['\Xibo\Controller\Camera', 'search'])->setName('cam
 $app->post('/camera/add', ['\Xibo\Controller\Camera', 'add'])->setName('camera.add');
 $app->put('/camera/edit/{id}', ['\Xibo\Controller\Camera', 'edit'])->setName('camera.edit');
 $app->delete('/camera/delete/{id}', ['\Xibo\Controller\Camera', 'delete'])->setName('camera.delete');
+// TEMP: test-video upload for verifying fisheye dewarp calibration without a live camera - remove once no longer needed.
+$app->post('/camera/{id}/test-video', ['\Xibo\Controller\Camera', 'testVideoUpload'])->setName('camera.testVideo.upload');
+$app->get('/camera/{id}/test-video', ['\Xibo\Controller\Camera', 'testVideoDownload'])->setName('camera.testVideo.download');
+$app->delete('/camera/{id}/test-video', ['\Xibo\Controller\Camera', 'testVideoDelete'])->setName('camera.testVideo.delete');
 
 /**
  * Displays

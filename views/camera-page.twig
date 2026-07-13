@@ -27,7 +27,7 @@
                         <thead>
                             <tr>
                                 <th>{% trans "채널 이름" %}</th>
-                                <th>{% trans "실시간 영상" %}</th>
+                                <th>{% trans "종류" %}</th>
                                 <th>{% trans "동작" %}</th>
                             </tr>
                         </thead>
@@ -45,6 +45,7 @@
         var cameraGridUrl = "{{ url_for("camera.search") }}";
         var cameraEditFormUrl = "{{ url_for("camera.edit.form", {id: ":id"}) }}";
         var cameraDeleteFormUrl = "{{ url_for("camera.delete.form", {id: ":id"}) }}";
+        var cameraDetailUrl = "{{ url_for("camera.detail", {id: ":id"}) }}";
     </script>
 
     <script src="{{ theme.rootUri() }}dist/pages/camera-page.bundle.min.js?v={{ version }}&rev={{ revision }}" nonce="{{ cspNonce }}"></script>

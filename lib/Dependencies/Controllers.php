@@ -81,7 +81,7 @@ class Controllers
             },
             '\Xibo\Controller\Camera' => function (ContainerInterface $c) {
                 $controller = new \Xibo\Controller\Camera(
-                    $c->get('ControllerBaseDependenciesService')
+                    $c->get('cameraFactory')
                 );
                 $controller->useBaseDependenciesService($c->get('ControllerBaseDependenciesService'));
                 return $controller;

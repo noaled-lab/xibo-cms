@@ -1,0 +1,56 @@
+{% extends "authed.twig" %}
+
+{% block title %}{{ camera.name|default(camera.channelId) }} | {% endblock %}
+
+{% block pageContent %}
+    <div class="card mx-auto my-auto" style="max-width: 70%;"
+         id="cameraDetail"
+         data-camera-id="{{ camera.id }}"
+         data-camera-type="{{ camera.type }}"
+         data-mse-url="{{ mseUrl }}"
+         data-test-video-download-url="{{ camera.testVideoFile ? url_for("camera.testVideo.download", {id: camera.id}) : "" }}"
+         data-fisheye-params="{{ fisheyeParams ? fisheyeParams|json_encode : "" }}">
+        <div class="card-body">
+            <h5 class="card-title">
+                {{ camera.name|default(camera.channelId) }}
+                <span class="badge {{ camera.type == 'fisheye' ? 'badge-info' : 'badge-secondary' }}">
+                    {{ camera.type == 'fisheye' ? '어안'|trans : '일반'|trans }}
+                </span>
+                {% if camera.testVideoFile %}
+                    <span class="badge badge-warning" title="{% trans "테스트 영상을 재생 중입니다 (임시)" %}">TEST</span>
+                {% endif %}
+            </h5>
+            <a href="{{ url_for("camera.view") }}" class="btn btn-white mb-3">{% trans "목록으로" %}</a>
+            <hr>
+
+            <div style="background:#000;">
+                {% if camera.type == 'fisheye' %}
+                    <canvas id="cameraDewarpCanvas" style="width:100%; display:block;"></canvas>
+                {% else %}
+                    <video id="cameraStandardVideo" class="w-100" controls autoplay muted playsinline></video>
+                {% endif %}
+            </div>
+
+            {% if camera.type == 'fisheye' %}
+                <div class="mt-2">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="viewFlip">
+                        <label class="form-check-label" for="viewFlip">{% trans "상하 반전" %}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="viewCcw">
+                        <label class="form-check-label" for="viewCcw">{% trans "반시계" %}</label>
+                    </div>
+                    <small class="form-text text-muted">
+                        {% trans "이 화면에서 바꾼 값은 저장되지 않으며, 새로고침하면 편집에서 저장된 기본값으로 돌아갑니다." %}
+                        <span id="viewPtzHint"></span>
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javaScript %}
+    <script src="{{ theme.rootUri() }}dist/pages/camera-detail-page.bundle.min.js?v={{ version }}&rev={{ revision }}" nonce="{{ cspNonce }}"></script>
+{% endblock %}

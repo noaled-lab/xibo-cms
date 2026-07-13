@@ -1,0 +1,147 @@
+// Powers the fisheye calibration panel inside the camera Edit form (modal).
+// Calibration values here are the ones that get saved (camera_fisheye_setting) -
+// this is the only screen where they can be changed. Detail-page overrides
+// (flip/ccw while viewing) never touch this code.
+import {createFisheyeDewarp} from './fisheye-dewarp.js';
+import {startPlay} from './camera-stream.js';
+
+const SLIDER_IDS = [
+  'centerX', 'centerY', 'radius', 'radiusInner', 'radiusOuter',
+  'rotationDeg', 'lensCorrection', 'fisheyeFov',
+];
+const SELECT_IDS = ['mode', 'layout', 'aspect'];
+
+function readParamsFromForm($form) {
+  const get = (id) => parseFloat($form.find('#' + id).val());
+  return {
+    cx: get('centerX'),
+    cy: get('centerY'),
+    rad: get('radius'),
+    rin: get('radiusInner'),
+    rout: get('radiusOuter'),
+    rot: get('rotationDeg'),
+    lens: get('lensCorrection'),
+    ffov: get('fisheyeFov'),
+    mode: $form.find('#mode').val(),
+    layout: $form.find('#layout').val(),
+    aspect: get('aspect'),
+  };
+}
+
+function readEphemeralFromForm($form) {
+  return {
+    flip: $form.find('#flip').is(':checked'),
+    ccw: $form.find('#ccw').is(':checked'),
+  };
+}
+
+export function initCameraFisheyeCalibration(dialog) {
+  const $dialog = $(dialog);
+  const $form = $dialog.find('#cameraEditForm');
+  const $panel = $dialog.find('#fisheyeCalibration');
+  const $typeSelect = $dialog.find('#type');
+
+  let dewarp = null;
+  let hiddenVideo = null;
+  let player = null;
+
+  function togglePanel() {
+    const isFisheye = $typeSelect.val() === 'fisheye';
+    $panel.toggle(isFisheye);
+    if (isFisheye && !dewarp) {
+      setup();
+    }
+  }
+
+  function loadSource() {
+    const testVideoFile = $form.data('test-video-file');
+    const $status = $dialog.find('#fisheyePreviewStatus');
+
+    if (hiddenVideo) {
+      hiddenVideo.pause();
+      if (player) {
+        player.stop();
+        player = null;
+      }
+    }
+    hiddenVideo = document.createElement('video');
+    hiddenVideo.muted = true;
+    hiddenVideo.playsInline = true;
+    hiddenVideo.autoplay = true;
+
+    hiddenVideo.addEventListener('loadedmetadata', function() {
+      dewarp.setSource(hiddenVideo, hiddenVideo.videoWidth, hiddenVideo.videoHeight, true);
+      $status.text('');
+    });
+
+    if (testVideoFile) {
+      $status.text('테스트 영상을 불러오는 중...');
+      hiddenVideo.src = $form.data('test-video-download-url') + '?_=' + Date.now();
+      hiddenVideo.play().catch(() => {});
+    } else {
+      $status.text('실시간 스트림을 불러오는 중...');
+      const mseUrl = 'ws://' + window.location.hostname + ':8083' + $form.data('mse-url');
+      player = startPlay(hiddenVideo, mseUrl);
+    }
+  }
+
+  function setup() {
+    const canvas = $dialog.find('#fisheyePreviewCanvas')[0];
+    dewarp = createFisheyeDewarp(canvas);
+
+    const initialParams = $form.data('fisheye-params') || {};
+    dewarp.setParams(initialParams);
+    dewarp.setEphemeral(readEphemeralFromForm($form));
+    dewarp.onPanesChange((panes) => {
+      $form.find('#panes').val(JSON.stringify(panes));
+    });
+
+    SLIDER_IDS.concat(SELECT_IDS).forEach((id) => {
+      $form.find('#' + id).on('input change', () => {
+        dewarp.setParams(readParamsFromForm($form));
+      });
+    });
+    $form.find('#flip, #ccw').on('change', () => {
+      dewarp.setEphemeral(readEphemeralFromForm($form));
+    });
+
+    dewarp.startLoop();
+    loadSource();
+
+    $dialog.find('#fisheyeTestVideoUploadBtn').on('click', function() {
+      const fileInput = $dialog.find('#fisheyeTestVideoInput')[0];
+      if (!fileInput.files.length) {
+        return;
+      }
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      $.ajax({
+        url: $form.data('test-video-upload-url'),
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(res) {
+          if (res.success) {
+            $form.data('test-video-file', 'uploaded');
+            loadSource();
+          }
+          SystemMessage(res.message, !res.success);
+        },
+      });
+    });
+  }
+
+  togglePanel();
+  $typeSelect.off('change.cameraFisheye').on('change.cameraFisheye', togglePanel);
+
+  $dialog.one('hidden.bs.modal', function() {
+    if (dewarp) {
+      dewarp.destroy();
+    }
+    if (player) {
+      player.stop();
+    }
+  });
+}

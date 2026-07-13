@@ -278,6 +278,9 @@ $app->get('/camera/view', ['\Xibo\Controller\Camera', 'displayPage'])
 $app->get('/camera/form/add', ['\Xibo\Controller\Camera', 'addForm'])->setName('camera.add.form');
 $app->get('/camera/form/edit/{id}', ['\Xibo\Controller\Camera', 'editForm'])->setName('camera.edit.form');
 $app->get('/camera/form/delete/{id}', ['\Xibo\Controller\Camera', 'deleteForm'])->setName('camera.delete.form');
+$app->get('/camera/detail/{id}', ['\Xibo\Controller\Camera', 'detailPage'])
+    ->addMiddleware(new FeatureAuth($app->getContainer(), ['displays.view']))
+    ->setName('camera.detail');
 
 
 //
