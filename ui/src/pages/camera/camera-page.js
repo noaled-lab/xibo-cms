@@ -43,6 +43,33 @@ const PREVIEW_SMALL_WIDTH = '240px';
 const PREVIEW_COLLAPSED_CSS = {'width': PREVIEW_SMALL_WIDTH, 'max-width': PREVIEW_SMALL_WIDTH};
 const PREVIEW_EXPANDED_CSS = {'width': '100%', 'max-width': '100%'};
 
+const DRAG_THRESHOLD_PX = 5;
+
+// Fisheye panorama/PTZ previews support drag-to-pan (see fisheye-dewarp.js) on the
+// same element we want a plain click to open the bigger dialog - a naive 'click'
+// handler fires at the end of a drag too (pointerup lands back near the target), which
+// hijacked panning into constantly popping the dialog open. Only treat it as a click if
+// the pointer barely moved between down and up.
+function bindClickWithoutDrag($el, handler) {
+  let startX = 0;
+  let startY = 0;
+  let moved = false;
+
+  $el.on('pointerdown', function(e) {
+    startX = e.clientX;
+    startY = e.clientY;
+    moved = false;
+  }).on('pointermove', function(e) {
+    if (Math.abs(e.clientX - startX) > DRAG_THRESHOLD_PX || Math.abs(e.clientY - startY) > DRAG_THRESHOLD_PX) {
+      moved = true;
+    }
+  }).on('pointerup', function(e) {
+    if (!moved) {
+      handler(e);
+    }
+  });
+}
+
 let activeViewers = [];
 
 function cameraPayload(camera, testVideoUrl) {
@@ -130,10 +157,10 @@ function displayCameras(cameras) {
     let viewer = null;
     const $previewWrapper = $('<div>').css({'position': 'relative'}).css(PREVIEW_COLLAPSED_CSS);
     const $previewStage = $('<div>').css({'background': '#000', 'cursor': 'pointer'})
-      .attr('title', '크게 보기')
-      .on('click', function() {
-        openPreviewDialog(camera, testVideoUrl);
-      });
+      .attr('title', '크게 보기');
+    bindClickWithoutDrag($previewStage, function() {
+      openPreviewDialog(camera, testVideoUrl);
+    });
     const $sizeBtn = $('<button>', {
       'class': 'btn btn-sm btn-secondary',
       'type': 'button',
