@@ -152,12 +152,4 @@
     </div>
 {% endblock %}
 
-{% block javaScript %}
-<script type="text/javascript" nonce="{{ cspNonce }}">
-    window.cameraEditFormOpen = function(dialog) {
-        if (window.initCameraFisheyeCalibration) {
-            window.initCameraFisheyeCalibration(dialog);
-        }
-    };
-</script>
-{% endblock %}
+{% block callBack %}cameraEditFormOpen{% endblock %}

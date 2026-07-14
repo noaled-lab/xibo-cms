@@ -4,9 +4,10 @@
 // video (including fisheye dewarp) is rendered.
 import {initCameraFisheyeCalibration} from './camera-edit-calibration.js';
 
-// Exposed for the camera-form-edit.twig "cameraEditFormOpen" hook (the
-// framework's standard convention for running JS when a form dialog opens).
-window.initCameraFisheyeCalibration = initCameraFisheyeCalibration;
+// Invoked by the framework via the form's "callBack" block (see
+// camera-form-edit.twig's {% block callBack %}cameraEditFormOpen{% endblock %})
+// once the edit dialog's HTML has been inserted into the page.
+window.cameraEditFormOpen = initCameraFisheyeCalibration;
 
 const dataTableKoLanguage = {
   'sEmptyTable': '등록된 카메라가 없습니다.',

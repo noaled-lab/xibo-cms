@@ -1,0 +1,225 @@
+2026-07-13 17:18:26 [DEBUG] Could not auto-detect local interface: [WinError 10051] 연결할 수 없는 네트워크에서 소켓 작업을 시도했습니다
+2026-07-13 17:18:26 [INFO] Starting ONVIF discovery (timeout=5.0s, interface=default)
+2026-07-13 17:18:26 [DEBUG] Sending WS-Discovery Probes (typed + untyped) to 239.255.255.250:3702
+2026-07-13 17:18:28 [DEBUG] Sending WS-Discovery Probes (typed + untyped) to 239.255.255.250:3702
+2026-07-13 17:18:30 [DEBUG] Sending WS-Discovery Probes (typed + untyped) to 239.255.255.250:3702
+2026-07-13 17:18:31 [WARNING] No ONVIF devices found.
+2026-07-13 17:35:34 [DEBUG] Auto-detected local interface 192.168.0.16
+2026-07-13 17:35:34 [INFO] Starting ONVIF discovery (timeout=5.0s, interface=192.168.0.16)
+2026-07-13 17:35:34 [DEBUG] Bound socket to interface 192.168.0.16
+2026-07-13 17:35:34 [DEBUG] Sending WS-Discovery Probes (typed + untyped) to 239.255.255.250:3702
+2026-07-13 17:35:34 [DEBUG] Received 1332 bytes from 192.168.0.240
+2026-07-13 17:35:34 [INFO] Found device: 192.168.0.240 | name=unknown | xaddrs=http://noa-storage:5357/b046f830-0028-4ca0-90a0-ec053b2c98f3
+2026-07-13 17:35:34 [DEBUG] Received 1332 bytes from 192.168.0.240
+2026-07-13 17:35:34 [DEBUG] Duplicate response from 192.168.0.240 (retransmit)
+2026-07-13 17:35:34 [DEBUG] Received 1362 bytes from 192.168.0.11
+2026-07-13 17:35:34 [INFO] Found device: 192.168.0.11 | name=SGV-12M | xaddrs=http://192.168.0.11:8001/onvif/device_service
+2026-07-13 17:35:34 [DEBUG] Received 1361 bytes from 192.168.0.2
+2026-07-13 17:35:34 [INFO] Found device: 192.168.0.2 | name=SGV-12M | xaddrs=http://192.168.0.2:8001/onvif/device_service
+2026-07-13 17:35:34 [WARNING] Endpoint urn:uuid:f28011fc-1eaf-ed46-c3aa-97e8866f5170 answered from multiple IPs: 192.168.0.11, 192.168.0.2. Likely the same physical device (DHCP lease change or multi-homed NIC), not separate devices.
+2026-07-13 17:35:34 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:34 [INFO] Found device: 192.168.0.19 | name=unknown | xaddrs=http://192.168.0.19:3911/, http://[fe80::b6b6:86ff:fe54:6eb2]:3911/
+2026-07-13 17:35:34 [DEBUG] Received 1361 bytes from 192.168.0.2
+2026-07-13 17:35:34 [DEBUG] Duplicate response from 192.168.0.2 (retransmit)
+2026-07-13 17:35:34 [DEBUG] Received 1362 bytes from 192.168.0.11
+2026-07-13 17:35:34 [DEBUG] Duplicate response from 192.168.0.11 (retransmit)
+2026-07-13 17:35:34 [DEBUG] Received 1226 bytes from 192.168.0.54
+2026-07-13 17:35:34 [INFO] Found device: 192.168.0.54 | name=unknown | xaddrs=http://192.168.0.54:80/WebServices/Device
+2026-07-13 17:35:34 [DEBUG] Received 1224 bytes from 192.168.0.110
+2026-07-13 17:35:34 [INFO] Found device: 192.168.0.110 | name=unknown | xaddrs=http://192.168.0.110:80/WebServices/Device
+2026-07-13 17:35:34 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:34 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:35 [DEBUG] Received 1226 bytes from 192.168.0.54
+2026-07-13 17:35:35 [DEBUG] Duplicate response from 192.168.0.54 (retransmit)
+2026-07-13 17:35:35 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:35 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:35 [DEBUG] Received 1224 bytes from 192.168.0.110
+2026-07-13 17:35:35 [DEBUG] Duplicate response from 192.168.0.110 (retransmit)
+2026-07-13 17:35:35 [DEBUG] Received 1336 bytes from 192.168.0.55
+2026-07-13 17:35:35 [INFO] Found device: 192.168.0.55 | name=unknown | xaddrs=http://192.168.0.55:80/wsd/pnpx-metadata.cgi
+2026-07-13 17:35:35 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:35 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:35 [DEBUG] Received 1408 bytes from 192.168.0.26
+2026-07-13 17:35:35 [INFO] Found device: 192.168.0.26 | name=unknown | xaddrs=http://192.168.0.26:8018/wsd, http://192.168.223.1:8018/wsd
+2026-07-13 17:35:35 [DEBUG] Received 1408 bytes from 192.168.0.26
+2026-07-13 17:35:35 [DEBUG] Duplicate response from 192.168.0.26 (retransmit)
+2026-07-13 17:35:35 [DEBUG] Received 1336 bytes from 192.168.0.55
+2026-07-13 17:35:35 [DEBUG] Duplicate response from 192.168.0.55 (retransmit)
+2026-07-13 17:35:36 [DEBUG] Received 1227 bytes from 192.168.0.186
+2026-07-13 17:35:36 [INFO] Found device: 192.168.0.186 | name=unknown | xaddrs=http://192.168.0.186:5357/b9e773dc-d07f-45fa-a78b-67984bdf29ab/
+2026-07-13 17:35:36 [DEBUG] Received 1227 bytes from 192.168.0.186
+2026-07-13 17:35:36 [DEBUG] Duplicate response from 192.168.0.186 (retransmit)
+2026-07-13 17:35:36 [DEBUG] Received 1227 bytes from 192.168.0.186
+2026-07-13 17:35:36 [DEBUG] Duplicate response from 192.168.0.186 (retransmit)
+2026-07-13 17:35:36 [DEBUG] Received 1222 bytes from 192.168.0.14
+2026-07-13 17:35:36 [INFO] Found device: 192.168.0.14 | name=unknown | xaddrs=http://192.168.0.14:5357/72a7faa0-3412-4ccc-b255-a646a2d1f895/
+2026-07-13 17:35:36 [DEBUG] Sending WS-Discovery Probes (typed + untyped) to 239.255.255.250:3702
+2026-07-13 17:35:36 [DEBUG] Received 1332 bytes from 192.168.0.240
+2026-07-13 17:35:36 [DEBUG] Duplicate response from 192.168.0.240 (retransmit)
+2026-07-13 17:35:36 [DEBUG] Received 1332 bytes from 192.168.0.240
+2026-07-13 17:35:36 [DEBUG] Duplicate response from 192.168.0.240 (retransmit)
+2026-07-13 17:35:36 [DEBUG] Received 1362 bytes from 192.168.0.11
+2026-07-13 17:35:36 [DEBUG] Duplicate response from 192.168.0.11 (retransmit)
+2026-07-13 17:35:36 [DEBUG] Received 1361 bytes from 192.168.0.2
+2026-07-13 17:35:36 [DEBUG] Duplicate response from 192.168.0.2 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1362 bytes from 192.168.0.11
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.11 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1361 bytes from 192.168.0.2
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.2 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1226 bytes from 192.168.0.54
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.54 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1224 bytes from 192.168.0.110
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.110 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1336 bytes from 192.168.0.55
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.55 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1222 bytes from 192.168.0.14
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.14 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1224 bytes from 192.168.0.110
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.110 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1227 bytes from 192.168.0.124
+2026-07-13 17:35:37 [INFO] Found device: 192.168.0.124 | name=unknown | xaddrs=http://192.168.0.124:5357/868301cb-0d1d-40e0-8dbe-ee8cd478390a/
+2026-07-13 17:35:37 [DEBUG] Received 1226 bytes from 192.168.0.54
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.54 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1336 bytes from 192.168.0.55
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.55 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1225 bytes from 192.168.0.15
+2026-07-13 17:35:37 [INFO] Found device: 192.168.0.15 | name=unknown | xaddrs=http://192.168.0.15:5357/dda1fd91-a9ff-4dd5-8428-b5ba0636ef66/
+2026-07-13 17:35:37 [DEBUG] Received 1227 bytes from 192.168.0.124
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.124 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1227 bytes from 192.168.0.124
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.124 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1227 bytes from 192.168.0.186
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.186 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1227 bytes from 192.168.0.124
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.124 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1408 bytes from 192.168.0.26
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.26 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1222 bytes from 192.168.0.14
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.14 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1408 bytes from 192.168.0.26
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.26 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1225 bytes from 192.168.0.15
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.15 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1227 bytes from 192.168.0.124
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.124 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1227 bytes from 192.168.0.124
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.124 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1225 bytes from 192.168.0.15
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.15 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1227 bytes from 192.168.0.124
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.124 (retransmit)
+2026-07-13 17:35:37 [DEBUG] Received 1222 bytes from 192.168.0.14
+2026-07-13 17:35:37 [DEBUG] Duplicate response from 192.168.0.14 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 1227 bytes from 192.168.0.124
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.124 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 1225 bytes from 192.168.0.15
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.15 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 1222 bytes from 192.168.0.14
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.14 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 1222 bytes from 192.168.0.14
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.14 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Sending WS-Discovery Probes (typed + untyped) to 239.255.255.250:3702
+2026-07-13 17:35:38 [DEBUG] Received 1332 bytes from 192.168.0.240
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.240 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 1332 bytes from 192.168.0.240
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.240 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 1362 bytes from 192.168.0.11
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.11 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 1361 bytes from 192.168.0.2
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.2 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 1224 bytes from 192.168.0.110
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.110 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:38 [DEBUG] Received 1226 bytes from 192.168.0.54
+2026-07-13 17:35:38 [DEBUG] Duplicate response from 192.168.0.54 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1361 bytes from 192.168.0.2
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.2 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1362 bytes from 192.168.0.11
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.11 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1224 bytes from 192.168.0.110
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.110 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1336 bytes from 192.168.0.55
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.55 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1226 bytes from 192.168.0.54
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.54 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1227 bytes from 192.168.0.186
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.186 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1336 bytes from 192.168.0.55
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.55 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1222 bytes from 192.168.0.14
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.14 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1225 bytes from 192.168.0.15
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.15 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 2315 bytes from 192.168.0.19
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.19 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1408 bytes from 192.168.0.26
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.26 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1408 bytes from 192.168.0.26
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.26 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1227 bytes from 192.168.0.186
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.186 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1225 bytes from 192.168.0.15
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.15 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1225 bytes from 192.168.0.15
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.15 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1225 bytes from 192.168.0.15
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.15 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1222 bytes from 192.168.0.14
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.14 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1225 bytes from 192.168.0.15
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.15 (retransmit)
+2026-07-13 17:35:39 [DEBUG] Received 1227 bytes from 192.168.0.186
+2026-07-13 17:35:39 [DEBUG] Duplicate response from 192.168.0.186 (retransmit)
+2026-07-13 17:35:39 [INFO] Discovery complete. 2 likely ONVIF camera(s), 10 other WS-Discovery device(s).
+2026-07-13 17:35:39 [INFO] ------------------------------------------------------------
+2026-07-13 17:35:39 [INFO] IP:       192.168.0.11
+2026-07-13 17:35:39 [INFO] Name:     SGV-12M
+2026-07-13 17:35:39 [INFO] Hardware: HI3519
+2026-07-13 17:35:39 [INFO] XAddrs:   http://192.168.0.11:8001/onvif/device_service
+2026-07-13 17:35:39 [INFO] Endpoint: urn:uuid:f28011fc-1eaf-ed46-c3aa-97e8866f5170
+2026-07-13 17:35:39 [INFO] ------------------------------------------------------------
+2026-07-13 17:35:39 [INFO] IP:       192.168.0.2
+2026-07-13 17:35:39 [INFO] Name:     SGV-12M
+2026-07-13 17:35:39 [INFO] Hardware: HI3519
+2026-07-13 17:35:39 [INFO] XAddrs:   http://192.168.0.2:8001/onvif/device_service
+2026-07-13 17:35:39 [INFO] Endpoint: urn:uuid:f28011fc-1eaf-ed46-c3aa-97e8866f5170
+2026-07-13 17:35:39 [INFO] ------------------------------------------------------------
+2026-07-13 17:35:39 [INFO] Other WS-Discovery devices (PCs/printers/NAS answering the untyped probe, not ONVIF cameras): 192.168.0.110, 192.168.0.124, 192.168.0.14, 192.168.0.15, 192.168.0.186, 192.168.0.19, 192.168.0.240, 192.168.0.26, 192.168.0.54, 192.168.0.55
+2026-07-13 17:37:13 [DEBUG] Auto-detected local interface 192.168.1.2
+2026-07-13 17:37:13 [INFO] Starting ONVIF discovery (timeout=5.0s, interface=192.168.1.2)
+2026-07-13 17:37:13 [DEBUG] Bound socket to interface 192.168.1.2
+2026-07-13 17:37:13 [DEBUG] Sending WS-Discovery Probes (typed + untyped) to 239.255.255.250:3702
+2026-07-13 17:37:13 [DEBUG] Received 1361 bytes from 192.168.1.3
+2026-07-13 17:37:13 [INFO] Found device: 192.168.1.3 | name=SGV-12M | xaddrs=http://192.168.1.3:8001/onvif/device_service
+2026-07-13 17:37:13 [DEBUG] Received 1361 bytes from 192.168.1.3
+2026-07-13 17:37:13 [DEBUG] Duplicate response from 192.168.1.3 (retransmit)
+2026-07-13 17:37:15 [DEBUG] Sending WS-Discovery Probes (typed + untyped) to 239.255.255.250:3702
+2026-07-13 17:37:15 [DEBUG] Received 1361 bytes from 192.168.1.3
+2026-07-13 17:37:15 [DEBUG] Duplicate response from 192.168.1.3 (retransmit)
+2026-07-13 17:37:15 [DEBUG] Received 1361 bytes from 192.168.1.3
+2026-07-13 17:37:15 [DEBUG] Duplicate response from 192.168.1.3 (retransmit)
+2026-07-13 17:37:17 [DEBUG] Sending WS-Discovery Probes (typed + untyped) to 239.255.255.250:3702
+2026-07-13 17:37:17 [DEBUG] Received 1361 bytes from 192.168.1.3
+2026-07-13 17:37:17 [DEBUG] Duplicate response from 192.168.1.3 (retransmit)
+2026-07-13 17:37:17 [DEBUG] Received 1361 bytes from 192.168.1.3
+2026-07-13 17:37:17 [DEBUG] Duplicate response from 192.168.1.3 (retransmit)
+2026-07-13 17:37:18 [INFO] Discovery complete. 1 likely ONVIF camera(s), 0 other WS-Discovery device(s).
+2026-07-13 17:37:18 [INFO] ------------------------------------------------------------
+2026-07-13 17:37:18 [INFO] IP:       192.168.1.3
+2026-07-13 17:37:18 [INFO] Name:     SGV-12M
+2026-07-13 17:37:18 [INFO] Hardware: HI3519
+2026-07-13 17:37:18 [INFO] XAddrs:   http://192.168.1.3:8001/onvif/device_service
+2026-07-13 17:37:18 [INFO] Endpoint: urn:uuid:f28011fc-1eaf-ed46-c3aa-97e8866f5170
