@@ -18,7 +18,7 @@ services:
         networks:
             - app
     cms-web:
-        image: ghcr.io/noaled-lab/xibo-cms:feature-hongmu-camera-44
+        image: ghcr.io/noaled-lab/xibo-cms:feature-hongmu-camera-45
         volumes:
             - "./shared/cms/custom:/var/www/cms/custom:Z"
             - "./shared/backup:/var/www/backup:Z"

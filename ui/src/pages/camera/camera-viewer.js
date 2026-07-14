@@ -10,6 +10,19 @@ import {createFisheyeDewarp} from './fisheye-dewarp.js';
 
 const RETRY_DELAY_MS = 4000;
 
+// hls.js has no built-in drift correction unless these are set - without them,
+// playback just keeps buffering and falls further and further behind the live edge
+// over time (a page refresh only "fixes" it because the player restarts near the
+// live edge again). liveSyncDuration/liveMaxLatencyDuration keep it pinned close to
+// live; maxLiveSyncPlaybackRate lets it catch up with a gentle speed-up instead of a
+// jarring seek whenever it drifts past the target.
+export const HLS_CONFIG = {
+  lowLatencyMode: true,
+  liveSyncDuration: 2,
+  liveMaxLatencyDuration: 8,
+  maxLiveSyncPlaybackRate: 1.2,
+};
+
 function buildHlsLLUrl(streamId, channelId) {
   return window.location.protocol + '//' + window.location.hostname + ':8083' +
     '/stream/' + streamId + '/channel/' + channelId + '/hlsll/live/index.m3u8';
@@ -58,30 +71,29 @@ export function createCameraViewer(container) {
 
     const url = buildHlsLLUrl(camera.streamId, camera.channelId);
     if (Hls.isSupported()) {
-      hls = new Hls({lowLatencyMode: true});
+      hls = new Hls(HLS_CONFIG);
       hls.on(Hls.Events.ERROR, function(event, data) {
         if (stopped || !data.fatal) {
           return;
         }
         // rtsp-to-web starts "on demand" streams lazily on first request, so the very
-        // first load attempt often fails before the stream has actually started - and
-        // real cameras can drop off the network transiently too. Keep retrying instead
-        // of leaving the viewer permanently dead.
-        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          setTimeout(() => {
-            if (!stopped && hls) {
-              hls.startLoad();
-            }
-          }, RETRY_DELAY_MS);
-        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-          hls.recoverMediaError();
-        } else {
-          setTimeout(() => {
-            if (!stopped) {
-              attachStream(videoEl, camera);
-            }
-          }, RETRY_DELAY_MS);
+        // first load attempt often fails before the stream has actually started (this
+        // is what a manifestLoadError/ERR_EMPTY_RESPONSE means) - and real cameras can
+        // drop off the network transiently too. hls.js's own startLoad()/
+        // recoverMediaError() don't reliably recover from a failed *manifest* load, so
+        // instead we do exactly what a page refresh does: tear down and reattach the
+        // stream from scratch.
+        console.warn('HLS fatal error (' + data.type + '/' + data.details + '), retrying in '
+          + RETRY_DELAY_MS + 'ms');
+        if (hls) {
+          hls.destroy();
+          hls = null;
         }
+        setTimeout(() => {
+          if (!stopped) {
+            attachStream(videoEl, camera);
+          }
+        }, RETRY_DELAY_MS);
       });
       hls.loadSource(url);
       hls.attachMedia(videoEl);

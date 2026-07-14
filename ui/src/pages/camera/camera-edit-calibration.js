@@ -6,6 +6,7 @@
 // code.
 import Hls from 'hls.js';
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
+import {HLS_CONFIG} from './camera-viewer.js';
 
 const RETRY_DELAY_MS = 4000;
 
@@ -106,22 +107,20 @@ export function initCameraFisheyeCalibration(dialog) {
       $status.text('실시간 스트림(LL-HLS)을 불러오는 중...');
       const url = buildHlsLLUrl($form.data('camera-id'));
       if (Hls.isSupported()) {
-        hls = new Hls({lowLatencyMode: true});
+        hls = new Hls(HLS_CONFIG);
         hls.on(Hls.Events.ERROR, function(event, data) {
           if (stopped || !data.fatal) {
             return;
           }
           // The stream may not have started yet (rtsp-to-web starts on-demand streams
-          // lazily) - keep retrying instead of leaving the preview permanently dead.
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            setTimeout(() => {
-              if (!stopped && hls) {
-                hls.startLoad();
-              }
-            }, RETRY_DELAY_MS);
-          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-            hls.recoverMediaError();
-          }
+          // lazily) - hls.js's startLoad()/recoverMediaError() don't reliably recover
+          // from a failed *manifest* load, so just do what a page refresh does: tear
+          // down and reload the source from scratch.
+          setTimeout(() => {
+            if (!stopped) {
+              loadSource();
+            }
+          }, RETRY_DELAY_MS);
         });
         hls.loadSource(url);
         hls.attachMedia(hiddenVideo);
