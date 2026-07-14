@@ -8,6 +8,8 @@
 import Hls from 'hls.js';
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
 
+const RETRY_DELAY_MS = 4000;
+
 function buildHlsLLUrl(streamId, channelId) {
   return window.location.protocol + '//' + window.location.hostname + ':8083' +
     '/stream/' + streamId + '/channel/' + channelId + '/hlsll/live/index.m3u8';
@@ -22,6 +24,10 @@ export function createCameraViewer(container) {
   let hiddenVideo = null;
   let visibleVideo = null;
   let hls = null;
+  // Set only by the public destroy() (not by the internal teardown() that show() also
+  // calls to reset before rendering) - stops any pending retry from firing after the
+  // viewer has actually been torn down for good.
+  let stopped = false;
 
   function teardown() {
     if (dewarp) {
@@ -53,6 +59,30 @@ export function createCameraViewer(container) {
     const url = buildHlsLLUrl(camera.streamId, camera.channelId);
     if (Hls.isSupported()) {
       hls = new Hls({lowLatencyMode: true});
+      hls.on(Hls.Events.ERROR, function(event, data) {
+        if (stopped || !data.fatal) {
+          return;
+        }
+        // rtsp-to-web starts "on demand" streams lazily on first request, so the very
+        // first load attempt often fails before the stream has actually started - and
+        // real cameras can drop off the network transiently too. Keep retrying instead
+        // of leaving the viewer permanently dead.
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          setTimeout(() => {
+            if (!stopped && hls) {
+              hls.startLoad();
+            }
+          }, RETRY_DELAY_MS);
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          hls.recoverMediaError();
+        } else {
+          setTimeout(() => {
+            if (!stopped) {
+              attachStream(videoEl, camera);
+            }
+          }, RETRY_DELAY_MS);
+        }
+      });
       hls.loadSource(url);
       hls.attachMedia(videoEl);
     } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
@@ -120,7 +150,10 @@ export function createCameraViewer(container) {
 
   return {
     show,
-    destroy: teardown,
+    destroy() {
+      stopped = true;
+      teardown();
+    },
     /** Call after the container's size changes (e.g. an expand/collapse toggle) so a
      * fisheye canvas recalculates its height from the configured aspect ratio. A no-op
      * for standard cameras - the <video> element is already responsive on its own. */

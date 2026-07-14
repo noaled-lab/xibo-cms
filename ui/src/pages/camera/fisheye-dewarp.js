@@ -231,7 +231,10 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
     if (!w) {
       return;
     }
-    const h = Math.max(100, Math.round(w / params.aspect));
+    // Only guard against zero/negative height - a fixed floor here would distort the
+    // configured aspect ratio at small container widths (e.g. a 6:1 layout at 240px
+    // wide "should" be 40px tall; flooring it to 100px made it look like ~2.4:1 instead).
+    const h = Math.max(1, Math.round(w / params.aspect));
     renderer.setSize(w, h, false);
     canvas.style.height = h + 'px';
   }

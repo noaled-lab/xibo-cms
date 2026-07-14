@@ -7,6 +7,8 @@
 import Hls from 'hls.js';
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
 
+const RETRY_DELAY_MS = 4000;
+
 function buildHlsLLUrl(cameraId) {
   const [streamId, channelId] = cameraId.split(':');
   return window.location.protocol + '//' + window.location.hostname + ':8083' +
@@ -52,6 +54,7 @@ export function initCameraFisheyeCalibration(dialog) {
   let dewarp = null;
   let hiddenVideo = null;
   let hls = null;
+  let stopped = false;
 
   function togglePanel() {
     const isFisheye = $typeSelect.val() === 'fisheye';
@@ -104,6 +107,22 @@ export function initCameraFisheyeCalibration(dialog) {
       const url = buildHlsLLUrl($form.data('camera-id'));
       if (Hls.isSupported()) {
         hls = new Hls({lowLatencyMode: true});
+        hls.on(Hls.Events.ERROR, function(event, data) {
+          if (stopped || !data.fatal) {
+            return;
+          }
+          // The stream may not have started yet (rtsp-to-web starts on-demand streams
+          // lazily) - keep retrying instead of leaving the preview permanently dead.
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            setTimeout(() => {
+              if (!stopped && hls) {
+                hls.startLoad();
+              }
+            }, RETRY_DELAY_MS);
+          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            hls.recoverMediaError();
+          }
+        });
         hls.loadSource(url);
         hls.attachMedia(hiddenVideo);
       } else if (hiddenVideo.canPlayType('application/vnd.apple.mpegurl')) {
@@ -192,6 +211,7 @@ export function initCameraFisheyeCalibration(dialog) {
   $typeSelect.off('change.cameraFisheye').on('change.cameraFisheye', togglePanel);
 
   $dialog.one('hidden.bs.modal', function() {
+    stopped = true;
     if (dewarp) {
       dewarp.destroy();
     }

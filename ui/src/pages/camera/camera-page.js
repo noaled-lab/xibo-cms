@@ -42,6 +42,20 @@ const PREVIEW_SMALL_WIDTH = '240px';
 // preserved), never set directly.
 const PREVIEW_LARGE_WIDTH = 'min(70vw, 960px)';
 
+// "Large" breaks out of the table as a fixed-position overlay rather than resizing in
+// place - a table cell won't reliably grow past its column's own layout, so trying to
+// resize within the row capped the preview well short of PREVIEW_LARGE_WIDTH.
+const PREVIEW_COLLAPSED_CSS = {
+  'position': 'relative', 'top': 'auto', 'left': 'auto', 'transform': 'none',
+  'width': PREVIEW_SMALL_WIDTH, 'max-width': PREVIEW_SMALL_WIDTH,
+  'z-index': 'auto', 'box-shadow': 'none',
+};
+const PREVIEW_EXPANDED_CSS = {
+  'position': 'fixed', 'top': '72px', 'left': '50%', 'transform': 'translateX(-50%)',
+  'width': PREVIEW_LARGE_WIDTH, 'max-width': PREVIEW_LARGE_WIDTH,
+  'z-index': 1050, 'box-shadow': '0 4px 24px rgba(0,0,0,.5)',
+};
+
 let activeViewers = [];
 
 function cameraPayload(camera, testVideoUrl) {
@@ -127,11 +141,7 @@ function displayCameras(cameras) {
     const testVideoUrl = camera.hasTestVideo ? cameraTestVideoUrl.replace(':id', cameraId) : null;
 
     let viewer = null;
-    const $previewWrapper = $('<div>').css({
-      'position': 'relative',
-      'width': PREVIEW_SMALL_WIDTH,
-      'max-width': PREVIEW_SMALL_WIDTH,
-    });
+    const $previewWrapper = $('<div>').css(PREVIEW_COLLAPSED_CSS);
     const $previewStage = $('<div>').css({'background': '#000', 'cursor': 'pointer'})
       .attr('title', '크게 보기')
       .on('click', function() {
@@ -145,8 +155,7 @@ function displayCameras(cameras) {
     }).html('<i class="fa fa-expand"></i>').on('click', function(e) {
       e.stopPropagation();
       const expanded = $previewWrapper.data('expanded');
-      const width = expanded ? PREVIEW_SMALL_WIDTH : PREVIEW_LARGE_WIDTH;
-      $previewWrapper.css({'width': width, 'max-width': width});
+      $previewWrapper.css(expanded ? PREVIEW_COLLAPSED_CSS : PREVIEW_EXPANDED_CSS);
       $previewWrapper.data('expanded', !expanded);
       $sizeBtn.html('<i class="fa fa-' + (expanded ? 'expand' : 'compress') + '"></i>');
       if (viewer) {
