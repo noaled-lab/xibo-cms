@@ -40,6 +40,11 @@ $(function() {
     hiddenVideo.muted = true;
     hiddenVideo.playsInline = true;
     hiddenVideo.autoplay = true;
+    // Must be attached to the document (not just display:none) - browsers throttle decoding
+    // of detached/display:none video elements, which causes dropped frames in the dewarped
+    // canvas even though the video itself is never meant to be seen directly.
+    hiddenVideo.style.cssText = 'position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;';
+    canvas.parentElement.appendChild(hiddenVideo);
     hiddenVideo.addEventListener('loadedmetadata', function() {
       dewarp.setSource(hiddenVideo, hiddenVideo.videoWidth, hiddenVideo.videoHeight, true);
     });
