@@ -7,7 +7,8 @@
          id="cameraDetail"
          data-camera-id="{{ camera.id }}"
          data-camera-type="{{ camera.type }}"
-         data-mse-url="{{ mseUrl }}"
+         data-stream-id="{{ camera.streamId }}"
+         data-channel-id="{{ camera.channelId }}"
          data-test-video-download-url="{{ camera.testVideoFile ? url_for("camera.testVideo.download", {id: camera.id}) : "" }}"
          data-fisheye-params="{{ fisheyeParams ? fisheyeParams|json_encode : "" }}">
         <div class="card-body">

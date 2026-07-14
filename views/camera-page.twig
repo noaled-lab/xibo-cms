@@ -12,33 +12,6 @@
 
 
 {% block pageContent %}
-    <div class="widget mb-3">
-        <div class="widget-title">{% trans "미리보기" %}</div>
-        <div class="widget-body">
-            <div class="mb-2 d-flex align-items-center">
-                <div id="cameraPreviewName" class="flex-grow-1"><em>{% trans "아래 목록에서 \"미리보기\"를 눌러 채널을 선택하세요." %}</em></div>
-                <div id="cameraPreviewNav" style="display:none;">
-                    <button type="button" class="btn btn-sm btn-white" id="cameraPreviewPrev" title="{% trans "이전 채널" %}"><i class="fa fa-chevron-left"></i> {% trans "이전" %}</button>
-                    <button type="button" class="btn btn-sm btn-white" id="cameraPreviewNext" title="{% trans "다음 채널" %}">{% trans "다음" %} <i class="fa fa-chevron-right"></i></button>
-                </div>
-            </div>
-            <div id="cameraPreviewStage" style="background:#000; max-width:640px; display:none;"></div>
-            <div id="cameraPreviewControls" class="mt-2" style="display:none;">
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="previewFlip">
-                    <label class="form-check-label" for="previewFlip">{% trans "상하 반전" %}</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" id="previewCcw">
-                    <label class="form-check-label" for="previewCcw">{% trans "반시계" %}</label>
-                </div>
-                <small class="form-text text-muted">
-                    {% trans "이 화면에서 바꾼 값은 저장되지 않습니다." %}
-                    <span id="previewPtzHint"></span>
-                </small>
-            </div>
-        </div>
-    </div>
     <div class="widget">
         <div class="widget-title">{% trans "카메라" %}</div>
         <div class="widget-body">
@@ -55,6 +28,7 @@
                             <tr>
                                 <th>{% trans "채널 이름" %}</th>
                                 <th>{% trans "종류" %}</th>
+                                <th>{% trans "미리보기" %}</th>
                                 <th>{% trans "동작" %}</th>
                             </tr>
                         </thead>

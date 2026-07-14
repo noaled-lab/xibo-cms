@@ -321,7 +321,6 @@ class Camera extends Base
         $this->getState()->setData([
             'camera' => $channel,
             'fisheyeParams' => $channel['fisheyeParams'] ?? $this->defaultFisheyeParams(),
-            'mseUrl' => $this->generateWebSocketUrl($streamId, $channelId),
         ]);
 
         return $this->render($request, $response);
@@ -489,7 +488,6 @@ class Camera extends Base
         $this->getState()->template = 'camera-detail';
         $this->getState()->setData([
             'camera' => $channel,
-            'mseUrl' => $this->generateWebSocketUrl($streamId, $channelId),
             'fisheyeParams' => $channel['type'] === self::TYPE_FISHEYE ? $channel['fisheyeParams'] : null,
         ]);
 

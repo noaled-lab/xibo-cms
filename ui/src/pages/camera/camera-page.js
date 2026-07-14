@@ -1,7 +1,6 @@
-// Camera grid page - lists cameras (name/type), with a single switchable
-// preview panel at the top (click "미리보기" on any row) and a link out to
-// the full camera detail page. Only one viewer instance ever exists here,
-// keeping the grid itself lightweight regardless of how many cameras exist.
+// Camera grid page - lists cameras (name/type) with a live preview inline on
+// every row (each row gets its own viewer, so multiple cameras can play at
+// the same time), plus a link out to the full camera detail page.
 import {initCameraFisheyeCalibration} from './camera-edit-calibration.js';
 import {createCameraViewer} from './camera-viewer.js';
 
@@ -37,78 +36,17 @@ const CAMERA_TYPE_LABELS = {
   fisheye: '어안',
 };
 
-let viewer = null;
-let selectedCameraId = null;
-let hasAutoSelected = false;
-let cameraById = {};
-
-function navigatePreview(direction) {
-  const ids = $('#cameraTable tbody tr').map(function() {
-    return $(this).attr('data-camera-id');
-  }).get();
-  if (ids.length === 0) {
-    return;
-  }
-
-  let index = ids.indexOf(selectedCameraId);
-  index = index === -1 ? 0 : (index + direction + ids.length) % ids.length;
-
-  const camera = cameraById[ids[index]];
-  if (camera) {
-    selectCameraForPreview(camera);
-  }
-}
-
-function selectCameraForPreview(camera) {
-  const cameraId = camera.streamId + ':' + camera.channelId;
-  selectedCameraId = cameraId;
-
-  $('#cameraPreviewName').html(
-    $('<strong>').text(camera.name || camera.channelId),
-  ).append(
-    $('<span>').addClass('badge ml-2 ' + (camera.type === 'fisheye' ? 'badge-info' : 'badge-secondary'))
-      .text(CAMERA_TYPE_LABELS[camera.type] || CAMERA_TYPE_LABELS.standard),
-  );
-  $('#cameraPreviewStage').show();
-  $('#cameraPreviewNav').show();
-
-  const testVideoUrl = camera.hasTestVideo ? cameraTestVideoUrl.replace(':id', cameraId) : null;
-  const handle = viewer.show({
-    type: camera.type,
-    mseUrl: camera.url,
-    fisheyeParams: camera.fisheyeParams,
-    testVideoUrl: testVideoUrl,
-  });
-
-  const isFisheye = camera.type === 'fisheye';
-  $('#cameraPreviewControls').toggle(isFisheye);
-
-  if (isFisheye) {
-    const $flip = $('#previewFlip').off('change')
-      .prop('checked', !!(camera.fisheyeParams && camera.fisheyeParams.flip));
-    const $ccw = $('#previewCcw').off('change')
-      .prop('checked', !!(camera.fisheyeParams && camera.fisheyeParams.ccw));
-
-    const applyEphemeral = () => handle.setEphemeral({flip: $flip.is(':checked'), ccw: $ccw.is(':checked')});
-    applyEphemeral();
-    $flip.add($ccw).on('change', applyEphemeral);
-
-    $('#previewPtzHint').text(handle.mode === 'ptz' ? ' 드래그: 팬/틸트 · 휠: 줌' : '');
-  }
-
-  $('#cameraTable tbody tr').removeClass('table-active');
-  $('#cameraTable tbody tr[data-camera-id="' + cameraId + '"]').addClass('table-active');
-}
+let activeViewers = [];
 
 function displayCameras(cameras) {
   if ($.fn.DataTable.isDataTable('#cameraTable')) {
     $('#cameraTable').DataTable().destroy();
   }
 
-  cameraById = {};
-  cameras.forEach(function(camera) {
-    cameraById[camera.streamId + ':' + camera.channelId] = camera;
-  });
+  // Tear down any viewers from the previous render (hls.js instances, WebGL contexts)
+  // before rebuilding the table, so they don't keep streaming in the background.
+  activeViewers.forEach((viewer) => viewer.destroy());
+  activeViewers = [];
 
   const tbody = $('#cameraTable tbody');
   tbody.empty();
@@ -125,19 +63,19 @@ function displayCameras(cameras) {
       $('<td>').append($('<span>').addClass('badge ' + badgeClass).text(typeLabel)),
     );
 
+    const previewStage = $('<div>').css({
+      'background': '#000',
+      'width': '240px',
+      'max-width': '240px',
+    })[0];
+    row.append($('<td>').append(previewStage));
+
     const actionCell = $('<td>');
-    actionCell.append($('<button>', {
-      'class': 'btn btn-sm btn-secondary mr-1',
-      'type': 'button',
-      'title': '미리보기',
-    }).html('<i class="fa fa-play"></i> 미리보기').on('click', function() {
-      selectCameraForPreview(camera);
-    }));
     actionCell.append($('<a>', {
       'class': 'btn btn-sm btn-primary mr-1',
       'href': cameraDetailUrl.replace(':id', cameraId),
       'title': '상세보기',
-    }).html('<i class="fa fa-eye"></i> 상세보기'));
+    }).html('<i class="fa fa-eye"></i>'));
     actionCell.append($('<button>', {
       'class': 'btn btn-sm btn-warning XiboFormButton mr-1',
       'href': cameraEditFormUrl.replace(':id', cameraId),
@@ -151,6 +89,17 @@ function displayCameras(cameras) {
     row.append(actionCell);
 
     tbody.append(row);
+
+    const viewer = createCameraViewer(previewStage);
+    const testVideoUrl = camera.hasTestVideo ? cameraTestVideoUrl.replace(':id', cameraId) : null;
+    viewer.show({
+      type: camera.type,
+      streamId: camera.streamId,
+      channelId: camera.channelId,
+      fisheyeParams: camera.fisheyeParams,
+      testVideoUrl: testVideoUrl,
+    });
+    activeViewers.push(viewer);
   });
 
   $('#cameraTable').DataTable({
@@ -164,13 +113,6 @@ function displayCameras(cameras) {
   });
 
   XiboInitialise('#cameraTable');
-
-  if (selectedCameraId) {
-    $('#cameraTable tbody tr[data-camera-id="' + selectedCameraId + '"]').addClass('table-active');
-  } else if (!hasAutoSelected && cameras.length > 0) {
-    hasAutoSelected = true;
-    selectCameraForPreview(cameras[0]);
-  }
 }
 
 function loadCameras() {
@@ -197,16 +139,7 @@ window.refreshCameraList = function() {
 };
 
 $(function() {
-  viewer = createCameraViewer(document.getElementById('cameraPreviewStage'));
-
   loadCameras();
-
-  $('#cameraPreviewPrev').on('click', function() {
-    navigatePreview(-1);
-  });
-  $('#cameraPreviewNext').on('click', function() {
-    navigatePreview(1);
-  });
 
   $('#refreshGrid').click(function() {
     refreshCameraList();

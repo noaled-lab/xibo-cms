@@ -16,7 +16,6 @@
             <form id="cameraEditForm" class="XiboForm form-horizontal" method="put"
                   action="{{ url_for("camera.edit", {id: camera.id}) }}"
                   data-camera-id="{{ camera.id }}"
-                  data-mse-url="{{ mseUrl }}"
                   data-fisheye-params="{{ fisheyeParams|json_encode }}"
                   data-test-video-upload-url="{{ url_for("camera.testVideo.upload", {id: camera.id}) }}"
                   data-test-video-download-url="{{ url_for("camera.testVideo.download", {id: camera.id}) }}"

@@ -4,8 +4,14 @@
 // the ones that get saved - this is the only screen where they can be
 // changed. Detail-page overrides (flip/ccw while viewing) never touch this
 // code.
+import Hls from 'hls.js';
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
-import {startPlay, buildMseWebSocketUrl} from './camera-stream.js';
+
+function buildHlsLLUrl(cameraId) {
+  const [streamId, channelId] = cameraId.split(':');
+  return window.location.protocol + '//' + window.location.hostname + ':8083' +
+    '/stream/' + streamId + '/channel/' + channelId + '/hlsll/live/index.m3u8';
+}
 
 const SLIDER_IDS = [
   'centerX', 'centerY', 'radius', 'radiusInner', 'radiusOuter',
@@ -45,7 +51,7 @@ export function initCameraFisheyeCalibration(dialog) {
 
   let dewarp = null;
   let hiddenVideo = null;
-  let player = null;
+  let hls = null;
 
   function togglePanel() {
     const isFisheye = $typeSelect.val() === 'fisheye';
@@ -69,10 +75,10 @@ export function initCameraFisheyeCalibration(dialog) {
     if (hiddenVideo) {
       hiddenVideo.pause();
       hiddenVideo.remove();
-      if (player) {
-        player.stop();
-        player = null;
-      }
+    }
+    if (hls) {
+      hls.destroy();
+      hls = null;
     }
     hiddenVideo = document.createElement('video');
     hiddenVideo.muted = true;
@@ -94,8 +100,17 @@ export function initCameraFisheyeCalibration(dialog) {
       hiddenVideo.src = $form.data('test-video-download-url') + '?_=' + Date.now();
       hiddenVideo.play().catch(() => {});
     } else {
-      $status.text('실시간 스트림을 불러오는 중...');
-      player = startPlay(hiddenVideo, buildMseWebSocketUrl($form.data('mse-url')));
+      $status.text('실시간 스트림(LL-HLS)을 불러오는 중...');
+      const url = buildHlsLLUrl($form.data('camera-id'));
+      if (Hls.isSupported()) {
+        hls = new Hls({lowLatencyMode: true});
+        hls.loadSource(url);
+        hls.attachMedia(hiddenVideo);
+      } else if (hiddenVideo.canPlayType('application/vnd.apple.mpegurl')) {
+        hiddenVideo.src = url;
+      } else {
+        $status.text('이 브라우저는 HLS 재생을 지원하지 않습니다.');
+      }
     }
   }
 
@@ -174,8 +189,8 @@ export function initCameraFisheyeCalibration(dialog) {
     if (dewarp) {
       dewarp.destroy();
     }
-    if (player) {
-      player.stop();
+    if (hls) {
+      hls.destroy();
     }
     if (hiddenVideo) {
       hiddenVideo.remove();
