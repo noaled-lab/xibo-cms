@@ -56,23 +56,39 @@ function cameraPayload(camera, testVideoUrl) {
 
 // Opens the same camera much larger in a dialog - a separate viewer instance, so it
 // plays independently of (and doesn't disturb) the row's own inline preview.
+let dialogStageCounter = 0;
+
 function openPreviewDialog(camera, testVideoUrl) {
-  const stage = $('<div>').css({'background': '#000', 'width': '100%'});
+  // bootbox inserts `message` via jQuery .html(), which only accepts a string (a
+  // jQuery/DOM object passed directly gets stringified into garbage) - so build the
+  // stage as markup and look it up again once it's actually in the DOM.
+  const stageId = 'cameraPreviewDialogStage' + (dialogStageCounter++);
   const dialog = bootbox.dialog({
     title: camera.name || camera.channelId,
-    message: stage,
-    size: 'large',
+    message: '<div id="' + stageId + '" style="background:#000; width:100%;"></div>',
+    size: 'extra-large',
+    backdrop: true, // click outside the dialog to close it
   });
 
-  const dialogViewer = createCameraViewer(stage[0]);
-  dialogViewer.show(cameraPayload(camera, testVideoUrl));
+  let dialogViewer = null;
+  // Wait for the modal's own "fully shown" event before measuring/creating the viewer -
+  // creating it earlier (while the modal is still animating in) reads a stale/incorrect
+  // width from the still-transitioning dialog, which shows up as a cropped or
+  // oddly-sized video.
+  dialog.one('shown.bs.modal', function() {
+    const stage = dialog.find('#' + stageId)[0];
+    dialogViewer = createCameraViewer(stage);
+    dialogViewer.show(cameraPayload(camera, testVideoUrl));
+  });
 
   // stopPropagation so this pure-viewing dialog doesn't trigger the page's global
   // hidden.bs.modal handler (below) meant for the add/edit/delete forms - that would
   // refresh and rebuild the whole grid, tearing down every row's live preview.
   dialog.one('hidden.bs.modal', function(e) {
     e.stopPropagation();
-    dialogViewer.destroy();
+    if (dialogViewer) {
+      dialogViewer.destroy();
+    }
   });
 }
 
@@ -89,6 +105,13 @@ function displayCameras(cameras) {
   const tbody = $('#cameraTable tbody');
   tbody.empty();
 
+  // Viewers are created once the table has finished laying out (DataTable's
+  // initComplete, below) rather than right here - creating them immediately after
+  // inserting the row measures the preview container before DataTables has sorted/
+  // sized the table, which reads a stale width and shows up as a black/broken preview
+  // until something else (opening the dialog, a page refresh) forces a fresh layout.
+  const pending = [];
+
   cameras.forEach(function(camera) {
     const cameraId = camera.streamId + ':' + camera.channelId;
     const row = $('<tr>').attr('data-camera-id', cameraId);
@@ -103,6 +126,7 @@ function displayCameras(cameras) {
 
     const testVideoUrl = camera.hasTestVideo ? cameraTestVideoUrl.replace(':id', cameraId) : null;
 
+    let viewer = null;
     const $previewWrapper = $('<div>').css({
       'position': 'relative',
       'width': PREVIEW_SMALL_WIDTH,
@@ -125,7 +149,9 @@ function displayCameras(cameras) {
       $previewWrapper.css({'width': width, 'max-width': width});
       $previewWrapper.data('expanded', !expanded);
       $sizeBtn.html('<i class="fa fa-' + (expanded ? 'expand' : 'compress') + '"></i>');
-      viewer.resize();
+      if (viewer) {
+        viewer.resize();
+      }
     });
     $previewWrapper.append($previewStage).append($sizeBtn);
     row.append($('<td>').append($previewWrapper));
@@ -150,9 +176,14 @@ function displayCameras(cameras) {
 
     tbody.append(row);
 
-    const viewer = createCameraViewer($previewStage[0]);
-    viewer.show(cameraPayload(camera, testVideoUrl));
-    activeViewers.push(viewer);
+    pending.push({
+      stage: $previewStage[0],
+      start: (createdViewer) => {
+        viewer = createdViewer;
+      },
+      camera: camera,
+      testVideoUrl: testVideoUrl,
+    });
   });
 
   $('#cameraTable').DataTable({
@@ -163,6 +194,14 @@ function displayCameras(cameras) {
     'info': true,
     'autoWidth': false,
     'order': [[0, 'asc']],
+    'initComplete': function() {
+      pending.forEach(({stage, start, camera, testVideoUrl}) => {
+        const viewer = createCameraViewer(stage);
+        start(viewer);
+        viewer.show(cameraPayload(camera, testVideoUrl));
+        activeViewers.push(viewer);
+      });
+    },
   });
 
   XiboInitialise('#cameraTable');

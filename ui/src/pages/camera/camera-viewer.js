@@ -104,7 +104,9 @@ export function createCameraViewer(container) {
     }
 
     visibleVideo = document.createElement('video');
-    visibleVideo.className = 'w-100';
+    // height:auto (not left to inherited/default CSS) so the video keeps its natural
+    // aspect ratio instead of being stretched/cropped to fill some unrelated height.
+    visibleVideo.style.cssText = 'width:100%; height:auto; display:block;';
     visibleVideo.controls = true;
     visibleVideo.autoplay = true;
     visibleVideo.muted = true;
