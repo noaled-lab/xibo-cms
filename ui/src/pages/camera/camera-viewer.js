@@ -116,5 +116,16 @@ export function createCameraViewer(container) {
     return {setEphemeral: () => {}, mode: null};
   }
 
-  return {show, destroy: teardown};
+  return {
+    show,
+    destroy: teardown,
+    /** Call after the container's size changes (e.g. an expand/collapse toggle) so a
+     * fisheye canvas recalculates its height from the configured aspect ratio. A no-op
+     * for standard cameras - the <video> element is already responsive on its own. */
+    resize() {
+      if (dewarp) {
+        dewarp.resize();
+      }
+    },
+  };
 }

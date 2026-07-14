@@ -46,10 +46,14 @@ const COMMON = `
 `;
 
 /**
- * @param {HTMLCanvasElement} canvas
+ * @param {HTMLCanvasElement} canvas the dewarped output canvas
+ * @param {HTMLCanvasElement} [sourceCanvas] optional - shows the raw fisheye source with a
+ *   circle overlay for the current calibration, and lets the caller pick the center by
+ *   clicking on it (via onCenterPick). Mainly useful for the Edit form's calibration UI;
+ *   the detail/viewing page has no reason to pass this.
  * @returns {object} controller
  */
-export function createFisheyeDewarp(canvas) {
+export function createFisheyeDewarp(canvas, sourceCanvas) {
   const params = {
     cx: 50, cy: 50, rad: 98, rin: 0.25, rout: 1.0, rot: 0,
     lens: 0, ffov: 180, mode: 'seg', layout: 'L1', aspect: 6,
@@ -58,12 +62,15 @@ export function createFisheyeDewarp(canvas) {
 
   let panes = [];
   let activePane = 0;
+  let srcEl = null;
   let srcW = 1024;
   let srcH = 1024;
   let texture = null;
   let running = false;
   let rafId = null;
   let onPanesChange = null;
+  let onCenterPick = null;
+  const srcCtx = sourceCanvas ? sourceCanvas.getContext('2d') : null;
 
   const renderer = new THREE.WebGLRenderer({canvas, antialias: false});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -155,6 +162,68 @@ export function createFisheyeDewarp(canvas) {
     uPtz.rInnerP.value = Math.min(params.rin, params.rout - 0.01);
 
     resize();
+    drawSourceOverlay();
+  }
+
+  // Raw source preview + circle overlay (center/inner/outer radius, start angle) so
+  // calibration values can be set by eye instead of guessing from sliders alone.
+  function drawSourceOverlay() {
+    if (!srcCtx || !srcEl) {
+      return;
+    }
+    const maxW = sourceCanvas.parentElement ? sourceCanvas.parentElement.clientWidth : 400;
+    const scale = Math.min(maxW / srcW, 340 / srcH, 1);
+    sourceCanvas.width = Math.round(srcW * scale);
+    sourceCanvas.height = Math.round(srcH * scale);
+    srcCtx.drawImage(srcEl, 0, 0, sourceCanvas.width, sourceCanvas.height);
+
+    const cx = params.cx / 100 * sourceCanvas.width;
+    const cy = params.cy / 100 * sourceCanvas.height;
+    const r = params.rad / 100 * Math.min(sourceCanvas.width, sourceCanvas.height) / 2;
+
+    srcCtx.lineWidth = 1.5;
+    srcCtx.strokeStyle = '#ffb454';
+    srcCtx.beginPath();
+    srcCtx.arc(cx, cy, r * params.rout, 0, Math.PI * 2);
+    srcCtx.stroke();
+
+    srcCtx.strokeStyle = '#4fd1c5';
+    srcCtx.fillStyle = 'rgba(79,209,197,.12)';
+    srcCtx.beginPath();
+    srcCtx.arc(cx, cy, r * params.rin, 0, Math.PI * 2);
+    srcCtx.fill();
+    srcCtx.stroke();
+
+    srcCtx.strokeStyle = '#ffffffaa';
+    srcCtx.beginPath();
+    srcCtx.moveTo(cx - 8, cy);
+    srcCtx.lineTo(cx + 8, cy);
+    srcCtx.moveTo(cx, cy - 8);
+    srcCtx.lineTo(cx, cy + 8);
+    srcCtx.stroke();
+
+    const a = -params.rot * Math.PI / 180 * (ephemeral.ccw ? -1 : 1);
+    srcCtx.strokeStyle = '#ff7847';
+    srcCtx.setLineDash([5, 4]);
+    srcCtx.beginPath();
+    srcCtx.moveTo(cx + Math.cos(a) * r * params.rin, cy + Math.sin(a) * r * params.rin);
+    srcCtx.lineTo(cx + Math.cos(a) * r * params.rout, cy + Math.sin(a) * r * params.rout);
+    srcCtx.stroke();
+    srcCtx.setLineDash([]);
+  }
+
+  function onSourceCanvasClick(e) {
+    const r = sourceCanvas.getBoundingClientRect();
+    const cx = (e.clientX - r.left) / r.width * 100;
+    const cy = (e.clientY - r.top) / r.height * 100;
+    if (onCenterPick) {
+      onCenterPick({cx, cy});
+    }
+  }
+
+  if (sourceCanvas) {
+    sourceCanvas.style.cursor = 'crosshair';
+    sourceCanvas.addEventListener('click', onSourceCanvasClick);
   }
 
   function resize() {
@@ -293,12 +362,18 @@ export function createFisheyeDewarp(canvas) {
   canvas.addEventListener('wheel', onWheel, {passive: false});
   window.addEventListener('resize', resize);
 
+  let frame = 0;
   function loop() {
     if (!running) {
       return;
     }
     rafId = requestAnimationFrame(loop);
     renderFrame();
+    // Source is a live video - keep the overlay preview's frame current too (throttled,
+    // it's just a calibration aid, doesn't need to match the render loop's framerate).
+    if (srcCtx && frame++ % 3 === 0) {
+      drawSourceOverlay();
+    }
   }
 
   return {
@@ -312,6 +387,7 @@ export function createFisheyeDewarp(canvas) {
       if (texture) {
         texture.dispose();
       }
+      srcEl = el;
       srcW = w;
       srcH = h;
       texture = isVideo ? new THREE.VideoTexture(el) : new THREE.Texture(el);
@@ -347,6 +423,10 @@ export function createFisheyeDewarp(canvas) {
     onPanesChange(cb) {
       onPanesChange = cb;
     },
+    /** Fired with {cx, cy} (percentages) when the source preview canvas is clicked. */
+    onCenterPick(cb) {
+      onCenterPick = cb;
+    },
     resize,
     startLoop() {
       if (running) {
@@ -369,6 +449,9 @@ export function createFisheyeDewarp(canvas) {
       canvas.removeEventListener('pointerup', onPointerUp);
       canvas.removeEventListener('pointercancel', onPointerUp);
       canvas.removeEventListener('wheel', onWheel);
+      if (sourceCanvas) {
+        sourceCanvas.removeEventListener('click', onSourceCanvasClick);
+      }
       if (texture) {
         texture.dispose();
       }

@@ -36,7 +36,45 @@ const CAMERA_TYPE_LABELS = {
   fisheye: '어안',
 };
 
+const PREVIEW_SMALL_WIDTH = '240px';
+// Large = as wide as the screen reasonably allows, capped so it doesn't get absurd on
+// very wide monitors. Height always follows from this via viewer.resize() (aspect ratio
+// preserved), never set directly.
+const PREVIEW_LARGE_WIDTH = 'min(70vw, 960px)';
+
 let activeViewers = [];
+
+function cameraPayload(camera, testVideoUrl) {
+  return {
+    type: camera.type,
+    streamId: camera.streamId,
+    channelId: camera.channelId,
+    fisheyeParams: camera.fisheyeParams,
+    testVideoUrl: testVideoUrl,
+  };
+}
+
+// Opens the same camera much larger in a dialog - a separate viewer instance, so it
+// plays independently of (and doesn't disturb) the row's own inline preview.
+function openPreviewDialog(camera, testVideoUrl) {
+  const stage = $('<div>').css({'background': '#000', 'width': '100%'});
+  const dialog = bootbox.dialog({
+    title: camera.name || camera.channelId,
+    message: stage,
+    size: 'large',
+  });
+
+  const dialogViewer = createCameraViewer(stage[0]);
+  dialogViewer.show(cameraPayload(camera, testVideoUrl));
+
+  // stopPropagation so this pure-viewing dialog doesn't trigger the page's global
+  // hidden.bs.modal handler (below) meant for the add/edit/delete forms - that would
+  // refresh and rebuild the whole grid, tearing down every row's live preview.
+  dialog.one('hidden.bs.modal', function(e) {
+    e.stopPropagation();
+    dialogViewer.destroy();
+  });
+}
 
 function displayCameras(cameras) {
   if ($.fn.DataTable.isDataTable('#cameraTable')) {
@@ -63,12 +101,34 @@ function displayCameras(cameras) {
       $('<td>').append($('<span>').addClass('badge ' + badgeClass).text(typeLabel)),
     );
 
-    const previewStage = $('<div>').css({
-      'background': '#000',
-      'width': '240px',
-      'max-width': '240px',
-    })[0];
-    row.append($('<td>').append(previewStage));
+    const testVideoUrl = camera.hasTestVideo ? cameraTestVideoUrl.replace(':id', cameraId) : null;
+
+    const $previewWrapper = $('<div>').css({
+      'position': 'relative',
+      'width': PREVIEW_SMALL_WIDTH,
+      'max-width': PREVIEW_SMALL_WIDTH,
+    });
+    const $previewStage = $('<div>').css({'background': '#000', 'cursor': 'pointer'})
+      .attr('title', '크게 보기')
+      .on('click', function() {
+        openPreviewDialog(camera, testVideoUrl);
+      });
+    const $sizeBtn = $('<button>', {
+      'class': 'btn btn-sm btn-secondary',
+      'type': 'button',
+      'title': '작게/크게',
+      'style': 'position:absolute; top:4px; right:4px; z-index:10;',
+    }).html('<i class="fa fa-expand"></i>').on('click', function(e) {
+      e.stopPropagation();
+      const expanded = $previewWrapper.data('expanded');
+      const width = expanded ? PREVIEW_SMALL_WIDTH : PREVIEW_LARGE_WIDTH;
+      $previewWrapper.css({'width': width, 'max-width': width});
+      $previewWrapper.data('expanded', !expanded);
+      $sizeBtn.html('<i class="fa fa-' + (expanded ? 'expand' : 'compress') + '"></i>');
+      viewer.resize();
+    });
+    $previewWrapper.append($previewStage).append($sizeBtn);
+    row.append($('<td>').append($previewWrapper));
 
     const actionCell = $('<td>');
     actionCell.append($('<a>', {
@@ -90,15 +150,8 @@ function displayCameras(cameras) {
 
     tbody.append(row);
 
-    const viewer = createCameraViewer(previewStage);
-    const testVideoUrl = camera.hasTestVideo ? cameraTestVideoUrl.replace(':id', cameraId) : null;
-    viewer.show({
-      type: camera.type,
-      streamId: camera.streamId,
-      channelId: camera.channelId,
-      fisheyeParams: camera.fisheyeParams,
-      testVideoUrl: testVideoUrl,
-    });
+    const viewer = createCameraViewer($previewStage[0]);
+    viewer.show(cameraPayload(camera, testVideoUrl));
     activeViewers.push(viewer);
   });
 

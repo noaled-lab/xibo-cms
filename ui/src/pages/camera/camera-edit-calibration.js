@@ -116,13 +116,19 @@ export function initCameraFisheyeCalibration(dialog) {
 
   function setupDewarp() {
     const canvas = $dialog.find('#fisheyePreviewCanvas')[0];
-    dewarp = createFisheyeDewarp(canvas);
+    const sourceCanvas = $dialog.find('#fisheyeSourceCanvas')[0];
+    dewarp = createFisheyeDewarp(canvas, sourceCanvas);
 
     const initialParams = $form.data('fisheye-params') || {};
     dewarp.setParams(initialParams);
     dewarp.setEphemeral(readEphemeralFromForm($form));
     dewarp.onPanesChange((panes) => {
       $form.find('#panes').val(JSON.stringify(panes));
+    });
+    dewarp.onCenterPick(({cx, cy}) => {
+      $form.find('#centerX').val(cx.toFixed(1));
+      $form.find('#centerY').val(cy.toFixed(1));
+      dewarp.setParams(readParamsFromForm($form));
     });
 
     SLIDER_IDS.concat(SELECT_IDS).forEach((id) => {

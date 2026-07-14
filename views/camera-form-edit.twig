@@ -66,8 +66,19 @@
                     <div class="form-group row">
                         <label class="col-sm-2 control-label">{% trans "미리보기" %}</label>
                         <div class="col-sm-10">
-                            <div style="background:#000; max-width:480px;">
-                                <canvas id="fisheyePreviewCanvas" style="width:100%; display:block;"></canvas>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div style="background:#000; max-width:400px;">
+                                        <canvas id="fisheyeSourceCanvas" style="width:100%; display:block;"></canvas>
+                                    </div>
+                                    <small class="form-text text-muted">{% trans "원본 - 클릭하면 그 위치가 중심으로 지정됩니다." %}</small>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div style="background:#000; max-width:400px;">
+                                        <canvas id="fisheyePreviewCanvas" style="width:100%; display:block;"></canvas>
+                                    </div>
+                                    <small class="form-text text-muted">{% trans "디워핑 결과" %}</small>
+                                </div>
                             </div>
                             <small class="form-text text-muted" id="fisheyePreviewStatus">{% trans "소스를 불러오는 중..." %}</small>
                         </div>
