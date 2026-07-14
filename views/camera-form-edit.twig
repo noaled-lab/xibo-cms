@@ -20,6 +20,7 @@
                   data-fisheye-params="{{ fisheyeParams|json_encode }}"
                   data-test-video-upload-url="{{ url_for("camera.testVideo.upload", {id: camera.id}) }}"
                   data-test-video-download-url="{{ url_for("camera.testVideo.download", {id: camera.id}) }}"
+                  data-test-video-delete-url="{{ url_for("camera.testVideo.delete", {id: camera.id}) }}"
                   data-test-video-file="{{ camera.testVideoFile }}">
 
                 <!-- 숨겨진 필드: onDemand는 항상 true -->
@@ -45,6 +46,20 @@
                 ] %}
                 {{ forms.dropdown("type", "dropdown", title, camera.type, options, "id", "value", helpText) }}
 
+                <div class="form-group row">
+                    <label class="col-sm-2 control-label">{% trans "테스트 영상 (임시)" %}</label>
+                    <div class="col-sm-10">
+                        <input type="file" id="testVideoInput" accept="video/mp4,video/webm,video/quicktime">
+                        <button type="button" class="btn btn-sm btn-white" id="testVideoUploadBtn">{% trans "업로드" %}</button>
+                        {% if camera.testVideoFile %}
+                            <button type="button" class="btn btn-sm btn-white" id="testVideoDeleteBtn">{% trans "삭제" %}</button>
+                        {% endif %}
+                        <small class="form-text text-muted" id="testVideoStatus">
+                            {% trans "실제 카메라 없이(종류 상관없이) 확인용으로 영상을 올려둘 수 있습니다. 임시 기능이라 추후 제거 예정입니다." %}
+                        </small>
+                    </div>
+                </div>
+
                 <div id="fisheyeCalibration" class="fisheye-calibration" style="display:none;">
                     <hr>
                     <h4>{% trans "어안 캘리브레이션" %}</h4>
@@ -56,15 +71,6 @@
                                 <canvas id="fisheyePreviewCanvas" style="width:100%; display:block;"></canvas>
                             </div>
                             <small class="form-text text-muted" id="fisheyePreviewStatus">{% trans "소스를 불러오는 중..." %}</small>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                        <label class="col-sm-2 control-label">{% trans "테스트 영상 (임시)" %}</label>
-                        <div class="col-sm-10">
-                            <input type="file" id="fisheyeTestVideoInput" accept="video/mp4,video/webm,video/quicktime">
-                            <button type="button" class="btn btn-sm btn-white" id="fisheyeTestVideoUploadBtn">{% trans "업로드" %}</button>
-                            <small class="form-text text-muted">{% trans "실제 카메라 없이 캘리브레이션을 테스트하기 위한 임시 기능입니다 (추후 제거 예정)." %}</small>
                         </div>
                     </div>
 

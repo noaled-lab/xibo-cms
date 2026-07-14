@@ -3,7 +3,7 @@
 // top of the saved defaults from the camera Edit form; they are never sent
 // back to the server.
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
-import {startPlay} from './camera-stream.js';
+import {startPlay, buildMseWebSocketUrl} from './camera-stream.js';
 
 $(function() {
   const $root = $('#cameraDetail');
@@ -14,7 +14,7 @@ $(function() {
   const cameraType = $root.data('camera-type');
   const mseUrl = $root.data('mse-url');
   const testVideoUrl = $root.data('test-video-download-url');
-  const wsUrl = 'ws://' + window.location.hostname + ':8083' + mseUrl;
+  const wsUrl = buildMseWebSocketUrl(mseUrl);
 
   if (cameraType === 'fisheye') {
     const fisheyeParams = $root.data('fisheye-params') || {};

@@ -1,6 +1,18 @@
 // Shared MSE/WebSocket live-stream player, used by both the camera grid page
 // and the camera detail page (extracted from the original inline camera-page.js).
 
+/**
+ * Build the rtsp-to-web MSE websocket URL, matching ws:/wss: to the page's own
+ * protocol - a page loaded over HTTPS cannot open a plain ws:// connection
+ * (browsers block it as mixed content), it must use wss://.
+ * @param {string} mseUrlPath the path returned by the server, e.g. "/stream/{id}/channel/{id}/mse?..."
+ * @return {string}
+ */
+export function buildMseWebSocketUrl(mseUrlPath) {
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return wsProtocol + '//' + window.location.hostname + ':8083' + mseUrlPath;
+}
+
 function utf8ArrayToStr(array) {
   try {
     return new TextDecoder('utf-8').decode(array);

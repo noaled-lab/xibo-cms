@@ -1,9 +1,11 @@
-// Powers the fisheye calibration panel inside the camera Edit form (modal).
-// Calibration values here are the ones that get saved (camera_fisheye_setting) -
-// this is the only screen where they can be changed. Detail-page overrides
-// (flip/ccw while viewing) never touch this code.
+// Powers the camera Edit form (modal): the fisheye calibration panel (only
+// shown/initialised when type=fisheye) and the test-video upload controls
+// (always available, regardless of camera type). Calibration values here are
+// the ones that get saved - this is the only screen where they can be
+// changed. Detail-page overrides (flip/ccw while viewing) never touch this
+// code.
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
-import {startPlay} from './camera-stream.js';
+import {startPlay, buildMseWebSocketUrl} from './camera-stream.js';
 
 const SLIDER_IDS = [
   'centerX', 'centerY', 'radius', 'radiusInner', 'radiusOuter',
@@ -49,11 +51,18 @@ export function initCameraFisheyeCalibration(dialog) {
     const isFisheye = $typeSelect.val() === 'fisheye';
     $panel.toggle(isFisheye);
     if (isFisheye && !dewarp) {
-      setup();
+      setupDewarp();
     }
   }
 
+  // Refreshes the fisheye preview source (test video, if one is set, otherwise the live stream).
+  // A no-op when the calibration panel/canvas isn't active (e.g. type is "standard") - test-video
+  // upload/delete still work in that case, there's just no preview to refresh.
   function loadSource() {
+    if (!dewarp) {
+      return;
+    }
+
     const testVideoFile = $form.data('test-video-file');
     const $status = $dialog.find('#fisheyePreviewStatus');
 
@@ -80,12 +89,11 @@ export function initCameraFisheyeCalibration(dialog) {
       hiddenVideo.play().catch(() => {});
     } else {
       $status.text('실시간 스트림을 불러오는 중...');
-      const mseUrl = 'ws://' + window.location.hostname + ':8083' + $form.data('mse-url');
-      player = startPlay(hiddenVideo, mseUrl);
+      player = startPlay(hiddenVideo, buildMseWebSocketUrl($form.data('mse-url')));
     }
   }
 
-  function setup() {
+  function setupDewarp() {
     const canvas = $dialog.find('#fisheyePreviewCanvas')[0];
     dewarp = createFisheyeDewarp(canvas);
 
@@ -107,10 +115,15 @@ export function initCameraFisheyeCalibration(dialog) {
 
     dewarp.startLoop();
     loadSource();
+  }
 
-    $dialog.find('#fisheyeTestVideoUploadBtn').on('click', function() {
-      const fileInput = $dialog.find('#fisheyeTestVideoInput')[0];
+  // Test-video upload/delete are wired unconditionally - useful for standard cameras too
+  // (verifying the detail page plays something without a live camera connected).
+  function wireTestVideoControls() {
+    $dialog.find('#testVideoUploadBtn').on('click', function() {
+      const fileInput = $dialog.find('#testVideoInput')[0];
       if (!fileInput.files.length) {
+        SystemMessage('업로드할 파일을 선택하세요.', true);
         return;
       }
       const formData = new FormData();
@@ -131,8 +144,23 @@ export function initCameraFisheyeCalibration(dialog) {
         },
       });
     });
+
+    $dialog.find('#testVideoDeleteBtn').on('click', function() {
+      $.ajax({
+        url: $form.data('test-video-delete-url'),
+        type: 'DELETE',
+        success: function(res) {
+          if (res.success) {
+            $form.data('test-video-file', '');
+            loadSource();
+          }
+          SystemMessage(res.message, !res.success);
+        },
+      });
+    });
   }
 
+  wireTestVideoControls();
   togglePanel();
   $typeSelect.off('change.cameraFisheye').on('change.cameraFisheye', togglePanel);
 
