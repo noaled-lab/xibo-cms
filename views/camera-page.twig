@@ -23,17 +23,20 @@
                     </div>
                 </div>
                 <div class="XiboData card pt-3">
-                    <table id="cameraTable" class="table table-striped" data-state-preference-name="cameraGrid">
-                        <thead>
-                            <tr>
-                                <th>{% trans "채널 이름" %}</th>
-                                <th>{% trans "실시간 영상" %}</th>
-                                <th>{% trans "동작" %}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table id="cameraTable" class="table table-striped" data-state-preference-name="cameraGrid" style="table-layout:fixed; width:100%; min-width:700px;">
+                            <thead>
+                                <tr>
+                                    <th style="width:20%">{% trans "채널 이름" %}</th>
+                                    <th style="width:10%">{% trans "종류" %}</th>
+                                    <th style="width:50%">{% trans "미리보기" %}</th>
+                                    <th style="width:20%">{% trans "동작" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -45,6 +48,8 @@
         var cameraGridUrl = "{{ url_for("camera.search") }}";
         var cameraEditFormUrl = "{{ url_for("camera.edit.form", {id: ":id"}) }}";
         var cameraDeleteFormUrl = "{{ url_for("camera.delete.form", {id: ":id"}) }}";
+        var cameraDetailUrl = "{{ url_for("camera.detail", {id: ":id"}) }}";
+        var cameraTestVideoUrl = "{{ url_for("camera.testVideo.download", {id: ":id"}) }}";
     </script>
 
     <script src="{{ theme.rootUri() }}dist/pages/camera-page.bundle.min.js?v={{ version }}&rev={{ revision }}" nonce="{{ cspNonce }}"></script>

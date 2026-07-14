@@ -29,7 +29,31 @@
   "streams": {
     "noaled": {
       "channels": {
-
+        "89811b81-ce4f-4955-8277-0c4a0347b7f3": {
+          "name": "\u0001XIBO_FISHEYE\u0001{\"n\":\"\\uc5b4\\uc548\",\"t\":\"fisheye\",\"f\":{\"cx\":52.1,\"cy\":49.9,\"rad\":91.4,\"rin\":0.47,\"rout\":1.01,\"rot\":54.5,\"lens\":0,\"ffov\":218,\"mode\":\"seg\",\"layout\":\"L1\",\"aspect\":6,\"flip\":true,\"ccw\":false,\"panes\":[]}}",
+          "on_demand": true,
+          "url": "rtsp://192.168.1.4/ch0"
+        },
+        "8d2b385f-7b6f-4da3-a654-58735cd0fa6d": {
+          "name": "\u0001XIBO_FISHEYE\u0001{\"n\":\"\\uc5b4\\uc5483\",\"t\":\"fisheye\",\"f\":{\"cx\":51.7,\"cy\":47,\"rad\":95,\"rin\":0.45,\"rout\":0.995,\"rot\":230,\"lens\":0,\"ffov\":191,\"mode\":\"seg\",\"layout\":\"L1\",\"aspect\":6,\"flip\":true,\"ccw\":false,\"panes\":[]}}",
+          "on_demand": true,
+          "url": "rtsp://192.168.1.6/ch0"
+        },
+        "a8b1569f-6e2a-4697-88c7-dd47d340e20e": {
+          "name": "\u0001XIBO_FISHEYE\u0001{\"n\":\"ddd\",\"t\":\"fisheye\",\"f\":{\"cx\":37,\"cy\":50,\"rad\":98,\"rin\":0.25,\"rout\":1,\"rot\":0,\"lens\":0,\"ffov\":180,\"mode\":\"seg\",\"layout\":\"L4\",\"aspect\":1.3333,\"flip\":false,\"ccw\":false,\"panes\":[{\"segOff\":0,\"pan\":0,\"tilt\":45,\"vfov\":75.60000000000001}]}}",
+          "on_demand": true,
+          "url": "rtsp://210.99.70.120:1935/live/cctv001.stream"
+        },
+        "bb5dc47b-827c-4d47-9b96-bdcefd4e1357": {
+          "name": "dd",
+          "on_demand": true,
+          "url": "rtsp://210.99.70.120:1935/live/cctv001.stream"
+        },
+        "e839c775-c4b0-426d-8e0e-4d21c571aa2e": {
+          "name": "\u0001XIBO_FISHEYE\u0001{\"n\":\"\\uc5b4\\uc5482\",\"t\":\"fisheye\",\"f\":{\"cx\":51.7,\"cy\":50.8,\"rad\":94.6,\"rin\":0.465,\"rout\":0.98,\"rot\":0,\"lens\":0,\"ffov\":180,\"mode\":\"seg\",\"layout\":\"L1\",\"aspect\":8,\"flip\":true,\"ccw\":false,\"panes\":[]}}",
+          "on_demand": true,
+          "url": "rtsp://192.168.1.5/ch0"
+        }
       },
       "name": "노아엘이디"
     }
