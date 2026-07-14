@@ -2,8 +2,7 @@
 // dewarp) is actually rendered. Flip/ccw here are session-only overrides on
 // top of the saved defaults from the camera Edit form; they are never sent
 // back to the server.
-import {createFisheyeDewarp} from './fisheye-dewarp.js';
-import {startPlay, buildMseWebSocketUrl} from './camera-stream.js';
+import {createCameraViewer} from './camera-viewer.js';
 
 $(function() {
   const $root = $('#cameraDetail');
@@ -11,58 +10,28 @@ $(function() {
     return;
   }
 
-  const cameraType = $root.data('camera-type');
-  const mseUrl = $root.data('mse-url');
-  const testVideoUrl = $root.data('test-video-download-url');
-  const wsUrl = buildMseWebSocketUrl(mseUrl);
+  const camera = {
+    type: $root.data('camera-type'),
+    mseUrl: $root.data('mse-url'),
+    fisheyeParams: $root.data('fisheye-params') || null,
+    testVideoUrl: $root.data('test-video-download-url') || null,
+  };
 
-  if (cameraType === 'fisheye') {
-    const fisheyeParams = $root.data('fisheye-params') || {};
-    const canvas = document.getElementById('cameraDewarpCanvas');
-    const dewarp = createFisheyeDewarp(canvas);
+  const viewer = createCameraViewer(document.getElementById('cameraViewerStage'));
+  const handle = viewer.show(camera);
 
-    dewarp.setParams(fisheyeParams);
-
-    const $flip = $('#viewFlip').prop('checked', !!fisheyeParams.flip);
-    const $ccw = $('#viewCcw').prop('checked', !!fisheyeParams.ccw);
-    dewarp.setEphemeral({flip: $flip.is(':checked'), ccw: $ccw.is(':checked')});
+  if (camera.type === 'fisheye') {
+    const $flip = $('#viewFlip').prop('checked', !!camera.fisheyeParams.flip);
+    const $ccw = $('#viewCcw').prop('checked', !!camera.fisheyeParams.ccw);
+    handle.setEphemeral({flip: $flip.is(':checked'), ccw: $ccw.is(':checked')});
 
     $flip.add($ccw).on('change', function() {
       // Session-only: never persisted.
-      dewarp.setEphemeral({flip: $flip.is(':checked'), ccw: $ccw.is(':checked')});
+      handle.setEphemeral({flip: $flip.is(':checked'), ccw: $ccw.is(':checked')});
     });
 
-    if (fisheyeParams.mode === 'ptz') {
+    if (handle.mode === 'ptz') {
       $('#viewPtzHint').text(' 드래그: 팬/틸트 · 휠: 줌');
-    }
-
-    const hiddenVideo = document.createElement('video');
-    hiddenVideo.muted = true;
-    hiddenVideo.playsInline = true;
-    hiddenVideo.autoplay = true;
-    // Must be attached to the document (not just display:none) - browsers throttle decoding
-    // of detached/display:none video elements, which causes dropped frames in the dewarped
-    // canvas even though the video itself is never meant to be seen directly.
-    hiddenVideo.style.cssText = 'position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;';
-    canvas.parentElement.appendChild(hiddenVideo);
-    hiddenVideo.addEventListener('loadedmetadata', function() {
-      dewarp.setSource(hiddenVideo, hiddenVideo.videoWidth, hiddenVideo.videoHeight, true);
-    });
-
-    if (testVideoUrl) {
-      hiddenVideo.src = testVideoUrl;
-      hiddenVideo.play().catch(() => {});
-    } else {
-      startPlay(hiddenVideo, wsUrl);
-    }
-
-    dewarp.startLoop();
-  } else {
-    const videoEl = document.getElementById('cameraStandardVideo');
-    if (testVideoUrl) {
-      videoEl.src = testVideoUrl;
-    } else {
-      startPlay(videoEl, wsUrl);
     }
   }
 });

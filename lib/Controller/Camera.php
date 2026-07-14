@@ -69,6 +69,8 @@ class Camera extends Base
                                     'onDemand' => $channel['on_demand'] ?? false,
                                     'status' => $channel['status'] ?? 0,
                                     'type' => $decoded['type'],
+                                    'fisheyeParams' => $decoded['fisheyeParams'],
+                                    'hasTestVideo' => $this->findTestVideoFile($channelId) !== null,
                                 ];
                             }
                         }

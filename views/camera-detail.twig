@@ -23,13 +23,7 @@
             <a href="{{ url_for("camera.view") }}" class="btn btn-white mb-3">{% trans "목록으로" %}</a>
             <hr>
 
-            <div style="background:#000;">
-                {% if camera.type == 'fisheye' %}
-                    <canvas id="cameraDewarpCanvas" style="width:100%; display:block;"></canvas>
-                {% else %}
-                    <video id="cameraStandardVideo" class="w-100" controls autoplay muted playsinline></video>
-                {% endif %}
-            </div>
+            <div id="cameraViewerStage" style="background:#000;"></div>
 
             {% if camera.type == 'fisheye' %}
                 <div class="mt-2">
