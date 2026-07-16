@@ -43,6 +43,11 @@
                         {{ forms.disabled("", "", "This Command has a default Command String."|trans, field.commandString) }}
                     {% endif %}
 
+                    {% set fieldId = "isActive_" ~ field.commandId %}
+                    {% set title %}{% trans "Enabled" %}{% endset %}
+                    {% set helpText %}{% trans "Enable this Command for this Display Profile?" %}{% endset %}
+                    {{ forms.checkbox(fieldId, title, field.isActiveOnProfile() ? 1 : 0, helpText) }}
+
                     {% set fieldId = "commandString_" ~ field.commandId %}
                     {% set title %}{% trans "Command" %}{% endset %}
                     {% set helpText %}{% trans "The Command String for this Command on this display" %}{% endset %}

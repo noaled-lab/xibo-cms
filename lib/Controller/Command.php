@@ -153,6 +153,7 @@ class Command extends Base
             'useRegexForCode' => $sanitizedParams->getCheckbox('useRegexForCode'),
             'logicalOperatorName' => $sanitizedParams->getString('logicalOperatorName'),
             'logicalOperatorCode' => $sanitizedParams->getString('logicalOperatorCode'),
+            'displayGroupIds' => $sanitizedParams->getIntArray('displayGroupIds'),
         ];
 
         $commands = $this->commandFactory->query(

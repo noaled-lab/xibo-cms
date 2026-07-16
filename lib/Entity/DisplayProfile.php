@@ -305,6 +305,7 @@ class DisplayProfile implements \JsonSerializable
                 $alreadyAssigned->commandString = $command->commandString;
                 $alreadyAssigned->validationString = $command->validationString;
                 $alreadyAssigned->createAlertOn = $command->createAlertOn;
+                $alreadyAssigned->isActiveDisplayProfile = $command->isActiveDisplayProfile;
                 $assigned = true;
                 break;
             }
@@ -491,28 +492,33 @@ class DisplayProfile implements \JsonSerializable
                   `displayProfileId`,
                   `commandString`,
                   `validationString`,
-                  `createAlertOn`
+                  `createAlertOn`,
+                  `isActive`
               )
               VALUES (
                   :commandId,
                   :displayProfileId,
                   :commandString,
                   :validationString,
-                  :createAlertOn    
+                  :createAlertOn,
+                  :isActive
               )
               ON DUPLICATE KEY UPDATE 
                   commandString = :commandString2,
                   validationString = :validationString2,
-                  createAlertOn = :createAlertOn2
+                  createAlertOn = :createAlertOn2,
+                  isActive = :isActive2
             ', [
                 'commandId' => $command->commandId,
                 'displayProfileId' => $this->displayProfileId,
                 'commandString' => $command->commandString,
                 'validationString' => $command->validationString,
                 'createAlertOn' => $command->createAlertOn,
+                'isActive' => $command->isActiveDisplayProfile !== null ? (int)$command->isActiveDisplayProfile : 1,
                 'commandString2' => $command->commandString,
                 'validationString2' => $command->validationString,
-                'createAlertOn2' => $command->createAlertOn
+                'createAlertOn2' => $command->createAlertOn,
+                'isActive2' => $command->isActiveDisplayProfile !== null ? (int)$command->isActiveDisplayProfile : 1
             ]);
         }
 

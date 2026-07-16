@@ -2576,6 +2576,82 @@ const setupSelectForSchedule = function(dialog) {
     }
   }
 
+  const $commandSelect = $('#commandId', dialog);
+  if ($commandSelect.hasClass('select2-hidden-accessible')) {
+    $commandSelect.select2('destroy');
+  }
+
+  const setupCommandSelect = function() {
+    $commandSelect.select2({
+      dropdownParent: $(dialog).find('form'),
+      ajax: {
+        url: $commandSelect.data('searchUrl'),
+        dataType: 'json',
+        delay: 250,
+        data: function(params) {
+          const query = {
+            command: params.term,
+            start: 0,
+            length: 10,
+            displayGroupIds: $('select[name="displayGroupIds[]"]', dialog).val() || [],
+          };
+          if (params.page != null) {
+            query.start = (params.page - 1) * 10;
+          }
+          return query;
+        },
+        processResults: function(data, params) {
+          const results = [];
+          $.each(data.data, function(index, el) {
+            results.push({
+              id: el['commandId'],
+              text: el['command'],
+            });
+          });
+          let page = params.page || 1;
+          page = (page > 1) ? page - 1 : page;
+          return {
+            results: results,
+            pagination: {
+              more: (page * 10 < data.recordsTotal),
+            },
+          };
+        },
+      },
+    });
+  };
+
+  setupCommandSelect();
+
+  let previousDisplays = $displaySelect.val() || [];
+
+  $displaySelect.on('change', function(e, extra) {
+    if (extra && extra.skipSave) {
+      return;
+    }
+    const selectedDisplays = $(this).val() || [];
+    
+    // Check if the value actually changed to prevent accidental clear on programmatic triggers
+    if (JSON.stringify(previousDisplays) === JSON.stringify(selectedDisplays)) {
+      return;
+    }
+    previousDisplays = selectedDisplays;
+
+    if (selectedDisplays.length === 0) {
+      $commandSelect.prop('disabled', true);
+      $commandSelect.val(null).trigger('change');
+    } else {
+      $commandSelect.prop('disabled', false);
+      // Clear command selection if displays change to ensure validity
+      $commandSelect.val(null).trigger('change');
+    }
+  });
+
+  const initialDisplays = $displaySelect.val() || [];
+  if (initialDisplays.length === 0) {
+    $commandSelect.prop('disabled', true);
+  }
+
   $('#mediaId, #playlistId', dialog).on('select2:select', function(event) {
     let hasFullScreenLayout = false;
     if (event.params.data.data !== undefined) {
