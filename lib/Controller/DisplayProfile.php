@@ -468,15 +468,19 @@ class DisplayProfile extends Base
 
         // Capture and update commands
         foreach ($this->commandFactory->query() as $command) {
-            if ($parsedParams->getString('commandString_' . $command->commandId) != null) {
+            $commandString = $parsedParams->getString('commandString_' . $command->commandId);
+            $hasCommandStringParam = $parsedParams->hasParam('commandString_' . $command->commandId);
+            $isActive = $parsedParams->getCheckbox('isActive_' . $command->commandId);
+
+            $validationString = $parsedParams->getString('validationString_' . $command->commandId);
+
+            // Save if commandString or validationString is provided, OR if the form was submitted (has param) and user explicitly unchecked isActive
+            if ($commandString != '' || $validationString != '' || ($hasCommandStringParam && $isActive === 0)) {
                 // Set and assign the command
-                $command->commandString = $parsedParams->getString('commandString_' . $command->commandId);
-                $command->validationString = $parsedParams->getString('validationString_' . $command->commandId);
+                $command->commandString = $commandString;
+                $command->validationString = $validationString;
                 $command->createAlertOn = $parsedParams->getString('createAlertOn_' . $command->commandId);
-                
-                // If it's missing from the form (e.g. checkbox not sent), it defaults to 0, but maybe we want default 1.
-                // Assuming we add a checkbox in the form:
-                $command->isActiveDisplayProfile = $parsedParams->getCheckbox('isActive_' . $command->commandId);
+                $command->isActiveDisplayProfile = $isActive;
 
                 $displayProfile->assignCommand($command);
             } else {

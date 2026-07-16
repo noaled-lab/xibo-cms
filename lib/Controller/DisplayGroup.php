@@ -2448,13 +2448,16 @@ class DisplayGroup extends Base
             throw new AccessDeniedException();
         }
 
+        $filter = [];
+        $filter['displayGroupIds'] = [$displayGroup->displayGroupId];
+
         // Are we a Display Specific Group? If so, then we should restrict the List of commands to those available.
         if ($displayGroup->isDisplaySpecific == 1) {
             $display = $this->displayFactory->getByDisplayGroupId($displayGroup->displayGroupId);
-            $commands = $this->commandFactory->query(null, ['type' => $display[0]->clientType]);
-        } else {
-            $commands = $this->commandFactory->query();
+            $filter['type'] = $display[0]->clientType;
         }
+
+        $commands = $this->commandFactory->query(null, $filter);
 
         $this->getState()->template = 'displaygroup-form-command';
         $this->getState()->setData([

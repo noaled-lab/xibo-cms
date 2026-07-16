@@ -44,8 +44,8 @@
                     {% endif %}
 
                     {% set fieldId = "isActive_" ~ field.commandId %}
-                    {% set title %}{% trans "Enabled" %}{% endset %}
-                    {% set helpText %}{% trans "Enable this Command for this Display Profile?" %}{% endset %}
+                    {% set title %}{% trans "명령어 활성화" %}{% endset %}
+                    {% set helpText %}{% trans "이 디스플레이 프로필에서 해당 명령어를 사용할 수 있도록 활성화합니다." %}{% endset %}
                     {{ forms.checkbox(fieldId, title, field.isActiveOnProfile() ? 1 : 0, helpText) }}
 
                     {% set fieldId = "commandString_" ~ field.commandId %}
