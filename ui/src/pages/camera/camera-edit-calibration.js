@@ -81,7 +81,11 @@ export function initCameraFisheyeCalibration(dialog) {
       hiddenVideo.remove();
     }
     if (hls) {
-      hls.destroy();
+      try {
+        hls.destroy();
+      } catch (e) {
+        console.warn('Error tearing down HLS instance (ignored):', e);
+      }
       hls = null;
     }
     hiddenVideo = document.createElement('video');
@@ -215,7 +219,11 @@ export function initCameraFisheyeCalibration(dialog) {
       dewarp.destroy();
     }
     if (hls) {
-      hls.destroy();
+      try {
+        hls.destroy();
+      } catch (e) {
+        console.warn('Error tearing down HLS instance (ignored):', e);
+      }
     }
     if (hiddenVideo) {
       hiddenVideo.remove();

@@ -48,7 +48,11 @@ export function createCameraViewer(container) {
       dewarp = null;
     }
     if (hls) {
-      hls.destroy();
+      try {
+        hls.destroy();
+      } catch (e) {
+        console.warn('Error tearing down HLS instance (ignored):', e);
+      }
       hls = null;
     }
     if (hiddenVideo) {
@@ -85,11 +89,17 @@ export function createCameraViewer(container) {
         // stream from scratch.
         console.warn('HLS fatal error (' + data.type + '/' + data.details + '), retrying in '
           + RETRY_DELAY_MS + 'ms');
-        if (hls) {
-          hls.destroy();
-          hls = null;
-        }
+        // Destroying hls.js synchronously from inside its own ERROR handler can race
+        // with an in-flight fragment/transmux callback that fires after teardown and
+        // throws on a now-null internal reference - defer it out of this call stack.
+        const failedHls = hls;
+        hls = null;
         setTimeout(() => {
+          try {
+            failedHls.destroy();
+          } catch (e) {
+            console.warn('Error tearing down HLS instance (ignored):', e);
+          }
           if (!stopped) {
             attachStream(videoEl, camera);
           }
