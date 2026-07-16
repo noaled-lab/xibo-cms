@@ -206,7 +206,7 @@
                         {{ forms.dropdown("actionLayoutCode", "single", title, "", null, "code", "code", helpText, "pagedSelect action-control layout-code-control", "", "", "", attributes) }}
 
                         {% set title %}{% trans "Command" %}{% endset %}
-                        {% set helpText %}{% trans "Please select a command for this Event." %}{% endset %}
+                        {% set helpText %}{% trans "Please select a command for this Event. (Requires at least one display to be selected first)" %}{% endset %}
                         {% set attributes = [
                             { name: "data-width", value: "100%" },
                             { name: "data-search-url", value: url_for("command.search") },

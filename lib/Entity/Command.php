@@ -142,6 +142,13 @@ class Command implements \JsonSerializable
     public $createAlertOnDisplayProfile;
 
     /**
+     * @SWG\Property(
+     *     description="Flag indicating if the command is active for the provided DisplayProfile."
+     * )
+     */
+    public $isActiveDisplayProfile;
+
+    /**
      * @SWG\Property(description="A comma separated list of groups/users with permissions to this Command")
      * @var string
      */
@@ -228,6 +235,14 @@ class Command implements \JsonSerializable
     public function isReady()
     {
         return !empty($this->getCommandString());
+    }
+
+    /**
+     * @return bool
+     */
+    public function isActiveOnProfile()
+    {
+        return $this->isActiveDisplayProfile !== null ? (bool)$this->isActiveDisplayProfile : true;
     }
 
     /**

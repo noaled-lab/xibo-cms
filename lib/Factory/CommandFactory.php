@@ -126,7 +126,8 @@ class CommandFactory extends BaseFactory
                 :displayProfileId AS displayProfileId, 
                 `lkcommanddisplayprofile`.commandString AS commandStringDisplayProfile, 
                 `lkcommanddisplayprofile`.validationString AS validationStringDisplayProfile,
-                `lkcommanddisplayprofile`.createAlertOn AS createAlertOnDisplayProfile ';
+                `lkcommanddisplayprofile`.createAlertOn AS createAlertOnDisplayProfile,
+                `lkcommanddisplayprofile`.isActive AS isActiveDisplayProfile ';
         }
 
         $select .= ' , (SELECT GROUP_CONCAT(DISTINCT `group`.group)
@@ -196,6 +197,29 @@ class CommandFactory extends BaseFactory
         if ($sanitizedFilter->getInt('userId') !== null) {
             $body .= ' AND `command`.userId = :userId ';
             $params['userId'] = $sanitizedFilter->getInt('userId');
+        }
+
+        if ($sanitizedFilter->getIntArray('displayGroupIds') !== null && count($sanitizedFilter->getIntArray('displayGroupIds')) > 0) {
+            $dgIds = $sanitizedFilter->getIntArray('displayGroupIds');
+            $body .= ' AND NOT EXISTS (
+                SELECT 1
+                  FROM `display`
+                  INNER JOIN `lkdisplaydg` ON `lkdisplaydg`.displayId = `display`.displayId
+                  INNER JOIN `lkcommanddisplayprofile` ON `lkcommanddisplayprofile`.displayProfileId = `display`.displayProfileId
+                 WHERE `lkcommanddisplayprofile`.commandId = `command`.commandId
+                   AND `lkcommanddisplayprofile`.isActive = 0
+                   AND `lkdisplaydg`.displayGroupId IN (';
+            
+            $dgParams = [];
+            $i = 0;
+            foreach ($dgIds as $dgId) {
+                $i++;
+                $paramName = 'dgIdFilter_' . $i;
+                $dgParams[] = ':' . $paramName;
+                $params[$paramName] = $dgId;
+            }
+            $body .= implode(',', $dgParams) . ')
+            ) ';
         }
 
         $this->viewPermissionSql(

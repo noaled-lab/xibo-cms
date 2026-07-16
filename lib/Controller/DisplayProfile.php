@@ -473,6 +473,10 @@ class DisplayProfile extends Base
                 $command->commandString = $parsedParams->getString('commandString_' . $command->commandId);
                 $command->validationString = $parsedParams->getString('validationString_' . $command->commandId);
                 $command->createAlertOn = $parsedParams->getString('createAlertOn_' . $command->commandId);
+                
+                // If it's missing from the form (e.g. checkbox not sent), it defaults to 0, but maybe we want default 1.
+                // Assuming we add a checkbox in the form:
+                $command->isActiveDisplayProfile = $parsedParams->getCheckbox('isActive_' . $command->commandId);
 
                 $displayProfile->assignCommand($command);
             } else {

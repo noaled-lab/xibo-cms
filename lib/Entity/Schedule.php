@@ -750,6 +750,48 @@ class Schedule implements \JsonSerializable
             throw new InvalidArgumentException(__('Please select the Event Type'), 'eventTypeId');
         }
 
+        // Validate command active state on targeted displays
+        $commandIdToCheck = null;
+        if ($this->eventTypeId == Schedule::$COMMAND_EVENT) {
+            $commandIdToCheck = $this->commandId;
+        } elseif ($this->eventTypeId == Schedule::$ACTION_EVENT && $this->actionType === 'command') {
+            $commandIdToCheck = $this->commandId;
+        }
+
+        if ($commandIdToCheck !== null && count($this->displayGroups) > 0) {
+            $sql = '
+                SELECT display.display
+                  FROM display
+                  INNER JOIN lkdisplaydg ON lkdisplaydg.displayId = display.displayId
+                  INNER JOIN lkcommanddisplayprofile ON lkcommanddisplayprofile.displayProfileId = display.displayProfileId
+                 WHERE lkcommanddisplayprofile.commandId = :commandIdToCheck
+                   AND lkcommanddisplayprofile.isActive = 0
+                   AND lkdisplaydg.displayGroupId IN (
+            ';
+            $params = ['commandIdToCheck' => $commandIdToCheck];
+            $i = 0;
+            foreach ($this->displayGroups as $dg) {
+                $i++;
+                $sql .= ':dgId' . $i . ',';
+                $params['dgId' . $i] = $dg->displayGroupId;
+            }
+            $sql = rtrim($sql, ',') . ')';
+
+            $disabledDisplays = $this->getStore()->select($sql, $params);
+            
+            if (count($disabledDisplays) > 0) {
+                $displayNames = [];
+                foreach ($disabledDisplays as $row) {
+                    $displayNames[] = $row['display'];
+                }
+                $displayNamesStr = implode(', ', array_unique($displayNames));
+                throw new InvalidArgumentException(
+                    sprintf(__('The selected command is disabled on the following displays: %s'), $displayNamesStr),
+                    'commandId'
+                );
+            }
+        }
+
         // Make sure we have a sensible recurrence setting
         if (!$this->isCustomDayPart() && ($this->recurrenceType == 'Minute' || $this->recurrenceType == 'Hour')) {
             throw new InvalidArgumentException(
