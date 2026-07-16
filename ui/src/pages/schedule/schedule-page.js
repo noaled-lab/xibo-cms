@@ -270,16 +270,11 @@ $(function() {
         responsivePriority: 2,
         sortable: false,
         data: function(data) {
-          if (data.displayGroups.length > 1 && data.eventTypeId !== 9) {
-            return '<span class="badge" ' +
-              'style="background-color: green; color: white" ' +
-              'data-toggle="popover" data-trigger="click" ' +
-              'data-placement="top" data-content="' +
-              data.displayGroupList + '">' + (data.displayGroups.length) +
-              '</span>';
-          } else {
-            return data.displayGroupList;
+          if (data.displayGroupList) {
+            // "디스플레이 그룹 목록"을 콤마(,) 대신 줄바꿈(<br>)으로 표시
+            return data.displayGroupList.replace(/,\s*/g, '<br>');
           }
+          return '';
         },
       },
       {
