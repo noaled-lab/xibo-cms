@@ -18,8 +18,8 @@ const RETRY_DELAY_MS = 4000;
 // jarring seek whenever it drifts past the target.
 export const HLS_CONFIG = {
   lowLatencyMode: true,
-  liveSyncDuration: 4,
-  liveMaxLatencyDuration: 12,
+  liveSyncDuration: 8,
+  liveMaxLatencyDuration: 20,
   maxLiveSyncPlaybackRate: 1.1,
 };
 
@@ -140,7 +140,7 @@ export function createCameraViewer(container) {
       hiddenVideo.muted = true;
       hiddenVideo.playsInline = true;
       hiddenVideo.autoplay = true;
-      hiddenVideo.style.cssText = 'position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;';
+      hiddenVideo.style.cssText = 'position:absolute; width:32px; height:32px; opacity:0.01; pointer-events:none; left:-10000px;';
       container.appendChild(hiddenVideo);
       hiddenVideo.addEventListener('loadedmetadata', function() {
         dewarp.setSource(hiddenVideo, hiddenVideo.videoWidth, hiddenVideo.videoHeight, true);
