@@ -18,8 +18,8 @@ const RETRY_DELAY_MS = 4000;
 // jarring seek whenever it drifts past the target.
 export const HLS_CONFIG = {
   lowLatencyMode: true,
-  liveSyncDuration: 8,
-  liveMaxLatencyDuration: 20,
+  liveSyncDuration: 4,
+  liveMaxLatencyDuration: 12,
   maxLiveSyncPlaybackRate: 1.1,
 };
 
@@ -97,6 +97,8 @@ export function createCameraViewer(container) {
         setTimeout(() => {
           try {
             failedHls.destroy();
+            videoEl.removeAttribute('src');
+            videoEl.load();
           } catch (e) {
             console.warn('Error tearing down HLS instance (ignored):', e);
           }
@@ -107,6 +109,9 @@ export function createCameraViewer(container) {
       });
       hls.loadSource(url);
       hls.attachMedia(videoEl);
+      hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        videoEl.play().catch(() => {});
+      });
     } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
       // Safari plays HLS natively, no hls.js needed.
       videoEl.src = url;
@@ -140,7 +145,7 @@ export function createCameraViewer(container) {
       hiddenVideo.muted = true;
       hiddenVideo.playsInline = true;
       hiddenVideo.autoplay = true;
-      hiddenVideo.style.cssText = 'position:absolute; width:32px; height:32px; opacity:0.01; pointer-events:none; left:-10000px;';
+      hiddenVideo.style.cssText = 'position:absolute; top:0; left:0; width:32px; height:32px; opacity:0.01; pointer-events:none; z-index:-1;';
       container.appendChild(hiddenVideo);
       hiddenVideo.addEventListener('loadedmetadata', function() {
         dewarp.setSource(hiddenVideo, hiddenVideo.videoWidth, hiddenVideo.videoHeight, true);
