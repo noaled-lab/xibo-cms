@@ -365,13 +365,28 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
   canvas.addEventListener('wheel', onWheel, {passive: false});
   window.addEventListener('resize', resize);
 
+  let lastVideoTime = -1;
   let frame = 0;
   function loop() {
     if (!running) {
       return;
     }
     rafId = requestAnimationFrame(loop);
-    renderFrame();
+    
+    let shouldRender = dragging || !srcEl;
+    if (srcEl && srcEl.currentTime !== undefined) {
+      if (srcEl.currentTime !== lastVideoTime) {
+        lastVideoTime = srcEl.currentTime;
+        shouldRender = true;
+      }
+    } else if (srcEl) {
+      shouldRender = true;
+    }
+
+    if (shouldRender) {
+      renderFrame();
+    }
+    
     // Source is a live video - keep the overlay preview's frame current too (throttled,
     // it's just a calibration aid, doesn't need to match the render loop's framerate).
     if (srcCtx && frame++ % 3 === 0) {
