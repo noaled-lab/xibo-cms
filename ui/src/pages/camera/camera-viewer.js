@@ -136,26 +136,25 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
     }
   };
   ws.onmessage = function(event) {
-    if (typeof event.data !== 'string') {
-      queue.push(event.data);
-      pump();
-      return;
-    }
-    let msg;
-    try {
-      msg = JSON.parse(event.data);
-    } catch (e) {
-      return;
-    }
-    if (msg.type === 'mse' && msg.value) {
-      mimeType = msg.value;
+    // Every message is binary (ws.binaryType = 'arraybuffer') - rtsp-to-web multiplexes
+    // the one-time codec announcement into the same stream as the fmp4 fragments by
+    // prefixing it with a marker byte, rather than sending it as a separate text/JSON
+    // message: a leading byte of 9 means "the rest of this message (UTF-8) is the codec
+    // string for addSourceBuffer", anything else is fragment data to append as-is.
+    const data = new Uint8Array(event.data);
+    if (data[0] === 9) {
+      const codecs = new TextDecoder('utf-8').decode(data.slice(1));
+      mimeType = 'video/mp4; codecs="' + codecs + '"';
       mediaSource = new MediaSource();
       objectUrl = URL.createObjectURL(mediaSource);
       videoEl.src = objectUrl;
       mediaSource.addEventListener('sourceopen', maybeInitSourceBuffer);
       maybeInitSourceBuffer();
       videoEl.play().catch(() => {});
+      return;
     }
+    queue.push(event.data);
+    pump();
   };
 
   return {
