@@ -114,6 +114,19 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
     // time keeps it from falling permanently behind while hidden.
     if (document.hidden && videoEl.buffered.length > 0) {
       videoEl.currentTime = videoEl.buffered.end(videoEl.buffered.length - 1) - 0.5;
+    } else if (!document.hidden && videoEl.buffered.length > 0) {
+      const end = videoEl.buffered.end(videoEl.buffered.length - 1);
+      const delay = end - videoEl.currentTime;
+      
+      if (delay > 3.0) {
+        videoEl.currentTime = end - 0.5; // too far behind, must snap
+      } else if (delay > 0.8) {
+        videoEl.playbackRate = 1.1; // play faster to catch up smoothly
+      } else if (delay < 0.2) {
+        videoEl.playbackRate = 0.9; // play slower to build buffer and avoid stopping
+      } else {
+        videoEl.playbackRate = 1.0;
+      }
     }
   }
 
