@@ -104,12 +104,7 @@ export function initCameraFisheyeCalibration(dialog) {
     } else {
       $status.text('실시간 스트림을 불러오는 중...');
       const [streamId, channelId] = $form.data('camera-id').split(':');
-      if (hiddenVideo.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari's own low-latency HLS implementation is more robust here than a
-        // hand-rolled MSE client.
-        hiddenVideo.src = window.location.protocol + '//' + window.location.hostname + ':8083' +
-          '/stream/' + streamId + '/channel/' + channelId + '/hlsll/live/index.m3u8';
-      } else if (window.MediaSource) {
+      if (window.MediaSource) {
         mse = attachMseStream(hiddenVideo, streamId, channelId, {
           onFatal() {
             if (stopped) {

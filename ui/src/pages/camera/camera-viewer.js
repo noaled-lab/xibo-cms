@@ -12,19 +12,6 @@
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
 
 const RETRY_DELAY_MS = 4000;
-// How much buffered history (seconds behind currentTime) to keep. Without this, a
-// long-running live session keeps growing the SourceBuffer forever until the browser's
-// own automatic eviction kicks in to free space - which can cause a visible decode
-// hiccup right as it happens. Trimming proactively and gradually avoids ever hitting
-// that automatic eviction. Most noticeable on the fisheye dewarp (a raw WebGL canvas
-// has no built-in stall/rebuffer handling to smooth a hiccup over, unlike a plain
-// <video> element), but applies to every stream.
-const MSE_BACK_BUFFER_SECONDS = 15;
-
-function buildHlsLLUrl(streamId, channelId) {
-  return window.location.protocol + '//' + window.location.hostname + ':8083' +
-    '/stream/' + streamId + '/channel/' + channelId + '/hlsll/live/index.m3u8';
-}
 
 function buildMseUrl(streamId, channelId) {
   const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -113,27 +100,13 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
   }
 
   function pushPacket() {
-    if (sourceBuffer && !sourceBuffer.updating) {
-      // Trim buffered data older than the back-buffer window before appending more -
-      // 'updateend' (already wired to this function) fires again once the removal
-      // completes, so this just resumes appending on the next call.
-      const buffered = sourceBuffer.buffered;
-      if (buffered.length && videoEl.currentTime - buffered.start(0) > MSE_BACK_BUFFER_SECONDS) {
-        try {
-          sourceBuffer.remove(0, videoEl.currentTime - MSE_BACK_BUFFER_SECONDS);
-          return;
-        } catch (e) {
-          // ignore - not worth failing the stream over a trim that didn't take
-        }
-      }
-      if (queue.length > 0) {
-        const packet = queue.shift();
-        try {
-          sourceBuffer.appendBuffer(packet);
-        } catch (e) {
-          fail('appendBuffer', e);
-          return;
-        }
+    if (sourceBuffer && !sourceBuffer.updating && queue.length > 0) {
+      const packet = queue.shift();
+      try {
+        sourceBuffer.appendBuffer(packet);
+      } catch (e) {
+        fail('appendBuffer', e);
+        return;
       }
     }
     // A backgrounded tab throttles video decode - without an active audio track to keep
@@ -241,13 +214,6 @@ export function createCameraViewer(container) {
     if (camera.testVideoUrl) {
       videoEl.src = camera.testVideoUrl;
       videoEl.play().catch(() => {});
-      return;
-    }
-
-    if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari's own low-latency HLS implementation is more robust here than a
-      // hand-rolled MSE client - hand it the LL-HLS URL directly, no hls.js involved.
-      videoEl.src = buildHlsLLUrl(camera.streamId, camera.channelId);
       return;
     }
 
