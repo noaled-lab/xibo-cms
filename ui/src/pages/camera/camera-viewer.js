@@ -37,6 +37,8 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
   let streamingStarted = false;
   let ws = null;
   let closed = false;
+  let lastLogTime = 0;
+  let lastPlaybackRate = 1.0;
 
   // MediaSource + videoEl.src must be set up synchronously, up front - opening the
   // WebSocket only inside 'sourceopen' (below) rather than immediately is what keeps
@@ -104,28 +106,23 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
       const end = videoEl.buffered.end(videoEl.buffered.length - 1);
       const delay = end - videoEl.currentTime;
 
-      // 1. Check for missing chunks (gaps in buffer) that cause native freezing.
-      // If currentTime is stuck at the end of a buffered segment and there's another segment ahead, jump over the gap.
-      if (videoEl.buffered.length > 1) {
-        for (let i = 0; i < videoEl.buffered.length - 1; i++) {
-          const gapStart = videoEl.buffered.end(i);
-          const gapEnd = videoEl.buffered.start(i + 1);
-          if (videoEl.currentTime >= gapStart - 0.1 && videoEl.currentTime < gapEnd) {
-            videoEl.currentTime = gapEnd;
-            break;
-          }
-        }
-      }
-
-      // 2. Smooth playback rate adjustments for normal latency drift
+      // Smooth playback rate adjustments for normal latency drift
       if (delay > 60.0) {
         videoEl.currentTime = end - 0.5; // Snap only if more than 1 min behind
+        console.log(`[MSE Debug] Snapped to live edge! Delay was ${delay.toFixed(2)}s. Current time: ${videoEl.currentTime.toFixed(2)}`);
       } else if (delay > 1.5) {
         videoEl.playbackRate = 1.05; // 5% faster to catch up very smoothly
       } else if (delay < 0.2) {
         videoEl.playbackRate = 0.95; // 5% slower to build buffer and avoid stopping
       } else {
         videoEl.playbackRate = 1.0;
+      }
+
+      const now = Date.now();
+      if (now - lastLogTime > 2000 || videoEl.playbackRate !== lastPlaybackRate) {
+        console.log(`[MSE Debug] Time: ${videoEl.currentTime.toFixed(2)}s | Buffer End: ${end.toFixed(2)}s | Delay: ${delay.toFixed(2)}s | Rate: ${videoEl.playbackRate}x`);
+        lastLogTime = now;
+        lastPlaybackRate = videoEl.playbackRate;
       }
     }
 
@@ -141,9 +138,10 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
       if (currentTime - start > 60) {
         try {
           sourceBuffer.remove(0, currentTime - 30);
+          console.log(`[MSE Debug] Buffer evicted! Removed 0 to ${(currentTime - 30).toFixed(2)}s`);
           return; // removal is async, appendBuffer will happen on next 'updateend'
         } catch (e) {
-          console.warn('Buffer remove error', e);
+          console.warn('[MSE Debug] Buffer remove error', e);
         }
       }
     }
@@ -194,7 +192,9 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
           fail('addSourceBuffer', e);
           return;
         }
-        sourceBuffer.mode = 'segments';
+        // Use 'sequence' mode instead of 'segments' so that if the camera/network drops frames
+        // (causing timestamp gaps), MSE appends them seamlessly without freezing at the gaps.
+        sourceBuffer.mode = 'sequence';
         sourceBuffer.addEventListener('updateend', pushPacket);
         return;
       }
