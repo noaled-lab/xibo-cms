@@ -103,23 +103,29 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
     if (videoEl.buffered.length > 0) {
       const end = videoEl.buffered.end(videoEl.buffered.length - 1);
       const delay = end - videoEl.currentTime;
-      if (document.hidden) {
-        // A backgrounded tab throttles video decode - without an active audio track to keep
-        // it "alive", playback can stall indefinitely. Snapping to near the live edge each
-        // time keeps it from falling permanently behind while hidden.
-        if (delay > 1.5) {
-          videoEl.currentTime = end - 0.5;
+
+      // 1. Check for missing chunks (gaps in buffer) that cause native freezing.
+      // If currentTime is stuck at the end of a buffered segment and there's another segment ahead, jump over the gap.
+      if (videoEl.buffered.length > 1) {
+        for (let i = 0; i < videoEl.buffered.length - 1; i++) {
+          const gapStart = videoEl.buffered.end(i);
+          const gapEnd = videoEl.buffered.start(i + 1);
+          if (videoEl.currentTime >= gapStart - 0.1 && videoEl.currentTime < gapEnd) {
+            videoEl.currentTime = gapEnd;
+            break;
+          }
         }
+      }
+
+      // 2. Smooth playback rate adjustments for normal latency drift
+      if (delay > 60.0) {
+        videoEl.currentTime = end - 0.5; // Snap only if more than 1 min behind
+      } else if (delay > 1.5) {
+        videoEl.playbackRate = 1.05; // 5% faster to catch up very smoothly
+      } else if (delay < 0.2) {
+        videoEl.playbackRate = 0.95; // 5% slower to build buffer and avoid stopping
       } else {
-        if (delay > 60.0) {
-          videoEl.currentTime = end - 0.5; // Snap only if more than 1 min behind
-        } else if (delay > 0.8) {
-          videoEl.playbackRate = 1.1; // play faster to catch up smoothly
-        } else if (delay < 0.2) {
-          videoEl.playbackRate = 0.9; // play slower to build buffer and avoid stopping
-        } else {
-          videoEl.playbackRate = 1.0;
-        }
+        videoEl.playbackRate = 1.0;
       }
     }
 
@@ -130,10 +136,11 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
     if (videoEl.buffered.length > 0) {
       const start = videoEl.buffered.start(0);
       const currentTime = videoEl.currentTime;
-      // Remove buffer data older than 60 seconds to prevent QuotaExceededError
+      // Remove buffer data older than 60 seconds to prevent QuotaExceededError.
+      // We remove up to (currentTime - 30) to leave 30s of buffer, preventing continuous micro-removals.
       if (currentTime - start > 60) {
         try {
-          sourceBuffer.remove(0, currentTime - 60);
+          sourceBuffer.remove(0, currentTime - 30);
           return; // removal is async, appendBuffer will happen on next 'updateend'
         } catch (e) {
           console.warn('Buffer remove error', e);
@@ -151,16 +158,12 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
     }
   }
 
-  // Safari-specific: low-latency MSE playback can stall with currentTime past the
-  // buffered range; nudge back in and resume rather than staying frozen.
-  function onPause() {
-    if (videoEl.buffered.length > 0 &&
-        videoEl.currentTime > videoEl.buffered.end(videoEl.buffered.length - 1)) {
-      videoEl.currentTime = videoEl.buffered.end(videoEl.buffered.length - 1) - 0.1;
+  // If the video pauses (e.g. due to buffer underflow), auto-resume when data arrives.
+  videoEl.addEventListener('pause', function() {
+    if (videoEl.currentTime < videoEl.duration || !videoEl.duration) {
       videoEl.play().catch(() => {});
     }
-  }
-  videoEl.addEventListener('pause', onPause);
+  });
 
   mediaSource.addEventListener('sourceopen', function() {
     ws = new WebSocket(buildMseUrl(streamId, channelId));
