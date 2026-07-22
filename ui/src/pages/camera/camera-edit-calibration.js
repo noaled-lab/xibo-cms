@@ -4,17 +4,10 @@
 // the ones that get saved - this is the only screen where they can be
 // changed. Detail-page overrides (flip/ccw while viewing) never touch this
 // code.
-import Hls from 'hls.js';
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
-import {HLS_CONFIG} from './camera-viewer.js';
+import {attachMseStream} from './camera-viewer.js';
 
 const RETRY_DELAY_MS = 4000;
-
-function buildHlsLLUrl(cameraId) {
-  const [streamId, channelId] = cameraId.split(':');
-  return window.location.protocol + '//' + window.location.hostname + ':8083' +
-    '/stream/' + streamId + '/channel/' + channelId + '/hlsll/live/index.m3u8';
-}
 
 const SLIDER_IDS = [
   'centerX', 'centerY', 'radius', 'radiusInner', 'radiusOuter',
@@ -54,7 +47,7 @@ export function initCameraFisheyeCalibration(dialog) {
 
   let dewarp = null;
   let hiddenVideo = null;
-  let hls = null;
+  let mse = null;
   let stopped = false;
 
   function togglePanel() {
@@ -80,13 +73,9 @@ export function initCameraFisheyeCalibration(dialog) {
       hiddenVideo.pause();
       hiddenVideo.remove();
     }
-    if (hls) {
-      try {
-        hls.destroy();
-      } catch (e) {
-        console.warn('Error tearing down HLS instance (ignored):', e);
-      }
-      hls = null;
+    if (mse) {
+      mse.destroy();
+      mse = null;
     }
     hiddenVideo = document.createElement('video');
     hiddenVideo.muted = true;
@@ -108,30 +97,32 @@ export function initCameraFisheyeCalibration(dialog) {
       hiddenVideo.src = $form.data('test-video-download-url') + '?_=' + Date.now();
       hiddenVideo.play().catch(() => {});
     } else {
-      $status.text('실시간 스트림(LL-HLS)을 불러오는 중...');
-      const url = buildHlsLLUrl($form.data('camera-id'));
-      if (Hls.isSupported()) {
-        hls = new Hls(HLS_CONFIG);
-        hls.on(Hls.Events.ERROR, function(event, data) {
-          if (stopped || !data.fatal) {
-            return;
-          }
-          // The stream may not have started yet (rtsp-to-web starts on-demand streams
-          // lazily) - hls.js's startLoad()/recoverMediaError() don't reliably recover
-          // from a failed *manifest* load, so just do what a page refresh does: tear
-          // down and reload the source from scratch.
-          setTimeout(() => {
-            if (!stopped) {
-              loadSource();
+      $status.text('실시간 스트림을 불러오는 중...');
+      const [streamId, channelId] = $form.data('camera-id').split(':');
+      if (hiddenVideo.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari's own low-latency HLS implementation is more robust here than a
+        // hand-rolled MSE client.
+        hiddenVideo.src = window.location.protocol + '//' + window.location.hostname + ':8083' +
+          '/stream/' + streamId + '/channel/' + channelId + '/hlsll/live/index.m3u8';
+      } else if (window.MediaSource) {
+        mse = attachMseStream(hiddenVideo, streamId, channelId, {
+          onFatal() {
+            if (stopped) {
+              return;
             }
-          }, RETRY_DELAY_MS);
+            // The stream may not have started yet (rtsp-to-web starts on-demand
+            // streams lazily) - do what a page refresh does: reload the source
+            // from scratch.
+            mse = null;
+            setTimeout(() => {
+              if (!stopped) {
+                loadSource();
+              }
+            }, RETRY_DELAY_MS);
+          },
         });
-        hls.loadSource(url);
-        hls.attachMedia(hiddenVideo);
-      } else if (hiddenVideo.canPlayType('application/vnd.apple.mpegurl')) {
-        hiddenVideo.src = url;
       } else {
-        $status.text('이 브라우저는 HLS 재생을 지원하지 않습니다.');
+        $status.text('이 브라우저는 MSE/HLS 재생을 지원하지 않습니다.');
       }
     }
   }
@@ -218,12 +209,8 @@ export function initCameraFisheyeCalibration(dialog) {
     if (dewarp) {
       dewarp.destroy();
     }
-    if (hls) {
-      try {
-        hls.destroy();
-      } catch (e) {
-        console.warn('Error tearing down HLS instance (ignored):', e);
-      }
+    if (mse) {
+      mse.destroy();
     }
     if (hiddenVideo) {
       hiddenVideo.remove();

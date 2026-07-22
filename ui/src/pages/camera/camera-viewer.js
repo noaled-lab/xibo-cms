@@ -3,34 +3,167 @@
 // Used by the camera detail page and the per-row list preview, so every
 // place a camera is shown behaves the same way.
 //
-// Playback is LL-HLS only (rtsp-to-web's low-latency HLS endpoint, played
-// via hls.js, falling back to native HLS on Safari). MSE is not used here.
-import Hls from 'hls.js';
+// Playback is rtsp-to-web's MSE endpoint: a raw WebSocket pushing fragmented-mp4 straight
+// into a MediaSource, no HTTP polling of an HLS playlist/segments. Safari still gets native
+// HLS (its own low-latency HLS implementation is more robust than a hand-rolled MSE client).
+// We moved off hls.js-over-LL-HLS because on-demand streams starting late produced repeated
+// manifestParsingError retries, and periodic bufferAppendError/live-edge-drift fatal errors
+// forced full multi-second reattaches - all inherent to polling a playlist over HTTP.
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
 
 const RETRY_DELAY_MS = 4000;
-
-// hls.js has no built-in drift correction unless these are set - without them,
-// playback just keeps buffering and falls further and further behind the live edge
-// over time (a page refresh only "fixes" it because the player restarts near the
-// live edge again). liveSyncDuration/liveMaxLatencyDuration keep it pinned close to
-// live; maxLiveSyncPlaybackRate lets it catch up with a gentle speed-up instead of a
-// jarring seek whenever it drifts past the target.
-export const HLS_CONFIG = {
-  lowLatencyMode: true,
-  // Bumped from 4/12 - the tighter margin kept readyState dipping at every ~1s LL-HLS
-  // part boundary, which the browser's native <video controls> shows as a buffering
-  // spinner flicker even though maxLiveSyncPlaybackRate kept actual playback smooth.
-  // A bit more buffer headroom trades ~1-2s of extra live latency for a steadier
-  // readyState. Bump further (e.g. 8/24) if flicker is still visible.
-  liveSyncDuration: 6,
-  liveMaxLatencyDuration: 18,
-  maxLiveSyncPlaybackRate: 1.1,
-};
+// How much buffered history (seconds behind currentTime) to keep before trimming. Live
+// playback never seeks backward, so anything older is dead weight that would otherwise
+// grow the SourceBuffer without bound until the browser throws QuotaExceededError.
+const MSE_BACK_BUFFER_SECONDS = 15;
 
 function buildHlsLLUrl(streamId, channelId) {
   return window.location.protocol + '//' + window.location.hostname + ':8083' +
     '/stream/' + streamId + '/channel/' + channelId + '/hlsll/live/index.m3u8';
+}
+
+function buildMseUrl(streamId, channelId) {
+  const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  return proto + '://' + window.location.hostname + ':8083' +
+    '/stream/' + streamId + '/channel/' + channelId +
+    '/mse?uuid=' + streamId + '&channel=' + channelId;
+}
+
+/**
+ * Opens rtsp-to-web's MSE endpoint (WebSocket + MediaSource) for a camera channel and
+ * feeds it straight into videoEl.
+ * @param {HTMLVideoElement} videoEl
+ * @param {string} streamId
+ * @param {string} channelId
+ * @param {{onFatal: function}} opts onFatal is called at most once, on an unrecoverable
+ *   error - the caller owns retry policy (every current caller waits RETRY_DELAY_MS then
+ *   reattaches from scratch, same as a page refresh).
+ * @return {{destroy: function}}
+ */
+export function attachMseStream(videoEl, streamId, channelId, opts) {
+  let ws = null;
+  let mediaSource = null;
+  let sourceBuffer = null;
+  let objectUrl = null;
+  let mimeType = null;
+  let queue = [];
+  let closed = false;
+
+  function cleanup() {
+    if (ws) {
+      ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
+      try {
+        ws.close();
+      } catch (e) {
+        // ignore - we're tearing down anyway
+      }
+      ws = null;
+    }
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+    }
+    mediaSource = null;
+    sourceBuffer = null;
+    queue = [];
+  }
+
+  function fail(reason, err) {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    console.warn('MSE stream failed (' + reason + '):', err || '');
+    cleanup();
+    opts.onFatal();
+  }
+
+  function pump() {
+    if (!sourceBuffer || sourceBuffer.updating || closed) {
+      return;
+    }
+    // Trim old buffered data before appending more - resumes here via the next
+    // 'updateend' once the removal completes.
+    const buffered = sourceBuffer.buffered;
+    if (buffered.length && videoEl.currentTime - buffered.start(0) > MSE_BACK_BUFFER_SECONDS) {
+      try {
+        sourceBuffer.remove(buffered.start(0), videoEl.currentTime - MSE_BACK_BUFFER_SECONDS);
+      } catch (e) {
+        // ignore - not worth failing the stream over a trim that didn't take
+      }
+      return;
+    }
+    if (queue.length === 0) {
+      return;
+    }
+    const chunk = queue.shift();
+    try {
+      sourceBuffer.appendBuffer(chunk);
+    } catch (e) {
+      // A QuotaExceededError here means the browser's own memory limit was hit despite
+      // trimming above - drop the backlog rather than get stuck retrying the same chunk.
+      queue = [];
+      fail('appendBuffer', e);
+    }
+  }
+
+  function maybeInitSourceBuffer() {
+    if (!mimeType || !mediaSource || mediaSource.readyState !== 'open' || sourceBuffer) {
+      return;
+    }
+    try {
+      sourceBuffer = mediaSource.addSourceBuffer(mimeType);
+    } catch (e) {
+      fail('addSourceBuffer', e);
+      return;
+    }
+    sourceBuffer.mode = 'segments';
+    sourceBuffer.addEventListener('updateend', pump);
+    pump();
+  }
+
+  ws = new WebSocket(buildMseUrl(streamId, channelId));
+  ws.binaryType = 'arraybuffer';
+
+  ws.onerror = function(e) {
+    fail('websocket error', e);
+  };
+  ws.onclose = function(e) {
+    // Our own cleanup() nulls out ws before calling close(), so this only fires for an
+    // unexpected server-side/network close, never our own teardown.
+    if (ws) {
+      fail('websocket closed', e);
+    }
+  };
+  ws.onmessage = function(event) {
+    if (typeof event.data !== 'string') {
+      queue.push(event.data);
+      pump();
+      return;
+    }
+    let msg;
+    try {
+      msg = JSON.parse(event.data);
+    } catch (e) {
+      return;
+    }
+    if (msg.type === 'mse' && msg.value) {
+      mimeType = msg.value;
+      mediaSource = new MediaSource();
+      objectUrl = URL.createObjectURL(mediaSource);
+      videoEl.src = objectUrl;
+      mediaSource.addEventListener('sourceopen', maybeInitSourceBuffer);
+      maybeInitSourceBuffer();
+      videoEl.play().catch(() => {});
+    }
+  };
+
+  return {
+    destroy() {
+      closed = true;
+      cleanup();
+    },
+  };
 }
 
 /**
@@ -41,31 +174,21 @@ export function createCameraViewer(container) {
   let dewarp = null;
   let hiddenVideo = null;
   let visibleVideo = null;
-  let hls = null;
+  let mse = null;
   // Set only by the public destroy() (not by the internal teardown() that show() also
   // calls to reset before rendering) - stops any pending retry from firing after the
   // viewer has actually been torn down for good.
   let stopped = false;
-  // Counts in-place MEDIA_ERROR recoveries (see attachStream) so a camera stuck in a
-  // genuine error loop still falls back to a full reattach instead of retrying forever.
-  let mediaErrorRecoveries = 0;
-  let mediaErrorResetTimer = null;
 
   function teardown() {
     if (dewarp) {
       dewarp.destroy();
       dewarp = null;
     }
-    if (hls) {
-      try {
-        hls.destroy();
-      } catch (e) {
-        console.warn('Error tearing down HLS instance (ignored):', e);
-      }
-      hls = null;
+    if (mse) {
+      mse.destroy();
+      mse = null;
     }
-    clearTimeout(mediaErrorResetTimer);
-    mediaErrorRecoveries = 0;
     if (hiddenVideo) {
       hiddenVideo.remove();
       hiddenVideo = null;
@@ -84,77 +207,34 @@ export function createCameraViewer(container) {
       return;
     }
 
-    const url = buildHlsLLUrl(camera.streamId, camera.channelId);
-    if (Hls.isSupported()) {
-      hls = new Hls(HLS_CONFIG);
-      hls.on(Hls.Events.ERROR, function(event, data) {
-        if (stopped || !data.fatal) {
+    if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari's own low-latency HLS implementation is more robust here than a
+      // hand-rolled MSE client - hand it the LL-HLS URL directly, no hls.js involved.
+      videoEl.src = buildHlsLLUrl(camera.streamId, camera.channelId);
+      return;
+    }
+
+    if (!window.MediaSource) {
+      console.error('This browser supports neither MSE nor native HLS playback.');
+      return;
+    }
+
+    mse = attachMseStream(videoEl, camera.streamId, camera.channelId, {
+      onFatal() {
+        if (stopped) {
           return;
         }
-
-        // bufferAppendError and other MEDIA_ERRORs happen fairly often with LL-HLS
-        // (e.g. an overlapping/out-of-order part append) and hls.js has a purpose-built
-        // cheap recovery for exactly this: swap in a fresh MediaSource in place, no
-        // manifest refetch and no jump back to the live edge. Reserve the full
-        // teardown+reattach below (which does both of those) for when that isn't
-        // enough - a real reattach is what was causing the repeated multi-second
-        // freezes/big seeks, since it was firing on every MEDIA_ERROR too.
-        if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaErrorRecoveries < 3) {
-          mediaErrorRecoveries++;
-          console.warn('HLS fatal media error (' + data.details + '), recovering in place (attempt '
-            + mediaErrorRecoveries + '/3)');
-          clearTimeout(mediaErrorResetTimer);
-          // Only counts as "still broken" if errors keep recurring quickly - a healthy
-          // stretch of playback after a recovery forgives past attempts.
-          mediaErrorResetTimer = setTimeout(() => {
-            mediaErrorRecoveries = 0;
-          }, 20000);
-          try {
-            hls.recoverMediaError();
-            return;
-          } catch (e) {
-            console.warn('recoverMediaError() failed, falling back to full reattach:', e);
-          }
-        }
-
-        // rtsp-to-web starts "on demand" streams lazily on first request, so the very
-        // first load attempt often fails before the stream has actually started (this
-        // is what a manifestLoadError/ERR_EMPTY_RESPONSE means) - and real cameras can
-        // drop off the network transiently too. hls.js's own startLoad()/
-        // recoverMediaError() don't reliably recover from a failed *manifest* load, so
-        // instead we do exactly what a page refresh does: tear down and reattach the
-        // stream from scratch.
-        console.warn('HLS fatal error (' + data.type + '/' + data.details + '), retrying in '
-          + RETRY_DELAY_MS + 'ms');
-        // Destroying hls.js synchronously from inside its own ERROR handler can race
-        // with an in-flight fragment/transmux callback that fires after teardown and
-        // throws on a now-null internal reference - defer it out of this call stack.
-        const failedHls = hls;
-        hls = null;
+        console.warn('MSE stream failed, retrying in ' + RETRY_DELAY_MS + 'ms');
+        mse = null;
+        videoEl.removeAttribute('src');
+        videoEl.load();
         setTimeout(() => {
-          try {
-            failedHls.destroy();
-            videoEl.removeAttribute('src');
-            videoEl.load();
-          } catch (e) {
-            console.warn('Error tearing down HLS instance (ignored):', e);
-          }
           if (!stopped) {
             attachStream(videoEl, camera);
           }
         }, RETRY_DELAY_MS);
-      });
-      hls.loadSource(url);
-      hls.attachMedia(videoEl);
-      hls.on(Hls.Events.MANIFEST_PARSED, function() {
-        videoEl.play().catch(() => {});
-      });
-    } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari plays HLS natively, no hls.js needed.
-      videoEl.src = url;
-    } else {
-      console.error('This browser does not support HLS playback.');
-    }
+      },
+    });
   }
 
   /**

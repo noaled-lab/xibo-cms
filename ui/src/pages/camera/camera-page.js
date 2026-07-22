@@ -125,8 +125,8 @@ function displayCameras(cameras) {
     $('#cameraTable').DataTable().destroy();
   }
 
-  // Tear down any viewers from the previous render (hls.js instances, WebGL contexts)
-  // before rebuilding the table, so they don't keep streaming in the background.
+  // Tear down any viewers from the previous render (MSE WebSocket connections, WebGL
+  // contexts) before rebuilding the table, so they don't keep streaming in the background.
   activeViewers.forEach((viewer) => viewer.destroy());
   activeViewers = [];
 
