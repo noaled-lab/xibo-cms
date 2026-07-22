@@ -193,9 +193,9 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
           fail('addSourceBuffer', e);
           return;
         }
-        // Use 'sequence' mode instead of 'segments' so that if the camera/network drops frames
-        // (causing timestamp gaps), MSE appends them seamlessly without freezing at the gaps.
-        sourceBuffer.mode = 'sequence';
+        // Use 'segments' mode. 'sequence' mode causes permanent latency buildup if the camera drops packets,
+        // because it blindly stitches surviving frames together and loses real-time sync.
+        sourceBuffer.mode = 'segments';
         sourceBuffer.addEventListener('updateend', pushPacket);
         return;
       }
