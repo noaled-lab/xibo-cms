@@ -18,6 +18,8 @@ const RETRY_DELAY_MS = 4000;
 // jarring seek whenever it drifts past the target.
 export const HLS_CONFIG = {
   lowLatencyMode: true,
+  liveSyncDuration: 4,
+  liveMaxLatencyDuration: 12,
   maxLiveSyncPlaybackRate: 1.1,
 };
 
