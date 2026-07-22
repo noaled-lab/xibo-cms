@@ -46,6 +46,10 @@ export function createCameraViewer(container) {
   // calls to reset before rendering) - stops any pending retry from firing after the
   // viewer has actually been torn down for good.
   let stopped = false;
+  // Counts in-place MEDIA_ERROR recoveries (see attachStream) so a camera stuck in a
+  // genuine error loop still falls back to a full reattach instead of retrying forever.
+  let mediaErrorRecoveries = 0;
+  let mediaErrorResetTimer = null;
 
   function teardown() {
     if (dewarp) {
@@ -60,6 +64,8 @@ export function createCameraViewer(container) {
       }
       hls = null;
     }
+    clearTimeout(mediaErrorResetTimer);
+    mediaErrorRecoveries = 0;
     if (hiddenVideo) {
       hiddenVideo.remove();
       hiddenVideo = null;
@@ -85,6 +91,32 @@ export function createCameraViewer(container) {
         if (stopped || !data.fatal) {
           return;
         }
+
+        // bufferAppendError and other MEDIA_ERRORs happen fairly often with LL-HLS
+        // (e.g. an overlapping/out-of-order part append) and hls.js has a purpose-built
+        // cheap recovery for exactly this: swap in a fresh MediaSource in place, no
+        // manifest refetch and no jump back to the live edge. Reserve the full
+        // teardown+reattach below (which does both of those) for when that isn't
+        // enough - a real reattach is what was causing the repeated multi-second
+        // freezes/big seeks, since it was firing on every MEDIA_ERROR too.
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaErrorRecoveries < 3) {
+          mediaErrorRecoveries++;
+          console.warn('HLS fatal media error (' + data.details + '), recovering in place (attempt '
+            + mediaErrorRecoveries + '/3)');
+          clearTimeout(mediaErrorResetTimer);
+          // Only counts as "still broken" if errors keep recurring quickly - a healthy
+          // stretch of playback after a recovery forgives past attempts.
+          mediaErrorResetTimer = setTimeout(() => {
+            mediaErrorRecoveries = 0;
+          }, 20000);
+          try {
+            hls.recoverMediaError();
+            return;
+          } catch (e) {
+            console.warn('recoverMediaError() failed, falling back to full reattach:', e);
+          }
+        }
+
         // rtsp-to-web starts "on demand" streams lazily on first request, so the very
         // first load attempt often fails before the stream has actually started (this
         // is what a manifestLoadError/ERR_EMPTY_RESPONSE means) - and real cameras can
