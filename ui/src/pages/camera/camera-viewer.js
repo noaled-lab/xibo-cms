@@ -277,6 +277,11 @@ export function createCameraViewer(container) {
       hiddenVideo.muted = true;
       hiddenVideo.playsInline = true;
       hiddenVideo.autoplay = true;
+      // Chrome taints MSE-backed video elements for WebGL texture reads ("contains
+      // cross-origin data") unless crossOrigin is explicitly set, even though the src is
+      // always a same-origin blob: URL - confirmed by testing: fixing the MediaSource/
+      // WebSocket setup order alone did NOT stop this error, only this does.
+      hiddenVideo.crossOrigin = 'anonymous';
       hiddenVideo.style.cssText = 'position:absolute; top:0; left:0; width:256px; height:256px; opacity:0.99; pointer-events:none; z-index:-1;';
       container.appendChild(hiddenVideo);
       hiddenVideo.addEventListener('loadedmetadata', function() {

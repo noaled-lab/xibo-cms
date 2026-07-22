@@ -81,6 +81,11 @@ export function initCameraFisheyeCalibration(dialog) {
     hiddenVideo.muted = true;
     hiddenVideo.playsInline = true;
     hiddenVideo.autoplay = true;
+    // Chrome taints MSE-backed video elements for WebGL texture reads ("contains
+    // cross-origin data") unless crossOrigin is explicitly set, even though the src is
+    // always a same-origin blob: URL - confirmed by testing: fixing the MediaSource/
+    // WebSocket setup order alone did NOT stop this error, only this does.
+    hiddenVideo.crossOrigin = 'anonymous';
     // Must be attached to the document (not just display:none) - browsers throttle decoding
     // of detached/display:none video elements, which causes dropped frames in the dewarped
     // canvas even though the video itself is never meant to be seen directly.
