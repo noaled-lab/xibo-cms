@@ -100,32 +100,53 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
   }
 
   function pushPacket() {
-    if (sourceBuffer && !sourceBuffer.updating && queue.length > 0) {
+    if (videoEl.buffered.length > 0) {
+      const end = videoEl.buffered.end(videoEl.buffered.length - 1);
+      const delay = end - videoEl.currentTime;
+      if (document.hidden) {
+        // A backgrounded tab throttles video decode - without an active audio track to keep
+        // it "alive", playback can stall indefinitely. Snapping to near the live edge each
+        // time keeps it from falling permanently behind while hidden.
+        if (delay > 1.5) {
+          videoEl.currentTime = end - 0.5;
+        }
+      } else {
+        if (delay > 60.0) {
+          videoEl.currentTime = end - 0.5; // Snap only if more than 1 min behind
+        } else if (delay > 0.8) {
+          videoEl.playbackRate = 1.1; // play faster to catch up smoothly
+        } else if (delay < 0.2) {
+          videoEl.playbackRate = 0.9; // play slower to build buffer and avoid stopping
+        } else {
+          videoEl.playbackRate = 1.0;
+        }
+      }
+    }
+
+    if (!sourceBuffer || sourceBuffer.updating) {
+      return;
+    }
+
+    if (videoEl.buffered.length > 0) {
+      const start = videoEl.buffered.start(0);
+      const currentTime = videoEl.currentTime;
+      // Remove buffer data older than 60 seconds to prevent QuotaExceededError
+      if (currentTime - start > 60) {
+        try {
+          sourceBuffer.remove(0, currentTime - 60);
+          return; // removal is async, appendBuffer will happen on next 'updateend'
+        } catch (e) {
+          console.warn('Buffer remove error', e);
+        }
+      }
+    }
+
+    if (queue.length > 0) {
       const packet = queue.shift();
       try {
         sourceBuffer.appendBuffer(packet);
       } catch (e) {
         fail('appendBuffer', e);
-        return;
-      }
-    }
-    // A backgrounded tab throttles video decode - without an active audio track to keep
-    // it "alive", playback can stall indefinitely. Snapping to near the live edge each
-    // time keeps it from falling permanently behind while hidden.
-    if (document.hidden && videoEl.buffered.length > 0) {
-      videoEl.currentTime = videoEl.buffered.end(videoEl.buffered.length - 1) - 0.5;
-    } else if (!document.hidden && videoEl.buffered.length > 0) {
-      const end = videoEl.buffered.end(videoEl.buffered.length - 1);
-      const delay = end - videoEl.currentTime;
-      
-      if (delay > 3.0) {
-        videoEl.currentTime = end - 0.5; // too far behind, must snap
-      } else if (delay > 0.8) {
-        videoEl.playbackRate = 1.1; // play faster to catch up smoothly
-      } else if (delay < 0.2) {
-        videoEl.playbackRate = 0.9; // play slower to build buffer and avoid stopping
-      } else {
-        videoEl.playbackRate = 1.0;
       }
     }
   }
