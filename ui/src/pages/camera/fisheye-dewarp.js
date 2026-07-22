@@ -370,14 +370,23 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
   canvas.addEventListener('wheel', onWheel, {passive: false});
   window.addEventListener('resize', resize);
 
+  // Caps the dewarp canvas's own render rate independent of the source video's actual
+  // framerate - re-uploading a full-res video frame to the GPU as a texture every single
+  // decoded frame is the expensive part, and a CCTV feed doesn't need to redraw faster
+  // than this to look smooth enough. Dragging bypasses the cap so pane manipulation still
+  // feels immediate.
+  const RENDER_FPS_CAP = 15;
+  const RENDER_INTERVAL_MS = 1000 / RENDER_FPS_CAP;
+
   let lastVideoTime = -1;
+  let lastRenderAt = 0;
   let frame = 0;
   function loop() {
     if (!running) {
       return;
     }
     rafId = requestAnimationFrame(loop);
-    
+
     let shouldRender = dragging || !srcEl;
     if (srcEl && srcEl.currentTime !== undefined) {
       if (srcEl.currentTime !== lastVideoTime) {
@@ -386,6 +395,15 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
       }
     } else if (srcEl) {
       shouldRender = true;
+    }
+
+    if (shouldRender && !dragging) {
+      const now = performance.now();
+      if (now - lastRenderAt < RENDER_INTERVAL_MS) {
+        shouldRender = false;
+      } else {
+        lastRenderAt = now;
+      }
     }
 
     if (shouldRender) {
