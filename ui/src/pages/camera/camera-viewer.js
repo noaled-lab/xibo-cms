@@ -157,11 +157,12 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
   }
 
   // If the video pauses (e.g. due to buffer underflow), auto-resume when data arrives.
-  videoEl.addEventListener('pause', function() {
+  function onPause() {
     if (videoEl.currentTime < videoEl.duration || !videoEl.duration) {
       videoEl.play().catch(() => {});
     }
-  });
+  }
+  videoEl.addEventListener('pause', onPause);
 
   mediaSource.addEventListener('sourceopen', function() {
     ws = new WebSocket(buildMseUrl(streamId, channelId));
