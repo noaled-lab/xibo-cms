@@ -18,8 +18,13 @@ const RETRY_DELAY_MS = 4000;
 // jarring seek whenever it drifts past the target.
 export const HLS_CONFIG = {
   lowLatencyMode: true,
-  liveSyncDuration: 4,
-  liveMaxLatencyDuration: 12,
+  // Bumped from 4/12 - the tighter margin kept readyState dipping at every ~1s LL-HLS
+  // part boundary, which the browser's native <video controls> shows as a buffering
+  // spinner flicker even though maxLiveSyncPlaybackRate kept actual playback smooth.
+  // A bit more buffer headroom trades ~1-2s of extra live latency for a steadier
+  // readyState. Bump further (e.g. 8/24) if flicker is still visible.
+  liveSyncDuration: 6,
+  liveMaxLatencyDuration: 18,
   maxLiveSyncPlaybackRate: 1.1,
 };
 

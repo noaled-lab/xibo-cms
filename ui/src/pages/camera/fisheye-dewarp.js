@@ -237,6 +237,11 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
     const h = Math.max(1, Math.round(w / params.aspect));
     renderer.setSize(w, h, false);
     canvas.style.height = h + 'px';
+    // setSize() just changed the canvas's width/height attributes, which per the HTML
+    // canvas spec clears the drawing buffer - without an immediate repaint here, the
+    // browser can paint that cleared (black) frame before the render loop's next rAF
+    // tick gets to it, showing up as a brief black flash on every resize.
+    renderFrame();
   }
 
   function renderFrame() {
