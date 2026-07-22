@@ -12,10 +12,6 @@
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
 
 const RETRY_DELAY_MS = 4000;
-// How much buffered history (seconds behind currentTime) to keep before trimming. Live
-// playback never seeks backward, so anything older is dead weight that would otherwise
-// grow the SourceBuffer without bound until the browser throws QuotaExceededError.
-const MSE_BACK_BUFFER_SECONDS = 15;
 
 function buildHlsLLUrl(streamId, channelId) {
   return window.location.protocol + '//' + window.location.hostname + ':8083' +
@@ -41,13 +37,22 @@ function buildMseUrl(streamId, channelId) {
  * @return {{destroy: function}}
  */
 export function attachMseStream(videoEl, streamId, channelId, opts) {
-  let ws = null;
-  let mediaSource = null;
+  const queue = [];
   let sourceBuffer = null;
-  let objectUrl = null;
-  let mimeType = null;
-  let queue = [];
+  let streamingStarted = false;
+  let ws = null;
   let closed = false;
+
+  // MediaSource + videoEl.src must be set up synchronously, up front - opening the
+  // WebSocket only inside 'sourceopen' (below) rather than immediately is what keeps
+  // this video "clean" for WebGL to read as a texture (the fisheye dewarp canvas).
+  // Reordering this - e.g. opening the socket first and only creating the MediaSource
+  // once the first packet arrives - reproduced a SecurityError ("video element contains
+  // cross-origin data") from THREE.js's texImage2D, even though the src is always a
+  // same-origin blob: URL either way.
+  const mediaSource = new MediaSource();
+  let objectUrl = URL.createObjectURL(mediaSource);
+  videoEl.src = objectUrl;
 
   function cleanup() {
     if (ws) {
@@ -63,9 +68,6 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
       URL.revokeObjectURL(objectUrl);
       objectUrl = null;
     }
-    mediaSource = null;
-    sourceBuffer = null;
-    queue = [];
   }
 
   function fail(reason, err) {
@@ -74,92 +76,106 @@ export function attachMseStream(videoEl, streamId, channelId, opts) {
     }
     closed = true;
     console.warn('MSE stream failed (' + reason + '):', err || '');
+    videoEl.removeEventListener('pause', onPause);
     cleanup();
     opts.onFatal();
   }
 
-  function pump() {
-    if (!sourceBuffer || sourceBuffer.updating || closed) {
+  // The first packet after a SourceBuffer is created gets appended immediately -
+  // otherwise it can sit queued indefinitely since nothing has triggered an 'updateend'
+  // yet to drain the queue.
+  function readPacket(packet) {
+    if (!sourceBuffer) {
+      queue.push(packet);
       return;
     }
-    // Trim old buffered data before appending more - resumes here via the next
-    // 'updateend' once the removal completes.
-    const buffered = sourceBuffer.buffered;
-    if (buffered.length && videoEl.currentTime - buffered.start(0) > MSE_BACK_BUFFER_SECONDS) {
+    if (!streamingStarted) {
+      streamingStarted = true;
       try {
-        sourceBuffer.remove(buffered.start(0), videoEl.currentTime - MSE_BACK_BUFFER_SECONDS);
+        sourceBuffer.appendBuffer(packet);
       } catch (e) {
-        // ignore - not worth failing the stream over a trim that didn't take
+        fail('appendBuffer', e);
       }
       return;
     }
-    if (queue.length === 0) {
-      return;
-    }
-    const chunk = queue.shift();
-    try {
-      sourceBuffer.appendBuffer(chunk);
-    } catch (e) {
-      // A QuotaExceededError here means the browser's own memory limit was hit despite
-      // trimming above - drop the backlog rather than get stuck retrying the same chunk.
-      queue = [];
-      fail('appendBuffer', e);
+    queue.push(packet);
+    if (!sourceBuffer.updating) {
+      pushPacket();
     }
   }
 
-  function maybeInitSourceBuffer() {
-    if (!mimeType || !mediaSource || mediaSource.readyState !== 'open' || sourceBuffer) {
-      return;
+  function pushPacket() {
+    if (sourceBuffer && !sourceBuffer.updating && queue.length > 0) {
+      const packet = queue.shift();
+      try {
+        sourceBuffer.appendBuffer(packet);
+      } catch (e) {
+        fail('appendBuffer', e);
+        return;
+      }
     }
-    try {
-      sourceBuffer = mediaSource.addSourceBuffer(mimeType);
-    } catch (e) {
-      fail('addSourceBuffer', e);
-      return;
+    // A backgrounded tab throttles video decode - without an active audio track to keep
+    // it "alive", playback can stall indefinitely. Snapping to near the live edge each
+    // time keeps it from falling permanently behind while hidden.
+    if (document.hidden && videoEl.buffered.length > 0) {
+      videoEl.currentTime = videoEl.buffered.end(videoEl.buffered.length - 1) - 0.5;
     }
-    sourceBuffer.mode = 'segments';
-    sourceBuffer.addEventListener('updateend', pump);
-    pump();
   }
 
-  ws = new WebSocket(buildMseUrl(streamId, channelId));
-  ws.binaryType = 'arraybuffer';
-
-  ws.onerror = function(e) {
-    fail('websocket error', e);
-  };
-  ws.onclose = function(e) {
-    // Our own cleanup() nulls out ws before calling close(), so this only fires for an
-    // unexpected server-side/network close, never our own teardown.
-    if (ws) {
-      fail('websocket closed', e);
-    }
-  };
-  ws.onmessage = function(event) {
-    // Every message is binary (ws.binaryType = 'arraybuffer') - rtsp-to-web multiplexes
-    // the one-time codec announcement into the same stream as the fmp4 fragments by
-    // prefixing it with a marker byte, rather than sending it as a separate text/JSON
-    // message: a leading byte of 9 means "the rest of this message (UTF-8) is the codec
-    // string for addSourceBuffer", anything else is fragment data to append as-is.
-    const data = new Uint8Array(event.data);
-    if (data[0] === 9) {
-      const codecs = new TextDecoder('utf-8').decode(data.slice(1));
-      mimeType = 'video/mp4; codecs="' + codecs + '"';
-      mediaSource = new MediaSource();
-      objectUrl = URL.createObjectURL(mediaSource);
-      videoEl.src = objectUrl;
-      mediaSource.addEventListener('sourceopen', maybeInitSourceBuffer);
-      maybeInitSourceBuffer();
+  // Safari-specific: low-latency MSE playback can stall with currentTime past the
+  // buffered range; nudge back in and resume rather than staying frozen.
+  function onPause() {
+    if (videoEl.buffered.length > 0 &&
+        videoEl.currentTime > videoEl.buffered.end(videoEl.buffered.length - 1)) {
+      videoEl.currentTime = videoEl.buffered.end(videoEl.buffered.length - 1) - 0.1;
       videoEl.play().catch(() => {});
-      return;
     }
-    queue.push(event.data);
-    pump();
-  };
+  }
+  videoEl.addEventListener('pause', onPause);
+
+  mediaSource.addEventListener('sourceopen', function() {
+    ws = new WebSocket(buildMseUrl(streamId, channelId));
+    ws.binaryType = 'arraybuffer';
+
+    ws.onerror = function(e) {
+      fail('websocket error', e);
+    };
+    ws.onclose = function(e) {
+      // Our own cleanup() nulls out ws before calling close(), so this only fires for an
+      // unexpected server-side/network close, never our own teardown.
+      if (ws) {
+        fail('websocket closed', e);
+      }
+    };
+    ws.onmessage = function(event) {
+      // Every message is binary (ws.binaryType = 'arraybuffer') - rtsp-to-web multiplexes
+      // the one-time codec announcement into the same stream as the fmp4 fragments by
+      // prefixing it with a marker byte, rather than sending it as a separate text/JSON
+      // message: a leading byte of 9 means "the rest of this message (UTF-8) is the
+      // codec string for addSourceBuffer", anything else is fragment data to append.
+      const data = new Uint8Array(event.data);
+      if (data[0] === 9) {
+        const codecs = new TextDecoder('utf-8').decode(data.slice(1));
+        try {
+          sourceBuffer = mediaSource.addSourceBuffer('video/mp4; codecs="' + codecs + '"');
+        } catch (e) {
+          fail('addSourceBuffer', e);
+          return;
+        }
+        sourceBuffer.mode = 'segments';
+        sourceBuffer.addEventListener('updateend', pushPacket);
+        return;
+      }
+      readPacket(event.data);
+    };
+
+    videoEl.play().catch(() => {});
+  }, {once: true});
 
   return {
     destroy() {
       closed = true;
+      videoEl.removeEventListener('pause', onPause);
       cleanup();
     },
   };
