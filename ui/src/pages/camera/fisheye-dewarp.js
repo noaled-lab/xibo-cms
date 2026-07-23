@@ -29,8 +29,8 @@ const COMMON = `
   precision highp float;
   varying vec2 vUv;
   uniform sampler2D tex;
-  uniform vec2 texSize, centerPx;
-  uniform float radiusPx, rotate, dir, lensK;
+  uniform vec2 texSize, centerPx, centerInnerPx;
+  uniform float radiusPx, rotate, dir, lensK, rInnerVal, rOuterVal;
   vec4 checker(){
     float c = mod(floor(gl_FragCoord.x/8.)+floor(gl_FragCoord.y/8.),2.);
     return vec4(vec3(.05+.03*c),1.);
@@ -38,7 +38,9 @@ const COMMON = `
   vec4 sampleFish(float rNorm, float phi){
     float r = rNorm*(1.+lensK*(rNorm*rNorm-1.));
     float a = dir*phi + rotate;
-    vec2 px = centerPx + radiusPx*r*vec2(cos(a),-sin(a));
+    float t = (rOuterVal > rInnerVal) ? clamp((rNorm - rInnerVal) / (rOuterVal - rInnerVal), 0.0, 1.0) : 1.0;
+    vec2 cPx = mix(centerInnerPx, centerPx, t);
+    vec2 px = cPx + radiusPx*r*vec2(cos(a),-sin(a));
     vec2 uv = vec2(px.x/texSize.x, 1.-px.y/texSize.y);
     if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.) return checker();
     return texture2D(tex,uv);
@@ -55,7 +57,7 @@ const COMMON = `
  */
 export function createFisheyeDewarp(canvas, sourceCanvas) {
   const params = {
-    cx: 50, cy: 50, rad: 98, rin: 0.25, rout: 1.0, rot: 0,
+    cx: 50, cy: 50, cx2: 50, cy2: 50, rad: 98, rin: 0.25, rout: 1.0, rot: 0,
     lens: 0, ffov: 180, mode: 'seg', layout: 'L1', aspect: 6,
   };
   const ephemeral = {flip: false, ccw: false};
@@ -80,10 +82,11 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
 
   const uSeg = {
     tex: {value: null}, texSize: {value: new THREE.Vector2(1, 1)},
-    centerPx: {value: new THREE.Vector2(512, 512)}, radiusPx: {value: 500},
+    centerPx: {value: new THREE.Vector2(512, 512)}, centerInnerPx: {value: new THREE.Vector2(512, 512)}, radiusPx: {value: 500},
     rotate: {value: 0}, dir: {value: 1}, lensK: {value: 0},
     rInner: {value: 0.25}, rOuter: {value: 1}, flipY: {value: 0},
     thetaStart: {value: 0}, thetaSpan: {value: Math.PI * 2},
+    rInnerVal: {value: 0.25}, rOuterVal: {value: 1},
   };
   const matSeg = new THREE.ShaderMaterial({
     uniforms: uSeg,
@@ -100,11 +103,12 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
 
   const uPtz = {
     tex: {value: null}, texSize: {value: new THREE.Vector2(1, 1)},
-    centerPx: {value: new THREE.Vector2(512, 512)}, radiusPx: {value: 500},
+    centerPx: {value: new THREE.Vector2(512, 512)}, centerInnerPx: {value: new THREE.Vector2(512, 512)}, radiusPx: {value: 500},
     rotate: {value: 0}, dir: {value: 1}, lensK: {value: 0},
     fishHalf: {value: Math.PI / 2},
     pan: {value: 0}, tilt: {value: 0}, tanHalf: {value: 0.7}, pAspect: {value: 1.78},
     rInnerP: {value: 0},
+    rInnerVal: {value: 0}, rOuterVal: {value: 1},
   };
   const matPtz = new THREE.ShaderMaterial({
     uniforms: uPtz,
@@ -150,10 +154,16 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
     [uSeg, uPtz].forEach((u) => {
       u.texSize.value.set(srcW, srcH);
       u.centerPx.value.set(params.cx / 100 * srcW, params.cy / 100 * srcH);
+      u.centerInnerPx.value.set(
+        (params.cx2 !== undefined ? params.cx2 : params.cx) / 100 * srcW, 
+        (params.cy2 !== undefined ? params.cy2 : params.cy) / 100 * srcH
+      );
       u.radiusPx.value = params.rad / 100 * Math.min(srcW, srcH) / 2;
       u.rotate.value = params.rot * Math.PI / 180;
       u.dir.value = ephemeral.ccw ? -1 : 1;
       u.lensK.value = params.lens;
+      u.rInnerVal.value = Math.min(params.rin, params.rout - 0.01);
+      u.rOuterVal.value = params.rout;
     });
     uSeg.rInner.value = Math.min(params.rin, params.rout - 0.01);
     uSeg.rOuter.value = params.rout;
@@ -179,6 +189,12 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
 
     const cx = params.cx / 100 * sourceCanvas.width;
     const cy = params.cy / 100 * sourceCanvas.height;
+    
+    const hasCx2 = params.cx2 !== undefined;
+    const hasCy2 = params.cy2 !== undefined;
+    const cx2 = (hasCx2 ? params.cx2 : params.cx) / 100 * sourceCanvas.width;
+    const cy2 = (hasCy2 ? params.cy2 : params.cy) / 100 * sourceCanvas.height;
+    
     const r = params.rad / 100 * Math.min(sourceCanvas.width, sourceCanvas.height) / 2;
 
     srcCtx.lineWidth = 1.5;
@@ -190,10 +206,11 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
     srcCtx.strokeStyle = '#4fd1c5';
     srcCtx.fillStyle = 'rgba(79,209,197,.12)';
     srcCtx.beginPath();
-    srcCtx.arc(cx, cy, r * params.rin, 0, Math.PI * 2);
+    srcCtx.arc(cx2, cy2, r * params.rin, 0, Math.PI * 2);
     srcCtx.fill();
     srcCtx.stroke();
 
+    // Outer Center Crosshair
     srcCtx.strokeStyle = '#ffffffaa';
     srcCtx.beginPath();
     srcCtx.moveTo(cx - 8, cy);
@@ -202,11 +219,22 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
     srcCtx.lineTo(cx, cy + 8);
     srcCtx.stroke();
 
+    // Inner Center Crosshair
+    if (hasCx2 || hasCy2) {
+      srcCtx.strokeStyle = '#4fd1c5aa';
+      srcCtx.beginPath();
+      srcCtx.moveTo(cx2 - 5, cy2);
+      srcCtx.lineTo(cx2 + 5, cy2);
+      srcCtx.moveTo(cx2, cy2 - 5);
+      srcCtx.lineTo(cx2, cy2 + 5);
+      srcCtx.stroke();
+    }
+
     const a = -params.rot * Math.PI / 180 * (ephemeral.ccw ? -1 : 1);
     srcCtx.strokeStyle = '#ff7847';
     srcCtx.setLineDash([5, 4]);
     srcCtx.beginPath();
-    srcCtx.moveTo(cx + Math.cos(a) * r * params.rin, cy + Math.sin(a) * r * params.rin);
+    srcCtx.moveTo(cx2 + Math.cos(a) * r * params.rin, cy2 + Math.sin(a) * r * params.rin);
     srcCtx.lineTo(cx + Math.cos(a) * r * params.rout, cy + Math.sin(a) * r * params.rout);
     srcCtx.stroke();
     srcCtx.setLineDash([]);
@@ -214,10 +242,16 @@ export function createFisheyeDewarp(canvas, sourceCanvas) {
 
   function onSourceCanvasClick(e) {
     const r = sourceCanvas.getBoundingClientRect();
-    const cx = (e.clientX - r.left) / r.width * 100;
-    const cy = (e.clientY - r.top) / r.height * 100;
+    const nx = (e.clientX - r.left) / r.width * 100;
+    const ny = (e.clientY - r.top) / r.height * 100;
+    
     if (onCenterPick) {
-      onCenterPick({cx, cy});
+      // If shift key is held, set inner center, otherwise outer center
+      if (e.shiftKey) {
+        onCenterPick({cx2: nx, cy2: ny});
+      } else {
+        onCenterPick({cx: nx, cy: ny});
+      }
     }
   }
 

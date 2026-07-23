@@ -16,11 +16,7 @@
             <form id="cameraEditForm" class="XiboForm form-horizontal" method="put"
                   action="{{ url_for("camera.edit", {id: camera.id}) }}"
                   data-camera-id="{{ camera.id }}"
-                  data-fisheye-params="{{ fisheyeParams|json_encode }}"
-                  data-test-video-upload-url="{{ url_for("camera.testVideo.upload", {id: camera.id}) }}"
-                  data-test-video-download-url="{{ url_for("camera.testVideo.download", {id: camera.id}) }}"
-                  data-test-video-delete-url="{{ url_for("camera.testVideo.delete", {id: camera.id}) }}"
-                  data-test-video-file="{{ camera.testVideoFile }}">
+                  data-fisheye-params="{{ fisheyeParams|json_encode }}">
 
                 <!-- 숨겨진 필드: onDemand는 항상 true -->
                 <input type="hidden" name="onDemand" value="1">
@@ -45,19 +41,7 @@
                 ] %}
                 {{ forms.dropdown("type", "dropdown", title, camera.type, options, "id", "value", helpText) }}
 
-                <div class="form-group row">
-                    <label class="col-sm-2 control-label">{% trans "테스트 영상 (임시)" %}</label>
-                    <div class="col-sm-10">
-                        <input type="file" id="testVideoInput" accept="video/mp4,video/webm,video/quicktime">
-                        <button type="button" class="btn btn-sm btn-white" id="testVideoUploadBtn">{% trans "업로드" %}</button>
-                        {% if camera.testVideoFile %}
-                            <button type="button" class="btn btn-sm btn-white" id="testVideoDeleteBtn">{% trans "삭제" %}</button>
-                        {% endif %}
-                        <small class="form-text text-muted" id="testVideoStatus">
-                            {% trans "실제 카메라 없이(종류 상관없이) 확인용으로 영상을 올려둘 수 있습니다. 임시 기능이라 추후 제거 예정입니다." %}
-                        </small>
-                    </div>
-                </div>
+
 
                 <div id="fisheyeCalibration" class="fisheye-calibration" style="display:none;">
                     <hr>
@@ -85,12 +69,25 @@
                     </div>
 
                     <div class="form-group row">
-                        <label class="col-sm-2 control-label" for="centerX">{% trans "중심 X / Y" %}</label>
+                        <label class="col-sm-2 control-label" for="centerX">{% trans "바깥 원 중심 X / Y" %}</label>
                         <div class="col-sm-5">
                             <input type="range" class="form-control-range" id="centerX" name="centerX" min="0" max="100" step="0.1" value="{{ fisheyeParams.cx }}">
                         </div>
                         <div class="col-sm-5">
                             <input type="range" class="form-control-range" id="centerY" name="centerY" min="0" max="100" step="0.1" value="{{ fisheyeParams.cy }}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group row">
+                        <label class="col-sm-2 control-label" for="centerX2">{% trans "안쪽 원 중심 X / Y" %}</label>
+                        <div class="col-sm-5">
+                            <input type="range" class="form-control-range" id="centerX2" name="centerX2" min="0" max="100" step="0.1" value="{{ fisheyeParams.cx2|default(fisheyeParams.cx) }}">
+                        </div>
+                        <div class="col-sm-5">
+                            <input type="range" class="form-control-range" id="centerY2" name="centerY2" min="0" max="100" step="0.1" value="{{ fisheyeParams.cy2|default(fisheyeParams.cy) }}">
+                        </div>
+                        <div class="col-sm-10 offset-sm-2">
+                            <small class="form-text text-muted">{% trans "미리보기 화면에서 클릭하면 바깥 원 중심이, Shift+클릭하면 안쪽 원 중심이 설정됩니다." %}</small>
                         </div>
                     </div>
 

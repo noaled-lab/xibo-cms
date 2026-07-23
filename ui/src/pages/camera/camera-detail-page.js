@@ -12,10 +12,8 @@ $(function() {
 
   const camera = {
     type: $root.data('camera-type'),
-    streamId: $root.data('stream-id'),
     channelId: $root.data('channel-id'),
     fisheyeParams: $root.data('fisheye-params') || null,
-    testVideoUrl: $root.data('test-video-download-url') || null,
   };
 
   const viewer = createCameraViewer(document.getElementById('cameraViewerStage'));

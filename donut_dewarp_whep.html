@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Donut Dewarp — 파노라마 / 페인 분할 / 가상 PTZ (WHEP 실시간 연동)</title>
+<style>
+  :root{
+    --bg:#10141a; --panel:#171d26; --panel2:#1e2531; --line:#2a3342;
+    --text:#dce3ec; --dim:#8593a6; --accent:#ffb454; --accent2:#4fd1c5;
+    --mono:ui-monospace,'SF Mono','Cascadia Mono','JetBrains Mono',Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Apple SD Gothic Neo','Noto Sans KR',sans-serif;min-height:100vh}
+  header{display:flex;align-items:baseline;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line)}
+  header h1{font-size:15px;font-weight:600;letter-spacing:.4px}
+  header h1 b{color:var(--accent);font-weight:700}
+  header span{font-size:12px;color:var(--dim)}
+  .wrap{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 49px)}
+  @media (max-width:860px){.wrap{grid-template-columns:1fr}}
+
+  aside{background:var(--panel);border-right:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:14px}
+  .group{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}
+  .group h2{font-size:11px;font-weight:600;color:var(--dim);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px}
+  .row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .row:last-child{margin-bottom:0}
+  .row label{flex:0 0 84px;font-size:12px}
+  .row input[type=range]{flex:1;accent-color:var(--accent);height:4px}
+  .row .val{flex:0 0 58px;text-align:right;font-family:var(--mono);font-size:11.5px;color:var(--accent2)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+  button,.filebtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;
+    padding:8px 12px;font-size:12.5px;cursor:pointer;transition:border-color .15s,color .15s;font-family:inherit}
+  button:hover,.filebtn:hover{border-color:var(--accent);color:var(--accent)}
+  button.primary{border-color:var(--accent);color:var(--accent);font-weight:600}
+  .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .seg button{flex:1;border:none;border-radius:0;padding:7px 2px;font-size:11.5px;background:transparent}
+  .seg button.on{background:var(--accent);color:#1a1205;font-weight:700}
+  .toggles{display:flex;gap:10px;flex-wrap:wrap}
+  .tgl{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;user-select:none}
+  .tgl input{accent-color:var(--accent)}
+  select{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 8px;font-size:12px;width:100%}
+  input[type=text].urlbox{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:6px;padding:7px 8px;font-size:11px;font-family:var(--mono)}
+  .hint{font-size:11px;color:var(--dim);line-height:1.6}
+  #copyMsg{color:var(--accent2);font-size:11px;display:none}
+  #whepStatus{font-family:var(--mono);font-size:11px}
+  #whepStatus.ok{color:var(--accent2)}
+  #whepStatus.err{color:#ff7847}
+  #whepStatus.wait{color:var(--dim)}
+
+  main{padding:16px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+  .viewbox{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .viewbox .bar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}
+  .viewbox .bar h3{font-size:12px;font-weight:600;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
+  .viewbox .bar .meta{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  #srcStage{position:relative;display:flex;justify-content:center;background:#0a0d12}
+  #srcCanvas{max-width:100%;max-height:340px;display:block;cursor:crosshair}
+  #panoStage{position:relative;background:#0a0d12}
+  #panoCanvas{width:100%;display:block;touch-action:none}
+  #paneOverlay{position:absolute;inset:0;pointer-events:none}
+  .paneBox{position:absolute;border:1px solid #2a3342}
+  .paneBox.active{border-color:var(--accent)}
+  .paneBox .tag{position:absolute;left:0;top:0;background:rgba(13,17,23,.75);color:var(--dim);
+    font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-bottom-right-radius:6px;white-space:nowrap}
+  .paneBox.active .tag{color:var(--accent)}
+  .drop{outline:2px dashed var(--accent) !important;outline-offset:-6px}
+  footer{font-size:11px;color:var(--dim);line-height:1.7;padding:0 4px}
+  footer code{font-family:var(--mono);color:var(--accent2);font-size:10.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1><b>DONUT DEWARP</b> · 파노라마 / 페인 분할 / 가상 PTZ</h1>
+  <span>페인 드래그 = 팬·틸트(또는 회전) · 휠 = 줌(PTZ) · 이제 MediaMTX WHEP 실시간 연결 지원</span>
+</header>
+
+<div class="wrap">
+  <aside>
+    <div class="group">
+      <h2>실시간 소스 (MediaMTX WHEP)</h2>
+      <div class="row" style="margin-bottom:8px">
+        <input type="text" id="whepUrl" class="urlbox" value="http://100.127.64.74:8889/ch0/whep" placeholder="http://서버:8889/경로명/whep">
+      </div>
+      <div class="btns">
+        <button id="whepConnect" class="primary">연결</button>
+        <button id="whepDisconnect">연결 해제</button>
+      </div>
+      <p class="hint" id="whepStatus">대기 중</p>
+    </div>
+
+    <div class="group">
+      <h2>파일 소스</h2>
+      <div class="btns">
+        <label class="filebtn">파일 열기<input type="file" id="file" accept="image/*,video/*" hidden></label>
+        <button id="genPattern">테스트 패턴</button>
+      </div>
+      <p class="hint" style="margin-top:8px">소스 미리보기 <b>클릭</b> = 원 중심 지정</p>
+    </div>
+
+    <div class="group">
+      <h2>뷰 모드</h2>
+      <div class="seg" style="margin-bottom:8px">
+        <button id="modeSeg" class="on">파노라마 분할</button>
+        <button id="modePtz">가상 PTZ</button>
+      </div>
+      <label style="font-size:12px;display:block;margin:6px 0 5px;color:var(--dim)">페인 레이아웃</label>
+      <div class="seg" id="layoutSeg">
+        <button data-l="L1" class="on">1</button>
+        <button data-l="L2H">2 가로</button>
+        <button data-l="L2V">2 세로</button>
+        <button data-l="L4">2×2</button>
+        <button data-l="L13">1+3</button>
+      </div>
+      <div class="row" style="margin-top:10px"><label>어안 FOV</label><input type="range" id="ffov" min="150" max="230" step="1" value="180"><span class="val" id="ffovV"></span></div>
+      <label style="font-size:12px;display:block;margin:4px 0 5px;color:var(--dim)">출력 종횡비</label>
+      <select id="aspect">
+        <option value="8">8 : 1</option>
+        <option value="6">6 : 1</option>
+        <option value="4">4 : 1</option>
+        <option value="3">3 : 1</option>
+        <option value="2">2 : 1</option>
+        <option value="1.7778">16 : 9</option>
+        <option value="1.3333">4 : 3</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <h2>어안 원 캘리브레이션</h2>
+      <div class="row"><label>중심 X</label><input type="range" id="cx" min="0" max="100" step="0.1" value="50"><span class="val" id="cxV"></span></div>
+      <div class="row"><label>중심 Y</label><input type="range" id="cy" min="0" max="100" step="0.1" value="50"><span class="val" id="cyV"></span></div>
+      <div class="row"><label>반지름</label><input type="range" id="rad" min="10" max="150" step="0.1" value="98"><span class="val" id="radV"></span></div>
+      <div class="row"><label>안쪽 제외 r</label><input type="range" id="rin" min="0" max="0.95" step="0.005" value="0.25"><span class="val" id="rinV"></span></div>
+      <div class="row"><label>바깥쪽 r</label><input type="range" id="rout" min="0.1" max="1.2" step="0.005" value="1.0"><span class="val" id="routV"></span></div>
+      <div class="row"><label>시작 각도</label><input type="range" id="rot" min="0" max="360" step="0.5" value="0"><span class="val" id="rotV"></span></div>
+      <div class="row"><label>렌즈 보정</label><input type="range" id="lens" min="-0.5" max="0.5" step="0.01" value="0"><span class="val" id="lensV"></span></div>
+      <div class="toggles" style="margin-top:4px">
+        <label class="tgl"><input type="checkbox" id="ccw">반시계</label>
+        <label class="tgl"><input type="checkbox" id="flip">상하 반전(파노라마)</label>
+        <label class="tgl"><input type="checkbox" id="maskPtz" checked>안쪽 제외를 PTZ에도 적용</label>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>설정</h2>
+      <div class="btns">
+        <button id="copy">파라미터 JSON 복사</button>
+        <button id="reset">초기화</button>
+      </div>
+      <span id="copyMsg">복사됨 ✓</span>
+    </div>
+  </aside>
+
+  <main id="dropZone">
+    <div class="viewbox">
+      <div class="bar"><h3>소스 (어안 원본)</h3><span class="meta" id="srcMeta">—</span></div>
+      <div id="srcStage"><canvas id="srcCanvas"></canvas></div>
+    </div>
+    <div class="viewbox">
+      <div class="bar"><h3>디워핑 출력</h3><span class="meta" id="panoMeta">—</span></div>
+      <div id="panoStage">
+        <canvas id="panoCanvas"></canvas>
+        <div id="paneOverlay"></div>
+      </div>
+    </div>
+    <footer>
+      파노라마 분할: 페인 좌우 드래그로 각도 창 이동 · 가상 PTZ: 드래그 = 팬/틸트, 휠 = 줌.<br>
+      실시간 카메라 연결: 좌측 상단 "실시간 소스" 칸에 MediaMTX WHEP URL(<code>http://서버:8889/경로명/whep</code>)을 입력하고 연결 버튼을 누르세요.
+    </footer>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  /* ---------------- 상태 ---------------- */
+  const P = {
+    cx:50, cy:50, rad:98, rin:0.25, rout:1.0, rot:0,
+    ccw:false, flip:false, lens:0, maskPtz:true,
+    mode:'seg',        // 'seg' | 'ptz'
+    layout:'L1',
+    ffov:180,          // 어안 렌즈 전체 FOV (deg)
+    aspect:6
+  };
+  const DEFAULTS = JSON.parse(JSON.stringify(P));
+
+  const LAYOUTS = {
+    L1 : [{x:0,y:0,w:1,h:1}],
+    L2H: [{x:0,y:0,w:.5,h:1},{x:.5,y:0,w:.5,h:1}],
+    L2V: [{x:0,y:0,w:1,h:.5},{x:0,y:.5,w:1,h:.5}],
+    L4 : [{x:0,y:0,w:.5,h:.5},{x:.5,y:0,w:.5,h:.5},{x:0,y:.5,w:.5,h:.5},{x:.5,y:.5,w:.5,h:.5}],
+    L13: [{x:0,y:0,w:2/3,h:1},{x:2/3,y:0,w:1/3,h:1/3},{x:2/3,y:1/3,w:1/3,h:1/3},{x:2/3,y:2/3,w:1/3,h:1/3}]
+  };
+  // 모드/레이아웃별 기본 종횡비
+  const ASPECT_DEFAULT = {
+    seg:{L1:6, L2H:6, L2V:3, L4:3, L13:2},
+    ptz:{L1:1.7778, L2H:2, L2V:1.3333, L4:1.7778, L13:1.7778}
+  };
+
+  let panes = [];      // {segOff, pan, tilt, vfov}
+  let activePane = 0;
+
+  function initPanes(){
+    const n = LAYOUTS[P.layout].length;
+    panes = [];
+    for(let i=0;i<n;i++){
+      panes.push({
+        segOff: 0,
+        pan: (360/n)*i,          // PTZ 기본: 균등 분산 (4분할이면 0/90/180/270)
+        tilt: Math.min(45, P.ffov/2 - 10),
+        vfov: 70
+      });
+    }
+    activePane = 0;
+  }
+
+  let srcW=1024, srcH=1024, srcEl=null, isVideo=false, texture=null;
+
+  /* ---------------- Three.js ---------------- */
+  const panoCanvas = document.getElementById('panoCanvas');
+  const renderer = new THREE.WebGLRenderer({canvas:panoCanvas, antialias:false});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.autoClear = false;
+
+  const camera = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  const vert = `varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.);}`;
+  const COMMON = `
+    precision highp float;
+    varying vec2 vUv;
+    uniform sampler2D tex;
+    uniform vec2  texSize, centerPx;
+    uniform float radiusPx, rotate, dir, lensK;
+    const float PI=3.14159265358979, TAU=6.28318530717959;
+    vec4 checker(){
+      float c = mod(floor(gl_FragCoord.x/8.)+floor(gl_FragCoord.y/8.),2.);
+      return vec4(vec3(.05+.03*c),1.);
+    }
+    vec4 sampleFish(float rNorm, float phi){
+      float r = rNorm*(1.+lensK*(rNorm*rNorm-1.));
+      float a = dir*phi + rotate;
+      vec2 px = centerPx + radiusPx*r*vec2(cos(a),-sin(a));
+      vec2 uv = vec2(px.x/texSize.x, 1.-px.y/texSize.y);
+      if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.) return checker();
+      return texture2D(tex,uv);
+    }
+  `;
+
+  // --- 세그먼트(파노라마 띠) 셰이더 ---
+  const uSeg = {
+    tex:{value:null}, texSize:{value:new THREE.Vector2(1,1)},
+    centerPx:{value:new THREE.Vector2(512,512)}, radiusPx:{value:500},
+    rotate:{value:0}, dir:{value:1}, lensK:{value:0},
+    rInner:{value:.25}, rOuter:{value:1}, flipY:{value:0},
+    thetaStart:{value:0}, thetaSpan:{value:TAU()}
+  };
+  function TAU(){return Math.PI*2}
+  const matSeg = new THREE.ShaderMaterial({
+    uniforms:uSeg, vertexShader:vert,
+    fragmentShader: COMMON + `
+      uniform float rInner,rOuter,flipY,thetaStart,thetaSpan;
+      void main(){
+        float phi = thetaStart + vUv.x*thetaSpan;
+        float t = mix(vUv.y, 1.-vUv.y, flipY);
+        float rNorm = mix(rInner, rOuter, t);
+        gl_FragColor = sampleFish(rNorm, phi);
+      }`
+  });
+
+  // --- 가상 PTZ(퍼스펙티브) 셰이더 ---
+  const uPtz = {
+    tex:{value:null}, texSize:{value:new THREE.Vector2(1,1)},
+    centerPx:{value:new THREE.Vector2(512,512)}, radiusPx:{value:500},
+    rotate:{value:0}, dir:{value:1}, lensK:{value:0},
+    fishHalf:{value:Math.PI/2},
+    pan:{value:0}, tilt:{value:0}, tanHalf:{value:0.7}, pAspect:{value:1.78},
+    rInnerP:{value:0}
+  };
+  const matPtz = new THREE.ShaderMaterial({
+    uniforms:uPtz, vertexShader:vert,
+    fragmentShader: COMMON + `
+      uniform float fishHalf, pan, tilt, tanHalf, pAspect, rInnerP;
+      void main(){
+        vec2 ndc = vUv*2.-1.;
+        // 가상 카메라(광축=+Z)에서의 레이
+        vec3 d = normalize(vec3(ndc.x*tanHalf*pAspect, ndc.y*tanHalf, 1.));
+        // 틸트 (X축 회전) → 광축에서 기울임
+        float ct=cos(tilt), st=sin(tilt);
+        d = vec3(d.x, d.y*ct - d.z*st, d.y*st + d.z*ct);
+        // 팬 (Z축 회전) → 어안 원 둘레 방향
+        float cp=cos(pan), sp=sin(pan);
+        d = vec3(d.x*cp - d.y*sp, d.x*sp + d.y*cp, d.z);
+        float theta = acos(clamp(d.z,-1.,1.));   // 광축으로부터의 각
+        if(theta > fishHalf*1.02){ gl_FragColor = checker(); return; }
+        if(theta < fishHalf*rInnerP){ gl_FragColor = checker(); return; } // 중앙 마운트 영역 제외
+        float phi = atan(d.y, d.x);
+        gl_FragColor = sampleFish(theta/fishHalf, phi);
+      }`
+  });
+
+  const geo = new THREE.PlaneGeometry(2,2);
+  const sceneSeg = new THREE.Scene(); sceneSeg.add(new THREE.Mesh(geo, matSeg));
+  const scenePtz = new THREE.Scene(); scenePtz.add(new THREE.Mesh(geo, matPtz));
+
+  /* ---------------- 소스 미리보기 ---------------- */
+  const srcCanvas = document.getElementById('srcCanvas');
+  const sctx = srcCanvas.getContext('2d');
+
+  function drawOverlay(){
+    if(!srcEl) return;
+    const maxW = srcCanvas.parentElement.clientWidth || 800;
+    const scale = Math.min(maxW/srcW, 340/srcH, 1);
+    srcCanvas.width  = Math.round(srcW*scale);
+    srcCanvas.height = Math.round(srcH*scale);
+    sctx.drawImage(srcEl,0,0,srcCanvas.width,srcCanvas.height);
+    const cx=P.cx/100*srcCanvas.width, cy=P.cy/100*srcCanvas.height;
+    const R=P.rad/100*Math.min(srcCanvas.width,srcCanvas.height)/2;
+    sctx.lineWidth=1.5;
+    sctx.strokeStyle='#ffb454';
+    sctx.beginPath(); sctx.arc(cx,cy,R*P.rout,0,Math.PI*2); sctx.stroke();
+    sctx.strokeStyle='#4fd1c5'; sctx.fillStyle='rgba(79,209,197,.12)';
+    sctx.beginPath(); sctx.arc(cx,cy,R*P.rin,0,Math.PI*2); sctx.fill(); sctx.stroke();
+    sctx.strokeStyle='#ffffffaa';
+    sctx.beginPath();
+    sctx.moveTo(cx-8,cy); sctx.lineTo(cx+8,cy);
+    sctx.moveTo(cx,cy-8); sctx.lineTo(cx,cy+8); sctx.stroke();
+    const a=-P.rot*Math.PI/180*(P.ccw?-1:1);
+    sctx.strokeStyle='#ff7847'; sctx.setLineDash([5,4]);
+    sctx.beginPath();
+    sctx.moveTo(cx+Math.cos(a)*R*P.rin, cy+Math.sin(a)*R*P.rin);
+    sctx.lineTo(cx+Math.cos(a)*R*P.rout,cy+Math.sin(a)*R*P.rout);
+    sctx.stroke(); sctx.setLineDash([]);
+  }
+  srcCanvas.addEventListener('click', e=>{
+    const r=srcCanvas.getBoundingClientRect();
+    P.cx=(e.clientX-r.left)/r.width*100;
+    P.cy=(e.clientY-r.top)/r.height*100;
+    cxEl.value=P.cx; cyEl.value=P.cy;
+    applyParams();
+  });
+
+  /* ---------------- 페인 오버레이 ---------------- */
+  const overlay = document.getElementById('paneOverlay');
+  let paneBoxes = [];
+  function buildPaneBoxes(){
+    overlay.innerHTML=''; paneBoxes=[];
+    LAYOUTS[P.layout].forEach((r,i)=>{
+      const d=document.createElement('div');
+      d.className='paneBox';
+      d.style.left=(r.x*100)+'%'; d.style.top=(r.y*100)+'%';
+      d.style.width=(r.w*100)+'%'; d.style.height=(r.h*100)+'%';
+      const tag=document.createElement('span');
+      tag.className='tag'; d.appendChild(tag);
+      overlay.appendChild(d); paneBoxes.push(d);
+    });
+    updatePaneTags();
+  }
+  function updatePaneTags(){
+    const n=panes.length, span=360/n;
+    paneBoxes.forEach((d,i)=>{
+      d.classList.toggle('active', i===activePane);
+      const s=panes[i];
+      d.firstChild.textContent = P.mode==='ptz'
+        ? `P${i+1} · pan ${fmtDeg(s.pan)} tilt ${s.tilt.toFixed(0)}° fov ${s.vfov.toFixed(0)}°`
+        : `P${i+1} · ${fmtDeg(span*i+s.segOff)} ~ ${fmtDeg(span*(i+1)+s.segOff)}`;
+    });
+  }
+  function fmtDeg(v){ v=((v%360)+360)%360; return v.toFixed(0)+'°'; }
+
+  /* ---------------- 파라미터 적용 ---------------- */
+  const cxEl=document.getElementById('cx'), cyEl=document.getElementById('cy');
+  function applyParams(){
+    [uSeg,uPtz].forEach(u=>{
+      u.texSize.value.set(srcW,srcH);
+      u.centerPx.value.set(P.cx/100*srcW, P.cy/100*srcH);
+      u.radiusPx.value = P.rad/100*Math.min(srcW,srcH)/2;
+      u.rotate.value = P.rot*Math.PI/180;
+      u.dir.value = P.ccw?-1:1;
+      u.lensK.value = P.lens;
+    });
+    uSeg.rInner.value = Math.min(P.rin, P.rout-0.01);
+    uSeg.rOuter.value = P.rout;
+    uSeg.flipY.value  = P.flip?1:0;
+    uPtz.fishHalf.value = P.ffov/2*Math.PI/180;
+    uPtz.rInnerP.value  = P.maskPtz ? Math.min(P.rin, P.rout-0.01) : 0;
+
+    setV('cxV',P.cx.toFixed(1)+'%'); setV('cyV',P.cy.toFixed(1)+'%');
+    setV('radV',P.rad.toFixed(1)+'%'); setV('rinV',P.rin.toFixed(3));
+    setV('routV',P.rout.toFixed(3)); setV('rotV',P.rot.toFixed(1)+'°');
+    setV('lensV',P.lens.toFixed(2)); setV('ffovV',P.ffov+'°');
+
+    resizePano(); drawOverlay(); updatePaneTags();
+  }
+  function setV(id,t){ document.getElementById(id).textContent=t; }
+
+  function resizePano(){
+    const w = panoCanvas.parentElement.clientWidth;
+    const h = Math.max(100, Math.round(w/P.aspect));
+    renderer.setSize(w,h,false);
+    panoCanvas.style.height=h+'px';
+    document.getElementById('panoMeta').textContent =
+      w+'×'+h+' · '+(P.mode==='ptz'?'PTZ':'PANORAMA')+' · '+panes.length+' pane';
+  }
+
+  /* ---------------- 렌더 ---------------- */
+  function renderPanes(){
+    if(!texture) return;
+    const W=panoCanvas.clientWidth, H=panoCanvas.clientHeight;
+    renderer.setScissorTest(false);
+    renderer.setViewport(0,0,W,H);
+    renderer.clear();
+    renderer.setScissorTest(true);
+    const rects=LAYOUTS[P.layout], n=rects.length;
+    for(let i=0;i<n;i++){
+      const r=rects[i], s=panes[i];
+      const vx=r.x*W, vy=H-(r.y+r.h)*H, vw=r.w*W, vh=r.h*H;
+      renderer.setViewport(vx,vy,vw,vh);
+      renderer.setScissor(vx,vy,vw,vh);
+      if(P.mode==='ptz'){
+        uPtz.pan.value  = s.pan*Math.PI/180;
+        uPtz.tilt.value = s.tilt*Math.PI/180;
+        uPtz.tanHalf.value = Math.tan(s.vfov/2*Math.PI/180);
+        uPtz.pAspect.value = vw/vh;
+        renderer.render(scenePtz,camera);
+      }else{
+        const span=Math.PI*2/n;
+        uSeg.thetaStart.value = span*i + s.segOff*Math.PI/180;
+        uSeg.thetaSpan.value  = span;
+        renderer.render(sceneSeg,camera);
+      }
+    }
+    renderer.setScissorTest(false);
+  }
+
+  /* ---------------- 페인 인터랙션 ---------------- */
+  let dragging=false, lastX=0, lastY=0;
+  function paneAt(e){
+    const r=panoCanvas.getBoundingClientRect();
+    const fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height;
+    const rects=LAYOUTS[P.layout];
+    for(let i=0;i<rects.length;i++){
+      const q=rects[i];
+      if(fx>=q.x&&fx<q.x+q.w&&fy>=q.y&&fy<q.y+q.h) return i;
+    }
+    return -1;
+  }
+  panoCanvas.addEventListener('pointerdown', e=>{
+    const i=paneAt(e); if(i<0) return;
+    activePane=i; dragging=true; lastX=e.clientX; lastY=e.clientY;
+    panoCanvas.setPointerCapture(e.pointerId);
+    updatePaneTags();
+  });
+  panoCanvas.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx=e.clientX-lastX, dy=e.clientY-lastY;
+    lastX=e.clientX; lastY=e.clientY;
+    const rect=LAYOUTS[P.layout][activePane];
+    const paneW=rect.w*panoCanvas.clientWidth, paneH=rect.h*panoCanvas.clientHeight;
+    const s=panes[activePane];
+    if(P.mode==='ptz'){
+      s.pan  -= dx/paneW * s.vfov * (P.ccw?-1:1);
+      s.tilt -= dy/paneH * s.vfov;
+      s.tilt = Math.max(0, Math.min(P.ffov/2, s.tilt));
+    }else{
+      s.segOff -= dx/paneW * (360/panes.length);
+    }
+    updatePaneTags();
+  });
+  ['pointerup','pointercancel'].forEach(ev=>
+    panoCanvas.addEventListener(ev, ()=>{ dragging=false; }));
+  panoCanvas.addEventListener('wheel', e=>{
+    if(P.mode!=='ptz') return;
+    const i=paneAt(e); if(i<0) return;
+    e.preventDefault();
+    activePane=i;
+    const s=panes[i];
+    s.vfov = Math.max(15, Math.min(110, s.vfov * (e.deltaY>0?1.08:0.92)));
+    updatePaneTags();
+  }, {passive:false});
+
+  /* ---------------- 소스 로딩 (파일/캔버스) ---------------- */
+  function setSource(el,w,h,video){
+    if(texture) texture.dispose();
+    srcEl=el; srcW=w; srcH=h; isVideo=!!video;
+    texture = video ? new THREE.VideoTexture(el) : new THREE.Texture(el);
+    texture.minFilter=THREE.LinearFilter; texture.magFilter=THREE.LinearFilter;
+    if(!video) texture.needsUpdate=true;
+    uSeg.tex.value=texture; uPtz.tex.value=texture;
+    document.getElementById('srcMeta').textContent=w+'×'+h+(video?' · video':' · image');
+    applyParams();
+  }
+  window.setSource=setSource;
+
+  function loadFile(file){
+    const url=URL.createObjectURL(file);
+    if(file.type.startsWith('video')){
+      const v=document.createElement('video');
+      v.src=url; v.loop=true; v.muted=true; v.playsInline=true;
+      v.addEventListener('loadedmetadata',()=>{ v.play(); setSource(v,v.videoWidth,v.videoHeight,true); });
+    }else{
+      const img=new Image();
+      img.onload=()=>setSource(img,img.naturalWidth,img.naturalHeight,false);
+      img.src=url;
+    }
+  }
+  document.getElementById('file').addEventListener('change',e=>{
+    if(e.target.files[0]) loadFile(e.target.files[0]);
+  });
+  const drop=document.getElementById('dropZone');
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drop');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drop');}));
+  drop.addEventListener('drop',e=>{ if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+
+  /* ---------------- MediaMTX WHEP(WebRTC) 실시간 연결 ---------------- */
+  let whepPc = null;
+  let whepVideoEl = null;
+
+  function setWhepStatus(text, kind){
+    const el = document.getElementById('whepStatus');
+    el.textContent = text;
+    el.className = kind || '';
+  }
+
+  async function connectWhep(url){
+    disconnectWhep();
+    setWhepStatus('연결 시도 중...', 'wait');
+    try{
+      whepPc = new RTCPeerConnection({
+        iceServers: [{urls:'stun:stun.l.google.com:19302'}]
+      });
+      // 재생 전용(recvonly) 트랙 요청
+      whepPc.addTransceiver('video', {direction:'recvonly'});
+      whepPc.addTransceiver('audio', {direction:'recvonly'});
+
+      whepVideoEl = document.createElement('video');
+      whepVideoEl.autoplay = true;
+      whepVideoEl.muted = true;
+      whepVideoEl.playsInline = true;
+
+      whepPc.ontrack = (ev) => {
+        if (whepVideoEl.srcObject !== ev.streams[0]) {
+          whepVideoEl.srcObject = ev.streams[0];
+          whepVideoEl.play().catch(()=>{});
+        }
+      };
+
+      whepPc.onconnectionstatechange = () => {
+        const st = whepPc.connectionState;
+        if(st === 'connected') setWhepStatus('연결됨 (핸드셰이크 완료, 영상 대기 중)', 'ok');
+        else if(st === 'failed' || st === 'disconnected' || st === 'closed') setWhepStatus('연결 끊김: ' + st, 'err');
+        else setWhepStatus('상태: ' + st, 'wait');
+      };
+
+      const offer = await whepPc.createOffer();
+      await whepPc.setLocalDescription(offer);
+
+      // 논-트리클: ICE 후보 수집이 끝날 때까지 대기 후 offer 전송 (가장 호환성 높은 방식)
+      await new Promise((resolve) => {
+        if (whepPc.iceGatheringState === 'complete') { resolve(); return; }
+        const onChange = () => {
+          if (whepPc.iceGatheringState === 'complete') {
+            whepPc.removeEventListener('icegatheringstatechange', onChange);
+            resolve();
+          }
+        };
+        whepPc.addEventListener('icegatheringstatechange', onChange);
+        // 안전장치: 3초 넘게 걸리면 그냥 진행
+        setTimeout(resolve, 3000);
+      });
+
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/sdp' },
+        body: whepPc.localDescription.sdp
+      });
+
+      if (!resp.ok) {
+        throw new Error('WHEP 요청 실패: HTTP ' + resp.status + ' ' + resp.statusText);
+      }
+
+      const answerSdp = await resp.text();
+      await whepPc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+      whepVideoEl.addEventListener('loadedmetadata', () => {
+        setSource(whepVideoEl, whepVideoEl.videoWidth, whepVideoEl.videoHeight, true);
+        setWhepStatus('연결됨 · ' + whepVideoEl.videoWidth + '×' + whepVideoEl.videoHeight, 'ok');
+      }, { once: true });
+
+    } catch (err) {
+      setWhepStatus('에러: ' + err.message, 'err');
+      console.error('[WHEP] connect error:', err);
+      disconnectWhep();
+    }
+  }
+
+  function disconnectWhep(){
+    if (whepPc) { try { whepPc.close(); } catch(e){} whepPc = null; }
+    if (whepVideoEl) { whepVideoEl.srcObject = null; whepVideoEl = null; }
+  }
+
+  document.getElementById('whepConnect').addEventListener('click', () => {
+    const url = document.getElementById('whepUrl').value.trim();
+    if (!url) { setWhepStatus('URL을 입력하세요', 'err'); return; }
+    connectWhep(url);
+  });
+  document.getElementById('whepDisconnect').addEventListener('click', () => {
+    disconnectWhep();
+    setWhepStatus('연결 해제됨', 'wait');
+  });
+
+  /* ---------------- 테스트 패턴 ---------------- */
+  function makePattern(){
+    const S=1200,c=document.createElement('canvas'); c.width=S; c.height=S;
+    const g=c.getContext('2d');
+    g.fillStyle='#111'; g.fillRect(0,0,S,S);
+    const cx=S/2, cy=S/2, R=S/2*0.98;
+    for(let i=0;i<12;i++){
+      g.fillStyle=`hsl(${i*30},62%,${i%2?30:38}%)`;
+      g.beginPath(); g.moveTo(cx,cy);
+      g.arc(cx,cy,R,i*Math.PI/6,(i+1)*Math.PI/6); g.closePath(); g.fill();
+    }
+    g.strokeStyle='#ffffff88'; g.lineWidth=2;
+    g.font='bold 26px monospace'; g.textAlign='center'; g.textBaseline='middle';
+    [0.2,0.4,0.6,0.8,1.0].forEach(r=>{
+      g.beginPath(); g.arc(cx,cy,R*r,0,Math.PI*2); g.stroke();
+      g.fillStyle='#fff'; g.fillText('r'+r.toFixed(1), cx+R*r-34, cy-12);
+    });
+    g.fillStyle='#ffe9a8'; g.font='bold 34px monospace';
+    for(let i=0;i<12;i++){
+      const a=i*Math.PI/6;
+      g.fillText(i*30+'°', cx+Math.cos(a)*R*0.72, cy+Math.sin(a)*R*0.72);
+    }
+    g.strokeStyle='#ff7847'; g.lineWidth=6;
+    g.beginPath(); g.moveTo(cx,cy); g.lineTo(cx+R*0.55,cy); g.stroke();
+    g.beginPath();
+    g.moveTo(cx+R*0.55,cy); g.lineTo(cx+R*0.47,cy-16);
+    g.moveTo(cx+R*0.55,cy); g.lineTo(cx+R*0.47,cy+16); g.stroke();
+    g.fillStyle='#000'; g.beginPath(); g.arc(cx,cy,R*0.18,0,Math.PI*2); g.fill();
+    g.fillStyle='#556'; g.font='bold 30px monospace'; g.fillText('MOUNT',cx,cy);
+    setSource(c,S,S,false);
+  }
+  document.getElementById('genPattern').addEventListener('click',makePattern);
+
+  /* ---------------- 컨트롤 바인딩 ---------------- */
+  [['cx','cx'],['cy','cy'],['rad','rad'],['rin','rin'],['rout','rout'],
+   ['rot','rot'],['lens','lens'],['ffov','ffov']].forEach(([id,key])=>{
+    document.getElementById(id).addEventListener('input',e=>{
+      P[key]=parseFloat(e.target.value); applyParams();
+    });
+  });
+  document.getElementById('ccw').addEventListener('change',e=>{P.ccw=e.target.checked;applyParams();});
+  document.getElementById('flip').addEventListener('change',e=>{P.flip=e.target.checked;applyParams();});
+  document.getElementById('maskPtz').addEventListener('change',e=>{P.maskPtz=e.target.checked;applyParams();});
+  document.getElementById('aspect').addEventListener('change',e=>{P.aspect=parseFloat(e.target.value);applyParams();});
+
+  const modeSeg=document.getElementById('modeSeg'), modePtz=document.getElementById('modePtz');
+  function setMode(m){
+    P.mode=m;
+    modeSeg.classList.toggle('on',m==='seg');
+    modePtz.classList.toggle('on',m==='ptz');
+    P.aspect=ASPECT_DEFAULT[m][P.layout];
+    document.getElementById('aspect').value=String(P.aspect);
+    applyParams();
+  }
+  modeSeg.addEventListener('click',()=>setMode('seg'));
+  modePtz.addEventListener('click',()=>setMode('ptz'));
+
+  document.getElementById('layoutSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    document.querySelectorAll('#layoutSeg button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    P.layout=b.dataset.l;
+    initPanes(); buildPaneBoxes();
+    P.aspect=ASPECT_DEFAULT[P.mode][P.layout];
+    document.getElementById('aspect').value=String(P.aspect);
+    applyParams();
+  });
+
+  document.getElementById('copy').addEventListener('click',()=>{
+    const out={
+      center:[+(P.cx/100).toFixed(4),+(P.cy/100).toFixed(4)],
+      radius:+(P.rad/100).toFixed(4),
+      rInner:P.rin, rOuter:P.rout, rotateDeg:P.rot,
+      direction:P.ccw?'ccw':'cw', flipV:P.flip, lensK:P.lens, maskPtz:P.maskPtz,
+      fisheyeFov:P.ffov, mode:P.mode, layout:P.layout,
+      panes:panes.map(s=>P.mode==='ptz'
+        ? {pan:+s.pan.toFixed(1), tilt:+s.tilt.toFixed(1), vfov:+s.vfov.toFixed(1)}
+        : {angleOffsetDeg:+s.segOff.toFixed(1)})
+    };
+    navigator.clipboard.writeText(JSON.stringify(out,null,2)).then(()=>{
+      const m=document.getElementById('copyMsg');
+      m.style.display='inline'; setTimeout(()=>m.style.display='none',1500);
+    });
+  });
+
+  document.getElementById('reset').addEventListener('click',()=>{
+    Object.assign(P,JSON.parse(JSON.stringify(DEFAULTS)));
+    ['cx','cy','rad','rin','rout','rot','lens','ffov'].forEach(id=>
+      document.getElementById(id).value=P[id]);
+    document.getElementById('ccw').checked=false;
+    document.getElementById('flip').checked=false;
+    document.getElementById('maskPtz').checked=true;
+    document.getElementById('aspect').value=String(P.aspect);
+    document.querySelectorAll('#layoutSeg button').forEach(x=>
+      x.classList.toggle('on',x.dataset.l==='L1'));
+    setMode('seg'); initPanes(); buildPaneBoxes(); applyParams();
+  });
+
+  /* ---------------- 루프 ---------------- */
+  let frame=0;
+  function loop(){
+    requestAnimationFrame(loop);
+    renderPanes();
+    if(isVideo && (frame++%3===0)) drawOverlay();
+  }
+  window.addEventListener('resize',applyParams);
+
+  initPanes(); buildPaneBoxes(); makePattern(); loop();
+})();
+</script>
+</body>
+</html>

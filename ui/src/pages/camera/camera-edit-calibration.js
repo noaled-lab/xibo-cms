@@ -5,21 +5,21 @@
 // changed. Detail-page overrides (flip/ccw while viewing) never touch this
 // code.
 import {createFisheyeDewarp} from './fisheye-dewarp.js';
-import {attachMseStream} from './camera-viewer.js';
-
-const RETRY_DELAY_MS = 4000;
 
 const SLIDER_IDS = [
-  'centerX', 'centerY', 'radius', 'radiusInner', 'radiusOuter',
+  'centerX', 'centerY', 'centerX2', 'centerY2', 'radius', 'radiusInner', 'radiusOuter',
   'rotationDeg', 'lensCorrection', 'fisheyeFov',
 ];
 const SELECT_IDS = ['mode', 'layout', 'aspect'];
 
 function readParamsFromForm($form) {
   const get = (id) => parseFloat($form.find('#' + id).val());
+  const has = (id) => { const v = $form.find('#' + id).val(); return v !== undefined && v !== ''; };
   return {
     cx: get('centerX'),
     cy: get('centerY'),
+    cx2: has('centerX2') ? get('centerX2') : undefined,
+    cy2: has('centerY2') ? get('centerY2') : undefined,
     rad: get('radius'),
     rin: get('radiusInner'),
     rout: get('radiusOuter'),
@@ -58,33 +58,23 @@ export function initCameraFisheyeCalibration(dialog) {
     }
   }
 
-  // Refreshes the fisheye preview source (test video, if one is set, otherwise the live stream).
-  // A no-op when the calibration panel/canvas isn't active (e.g. type is "standard") - test-video
-  // upload/delete still work in that case, there's just no preview to refresh.
+  // Refreshes the fisheye preview source (the live stream).
+  // A no-op when the calibration panel/canvas isn't active (e.g. type is "standard").
   function loadSource() {
     if (!dewarp) {
       return;
     }
 
-    const testVideoFile = $form.data('test-video-file');
     const $status = $dialog.find('#fisheyePreviewStatus');
 
     if (hiddenVideo) {
       hiddenVideo.pause();
       hiddenVideo.remove();
     }
-    if (mse) {
-      mse.destroy();
-      mse = null;
-    }
     hiddenVideo = document.createElement('video');
     hiddenVideo.muted = true;
     hiddenVideo.playsInline = true;
     hiddenVideo.autoplay = true;
-    // Chrome taints MSE-backed video elements for WebGL texture reads ("contains
-    // cross-origin data") unless crossOrigin is explicitly set, even though the src is
-    // always a same-origin blob: URL - confirmed by testing: fixing the MediaSource/
-    // WebSocket setup order alone did NOT stop this error, only this does.
     hiddenVideo.crossOrigin = 'anonymous';
     // Must be attached to the document (not just display:none) - browsers throttle decoding
     // of detached/display:none video elements, which causes dropped frames in the dewarped
@@ -97,34 +87,23 @@ export function initCameraFisheyeCalibration(dialog) {
       $status.text('');
     });
 
-    if (testVideoFile) {
-      $status.text('테스트 영상을 불러오는 중...');
-      hiddenVideo.src = $form.data('test-video-download-url') + '?_=' + Date.now();
-      hiddenVideo.play().catch(() => {});
-    } else {
-      $status.text('실시간 스트림을 불러오는 중...');
-      const [streamId, channelId] = $form.data('camera-id').split(':');
-      if (window.MediaSource) {
-        mse = attachMseStream(hiddenVideo, streamId, channelId, {
-          onFatal() {
-            if (stopped) {
-              return;
-            }
-            // The stream may not have started yet (rtsp-to-web starts on-demand
-            // streams lazily) - do what a page refresh does: reload the source
-            // from scratch.
-            mse = null;
-            setTimeout(() => {
-              if (!stopped) {
-                loadSource();
-              }
-            }, RETRY_DELAY_MS);
-          },
-        });
-      } else {
-        $status.text('이 브라우저는 MSE/HLS 재생을 지원하지 않습니다.');
+    $status.text('실시간 스트림을 불러오는 중...');
+    
+    // We import attachWhepStream from camera-viewer.js or implement here if not exported
+    // Since we need to reuse it, we can just use the iframe / video approach or WHEP directly.
+    // Wait, the preview in edit form is fisheye, so it needs WebRTC WHEP.
+    // But camera-viewer.js's attachWhepStream isn't exported... oh wait, let's just make it exportable in camera-viewer.js later, or do it dynamically.
+    // Actually, in the preview, we just want to play the stream. For Mediamtx WHEP, we can use the same logic.
+    // Let's implement attachWhepStream inline or export it. Wait, I didn't export it in camera-viewer.js.
+    // For now, let's just rely on a global or duplicate the WHEP connect logic for the preview?
+    // Let's just create an iframe and use it as a source? No, iframe can't be used as a WebGL texture because of cross-origin/tainted canvas constraints unless the video element inside has crossOrigin set.
+    // It's better to export `attachWhepStream` from `camera-viewer.js`. I will do that in the next step.
+    
+    import('./camera-viewer.js').then((module) => {
+      if (module.attachWhepStream) {
+        mse = module.attachWhepStream(hiddenVideo, $form.data('camera-id'));
       }
-    }
+    });
   }
 
   function setupDewarp() {
@@ -138,9 +117,15 @@ export function initCameraFisheyeCalibration(dialog) {
     dewarp.onPanesChange((panes) => {
       $form.find('#panes').val(JSON.stringify(panes));
     });
-    dewarp.onCenterPick(({cx, cy}) => {
-      $form.find('#centerX').val(cx.toFixed(1));
-      $form.find('#centerY').val(cy.toFixed(1));
+    dewarp.onCenterPick((centers) => {
+      if (centers.cx !== undefined) {
+        $form.find('#centerX').val(centers.cx.toFixed(1));
+        $form.find('#centerY').val(centers.cy.toFixed(1));
+      }
+      if (centers.cx2 !== undefined) {
+        $form.find('#centerX2').val(centers.cx2.toFixed(1));
+        $form.find('#centerY2').val(centers.cy2.toFixed(1));
+      }
       dewarp.setParams(readParamsFromForm($form));
     });
 
@@ -157,50 +142,6 @@ export function initCameraFisheyeCalibration(dialog) {
     loadSource();
   }
 
-  // Test-video upload/delete are wired unconditionally - useful for standard cameras too
-  // (verifying the detail page plays something without a live camera connected).
-  function wireTestVideoControls() {
-    $dialog.find('#testVideoUploadBtn').on('click', function() {
-      const fileInput = $dialog.find('#testVideoInput')[0];
-      if (!fileInput.files.length) {
-        SystemMessage('업로드할 파일을 선택하세요.', true);
-        return;
-      }
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-
-      $.ajax({
-        url: $form.data('test-video-upload-url'),
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(res) {
-          if (res.success) {
-            $form.data('test-video-file', 'uploaded');
-            loadSource();
-          }
-          SystemMessage(res.message, !res.success);
-        },
-      });
-    });
-
-    $dialog.find('#testVideoDeleteBtn').on('click', function() {
-      $.ajax({
-        url: $form.data('test-video-delete-url'),
-        type: 'DELETE',
-        success: function(res) {
-          if (res.success) {
-            $form.data('test-video-file', '');
-            loadSource();
-          }
-          SystemMessage(res.message, !res.success);
-        },
-      });
-    });
-  }
-
-  wireTestVideoControls();
   togglePanel();
   $typeSelect.off('change.cameraFisheye').on('change.cameraFisheye', togglePanel);
 

@@ -7,9 +7,7 @@
          id="cameraDetail"
          data-camera-id="{{ camera.id }}"
          data-camera-type="{{ camera.type }}"
-         data-stream-id="{{ camera.streamId }}"
          data-channel-id="{{ camera.channelId }}"
-         data-test-video-download-url="{{ camera.testVideoFile ? url_for("camera.testVideo.download", {id: camera.id}) : "" }}"
          data-fisheye-params="{{ fisheyeParams ? fisheyeParams|json_encode : "" }}">
         <div class="card-body">
             <h5 class="card-title">
@@ -17,9 +15,6 @@
                 <span class="badge {{ camera.type == 'fisheye' ? 'badge-info' : 'badge-secondary' }}">
                     {{ camera.type == 'fisheye' ? '어안'|trans : '일반'|trans }}
                 </span>
-                {% if camera.testVideoFile %}
-                    <span class="badge badge-warning" title="{% trans "테스트 영상을 재생 중입니다 (임시)" %}">TEST</span>
-                {% endif %}
             </h5>
             <a href="{{ url_for("camera.view") }}" class="btn btn-white mb-3">{% trans "목록으로" %}</a>
             <hr>

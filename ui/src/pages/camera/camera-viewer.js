@@ -13,202 +13,106 @@ import {createFisheyeDewarp} from './fisheye-dewarp.js';
 
 const RETRY_DELAY_MS = 4000;
 
-function buildMseUrl(streamId, channelId) {
-  const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  return proto + '://' + window.location.hostname + ':8083' +
-    '/stream/' + streamId + '/channel/' + channelId +
-    '/mse?uuid=' + streamId + '&channel=' + channelId;
+function buildWhepUrl(channelId) {
+  const proto = window.location.protocol === 'https:' ? 'https' : 'http';
+  return proto + '://' + window.location.hostname + ':8889/' + channelId + '/whep';
+}
+
+function buildIframeUrl(channelId) {
+  const proto = window.location.protocol === 'https:' ? 'https' : 'http';
+  return proto + '://' + window.location.hostname + ':8889/' + channelId + '/';
 }
 
 /**
- * Opens rtsp-to-web's MSE endpoint (WebSocket + MediaSource) for a camera channel and
- * feeds it straight into videoEl.
- * @param {HTMLVideoElement} videoEl
- * @param {string} streamId
- * @param {string} channelId
- * @param {{onFatal: function}} opts onFatal is called at most once, on an unrecoverable
- *   error - the caller owns retry policy (every current caller waits RETRY_DELAY_MS then
- *   reattaches from scratch, same as a page refresh).
- * @return {{destroy: function}}
+ * Connects to MediaMTX WHEP WebRTC endpoint and feeds it to videoEl.
  */
-export function attachMseStream(videoEl, streamId, channelId, opts) {
-  const queue = [];
-  let sourceBuffer = null;
-  let streamingStarted = false;
-  let ws = null;
+export function attachWhepStream(videoEl, channelId, opts) {
+  let whepPc = null;
   let closed = false;
-  let lastLogTime = 0;
-  let lastPlaybackRate = 1.0;
 
-  // MediaSource + videoEl.src must be set up synchronously, up front - opening the
-  // WebSocket only inside 'sourceopen' (below) rather than immediately is what keeps
-  // this video "clean" for WebGL to read as a texture (the fisheye dewarp canvas).
-  // Reordering this - e.g. opening the socket first and only creating the MediaSource
-  // once the first packet arrives - reproduced a SecurityError ("video element contains
-  // cross-origin data") from THREE.js's texImage2D, even though the src is always a
-  // same-origin blob: URL either way.
-  const mediaSource = new MediaSource();
-  let objectUrl = URL.createObjectURL(mediaSource);
-  videoEl.src = objectUrl;
+  async function connect() {
+    if (closed) return;
+    try {
+      whepPc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
+      whepPc.addTransceiver('video', { direction: 'recvonly' });
+      whepPc.addTransceiver('audio', { direction: 'recvonly' });
+
+      whepPc.ontrack = (ev) => {
+        if (videoEl.srcObject !== ev.streams[0]) {
+          videoEl.srcObject = ev.streams[0];
+          videoEl.play().catch(() => {});
+        }
+      };
+
+      whepPc.onconnectionstatechange = () => {
+        if (closed) return;
+        const st = whepPc.connectionState;
+        if (st === 'failed' || st === 'disconnected' || st === 'closed') {
+          fail('connection state ' + st);
+        }
+      };
+
+      const offer = await whepPc.createOffer();
+      await whepPc.setLocalDescription(offer);
+
+      await new Promise((resolve) => {
+        if (whepPc.iceGatheringState === 'complete') { resolve(); return; }
+        const onChange = () => {
+          if (whepPc.iceGatheringState === 'complete') {
+            whepPc.removeEventListener('icegatheringstatechange', onChange);
+            resolve();
+          }
+        };
+        whepPc.addEventListener('icegatheringstatechange', onChange);
+        setTimeout(resolve, 3000);
+      });
+
+      const url = buildWhepUrl(channelId);
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/sdp' },
+        body: whepPc.localDescription.sdp
+      });
+
+      if (!resp.ok) {
+        throw new Error('WHEP request failed: ' + resp.status);
+      }
+
+      const answerSdp = await resp.text();
+      await whepPc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+    } catch (err) {
+      fail('WHEP connect error', err);
+    }
+  }
 
   function cleanup() {
-    if (ws) {
-      ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
-      try {
-        ws.close();
-      } catch (e) {
-        // ignore - we're tearing down anyway
-      }
-      ws = null;
+    if (whepPc) {
+      try { whepPc.close(); } catch (e) {}
+      whepPc = null;
     }
-    if (objectUrl) {
-      URL.revokeObjectURL(objectUrl);
-      objectUrl = null;
+    if (videoEl.srcObject) {
+      videoEl.srcObject = null;
     }
   }
 
   function fail(reason, err) {
-    if (closed) {
-      return;
-    }
+    if (closed) return;
     closed = true;
-    console.warn('MSE stream failed (' + reason + '):', err || '');
-    videoEl.removeEventListener('pause', onPause);
+    console.warn('WHEP stream failed (' + reason + '):', err || '');
     cleanup();
-    opts.onFatal();
-  }
-
-  // The first packet after a SourceBuffer is created gets appended immediately -
-  // otherwise it can sit queued indefinitely since nothing has triggered an 'updateend'
-  // yet to drain the queue.
-  function readPacket(packet) {
-    if (!sourceBuffer) {
-      queue.push(packet);
-      return;
-    }
-    if (!streamingStarted) {
-      streamingStarted = true;
-      try {
-        sourceBuffer.appendBuffer(packet);
-      } catch (e) {
-        fail('appendBuffer', e);
-      }
-      return;
-    }
-    queue.push(packet);
-    if (!sourceBuffer.updating) {
-      pushPacket();
+    if (opts && opts.onFatal) {
+      opts.onFatal();
     }
   }
 
-  function pushPacket() {
-    if (videoEl.buffered.length > 0) {
-      const end = videoEl.buffered.end(videoEl.buffered.length - 1);
-      const delay = end - videoEl.currentTime;
-
-      // Smooth playback rate adjustments for normal latency drift
-      if (delay > 60.0) {
-        videoEl.currentTime = end - 0.5; // Snap only if more than 1 min behind
-        console.log(`[MSE Debug] Snapped to live edge! Delay was ${delay.toFixed(2)}s. Current time: ${videoEl.currentTime.toFixed(2)}`);
-      } else if (delay > 1.5) {
-        videoEl.playbackRate = 1.05; // 5% faster to catch up very smoothly
-      } else if (delay < 0.2) {
-        videoEl.playbackRate = 0.95; // 5% slower to build buffer and avoid stopping
-      } else {
-        videoEl.playbackRate = 1.0;
-      }
-
-      const now = Date.now();
-      if (now - lastLogTime > 2000 || videoEl.playbackRate !== lastPlaybackRate) {
-        console.log(`[MSE Debug] Time: ${videoEl.currentTime.toFixed(2)}s | Buffer End: ${end.toFixed(2)}s | Delay: ${delay.toFixed(2)}s | Rate: ${videoEl.playbackRate}x`);
-        lastLogTime = now;
-        lastPlaybackRate = videoEl.playbackRate;
-      }
-    }
-
-    if (!sourceBuffer || sourceBuffer.updating) {
-      return;
-    }
-
-    if (videoEl.buffered.length > 0) {
-      const start = videoEl.buffered.start(0);
-      const currentTime = videoEl.currentTime;
-      // Remove buffer data older than 60 seconds to prevent QuotaExceededError.
-      // We remove up to (currentTime - 30) to leave 30s of buffer, preventing continuous micro-removals.
-      if (currentTime - start > 60) {
-        try {
-          sourceBuffer.remove(0, currentTime - 30);
-          console.log(`[MSE Debug] Buffer evicted! Removed 0 to ${(currentTime - 30).toFixed(2)}s`);
-          return; // removal is async, appendBuffer will happen on next 'updateend'
-        } catch (e) {
-          console.warn('[MSE Debug] Buffer remove error', e);
-        }
-      }
-    }
-
-    if (queue.length > 0) {
-      const packet = queue.shift();
-      try {
-        sourceBuffer.appendBuffer(packet);
-      } catch (e) {
-        fail('appendBuffer', e);
-      }
-    }
-  }
-
-  // If the video pauses (e.g. due to buffer underflow), auto-resume when data arrives.
-  function onPause() {
-    if (videoEl.currentTime < videoEl.duration || !videoEl.duration) {
-      videoEl.play().catch(() => {});
-    }
-  }
-  videoEl.addEventListener('pause', onPause);
-
-  mediaSource.addEventListener('sourceopen', function() {
-    ws = new WebSocket(buildMseUrl(streamId, channelId));
-    ws.binaryType = 'arraybuffer';
-
-    ws.onerror = function(e) {
-      fail('websocket error', e);
-    };
-    ws.onclose = function(e) {
-      // Our own cleanup() nulls out ws before calling close(), so this only fires for an
-      // unexpected server-side/network close, never our own teardown.
-      if (ws) {
-        fail('websocket closed', e);
-      }
-    };
-    ws.onmessage = function(event) {
-      // Every message is binary (ws.binaryType = 'arraybuffer') - rtsp-to-web multiplexes
-      // the one-time codec announcement into the same stream as the fmp4 fragments by
-      // prefixing it with a marker byte, rather than sending it as a separate text/JSON
-      // message: a leading byte of 9 means "the rest of this message (UTF-8) is the
-      // codec string for addSourceBuffer", anything else is fragment data to append.
-      const data = new Uint8Array(event.data);
-      if (data[0] === 9) {
-        const codecs = new TextDecoder('utf-8').decode(data.slice(1));
-        try {
-          sourceBuffer = mediaSource.addSourceBuffer('video/mp4; codecs="' + codecs + '"');
-        } catch (e) {
-          fail('addSourceBuffer', e);
-          return;
-        }
-        // Use 'segments' mode. 'sequence' mode causes permanent latency buildup if the camera drops packets,
-        // because it blindly stitches surviving frames together and loses real-time sync.
-        sourceBuffer.mode = 'segments';
-        sourceBuffer.addEventListener('updateend', pushPacket);
-        return;
-      }
-      readPacket(event.data);
-    };
-
-    videoEl.play().catch(() => {});
-  }, {once: true});
+  connect();
 
   return {
     destroy() {
       closed = true;
-      videoEl.removeEventListener('pause', onPause);
       cleanup();
     },
   };
@@ -222,7 +126,7 @@ export function createCameraViewer(container) {
   let dewarp = null;
   let hiddenVideo = null;
   let visibleVideo = null;
-  let mse = null;
+  let streamConn = null;
   // Set only by the public destroy() (not by the internal teardown() that show() also
   // calls to reset before rendering) - stops any pending retry from firing after the
   // viewer has actually been torn down for good.
@@ -233,9 +137,9 @@ export function createCameraViewer(container) {
       dewarp.destroy();
       dewarp = null;
     }
-    if (mse) {
-      mse.destroy();
-      mse = null;
+    if (streamConn) {
+      streamConn.destroy();
+      streamConn = null;
     }
     if (hiddenVideo) {
       hiddenVideo.remove();
@@ -249,26 +153,14 @@ export function createCameraViewer(container) {
   }
 
   function attachStream(videoEl, camera) {
-    if (camera.testVideoUrl) {
-      videoEl.src = camera.testVideoUrl;
-      videoEl.play().catch(() => {});
-      return;
-    }
-
-    if (!window.MediaSource) {
-      console.error('This browser supports neither MSE nor native HLS playback.');
-      return;
-    }
-
-    mse = attachMseStream(videoEl, camera.streamId, camera.channelId, {
+    streamConn = attachWhepStream(videoEl, camera.channelId, {
       onFatal() {
         if (stopped) {
           return;
         }
-        console.warn('MSE stream failed, retrying in ' + RETRY_DELAY_MS + 'ms');
-        mse = null;
-        videoEl.removeAttribute('src');
-        videoEl.load();
+        console.warn('WHEP stream failed, retrying in ' + RETRY_DELAY_MS + 'ms');
+        streamConn = null;
+        videoEl.srcObject = null;
         setTimeout(() => {
           if (!stopped) {
             attachStream(videoEl, camera);
@@ -296,17 +188,10 @@ export function createCameraViewer(container) {
       dewarp.setParams(fisheyeParams);
       dewarp.setEphemeral({flip: !!fisheyeParams.flip, ccw: !!fisheyeParams.ccw});
 
-      // Source video is never meant to be seen directly, but must stay attached to the
-      // document (not display:none) - browsers throttle decoding of detached video
-      // elements, which would show up as dropped frames in the dewarped canvas.
       hiddenVideo = document.createElement('video');
       hiddenVideo.muted = true;
       hiddenVideo.playsInline = true;
       hiddenVideo.autoplay = true;
-      // Chrome taints MSE-backed video elements for WebGL texture reads ("contains
-      // cross-origin data") unless crossOrigin is explicitly set, even though the src is
-      // always a same-origin blob: URL - confirmed by testing: fixing the MediaSource/
-      // WebSocket setup order alone did NOT stop this error, only this does.
       hiddenVideo.crossOrigin = 'anonymous';
       hiddenVideo.style.cssText = 'position:absolute; top:0; left:0; width:256px; height:256px; opacity:0.99; pointer-events:none; z-index:-1;';
       container.appendChild(hiddenVideo);
@@ -323,17 +208,14 @@ export function createCameraViewer(container) {
       };
     }
 
-    visibleVideo = document.createElement('video');
-    // height:auto (not left to inherited/default CSS) so the video keeps its natural
-    // aspect ratio instead of being stretched/cropped to fill some unrelated height.
-    visibleVideo.style.cssText = 'width:100%; height:auto; display:block;';
-    visibleVideo.controls = true;
-    visibleVideo.autoplay = true;
-    visibleVideo.muted = true;
-    visibleVideo.playsInline = true;
-    container.appendChild(visibleVideo);
-
-    attachStream(visibleVideo, camera);
+    const iframe = document.createElement('iframe');
+    iframe.src = buildIframeUrl(camera.channelId);
+    iframe.style.cssText = 'width:100%; height:100%; border:none; display:block; aspect-ratio: 16/9;';
+    iframe.allow = 'autoplay; fullscreen';
+    container.appendChild(iframe);
+    
+    // We don't need a stream object for iframe since it handles it internally
+    visibleVideo = iframe;
 
     return {setEphemeral: () => {}, mode: null};
   }

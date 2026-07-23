@@ -72,13 +72,12 @@ function bindClickWithoutDrag($el, handler) {
 
 let activeViewers = [];
 
-function cameraPayload(camera, testVideoUrl) {
+function cameraPayload(camera) {
   return {
     type: camera.type,
     streamId: camera.streamId,
     channelId: camera.channelId,
     fisheyeParams: camera.fisheyeParams,
-    testVideoUrl: testVideoUrl,
   };
 }
 
@@ -86,7 +85,7 @@ function cameraPayload(camera, testVideoUrl) {
 // plays independently of (and doesn't disturb) the row's own inline preview.
 let dialogStageCounter = 0;
 
-function openPreviewDialog(camera, testVideoUrl) {
+function openPreviewDialog(camera) {
   // bootbox inserts `message` via jQuery .html(), which only accepts a string (a
   // jQuery/DOM object passed directly gets stringified into garbage) - so build the
   // stage as markup and look it up again once it's actually in the DOM.
@@ -106,7 +105,7 @@ function openPreviewDialog(camera, testVideoUrl) {
   dialog.one('shown.bs.modal', function() {
     const stage = dialog.find('#' + stageId)[0];
     dialogViewer = createCameraViewer(stage);
-    dialogViewer.show(cameraPayload(camera, testVideoUrl));
+    dialogViewer.show(cameraPayload(camera));
   });
 
   // stopPropagation so this pure-viewing dialog doesn't trigger the page's global
@@ -152,14 +151,12 @@ function displayCameras(cameras) {
       $('<td>').append($('<span>').addClass('badge ' + badgeClass).text(typeLabel)),
     );
 
-    const testVideoUrl = camera.hasTestVideo ? cameraTestVideoUrl.replace(':id', cameraId) : null;
-
     let viewer = null;
     const $previewWrapper = $('<div>').css({'position': 'relative'}).css(PREVIEW_COLLAPSED_CSS);
     const $previewStage = $('<div>').css({'background': '#000', 'cursor': 'pointer'})
       .attr('title', '크게 보기');
     bindClickWithoutDrag($previewStage, function() {
-      openPreviewDialog(camera, testVideoUrl);
+      openPreviewDialog(camera);
     });
     const $sizeBtn = $('<button>', {
       'class': 'btn btn-sm btn-secondary',
@@ -205,7 +202,6 @@ function displayCameras(cameras) {
         viewer = createdViewer;
       },
       camera: camera,
-      testVideoUrl: testVideoUrl,
     });
   });
 
@@ -218,10 +214,10 @@ function displayCameras(cameras) {
     'autoWidth': false,
     'order': [[0, 'asc']],
     'initComplete': function() {
-      pending.forEach(({stage, start, camera, testVideoUrl}) => {
+      pending.forEach(({stage, start, camera}) => {
         const viewer = createCameraViewer(stage);
         start(viewer);
-        viewer.show(cameraPayload(camera, testVideoUrl));
+        viewer.show(cameraPayload(camera));
         activeViewers.push(viewer);
       });
     },
@@ -260,7 +256,18 @@ $(function() {
     refreshCameraList();
   });
 
+  let needRefresh = false;
+
+  $(document).ajaxSuccess(function(event, xhr, settings) {
+    if (settings.url && settings.url.includes('/camera/') && ['POST', 'PUT', 'DELETE'].includes(settings.type)) {
+      needRefresh = true;
+    }
+  });
+
   $(document).on('hidden.bs.modal', function() {
-    refreshCameraList();
+    if (needRefresh) {
+      refreshCameraList();
+      needRefresh = false;
+    }
   });
 });
