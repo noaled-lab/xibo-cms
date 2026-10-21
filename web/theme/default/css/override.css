@@ -49,10 +49,10 @@ body.has-device-scope #sidebar-wrapper {
     z-index: 999;
     background: #273759;
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 6px;
     overflow-x: auto;
-    padding: 8px 16px;
+    padding: 0 16px;
     margin: 0;
     border-bottom: 1px solid #30426a;
     scrollbar-width: thin;
@@ -63,12 +63,12 @@ body.has-device-scope #sidebar-wrapper {
     flex: 0 0 auto;
     border: 1px solid transparent;
     border-bottom: 2px solid transparent;
-    border-radius: 3px 3px 0 0;
+    border-radius: 0;
     background: transparent;
     color: #b2bfdc;
     padding: 6px 14px;
     white-space: nowrap;
-    font-size: 0.875rem;
+    font-size: 1rem;
     line-height: 1.5;
     box-shadow: none;
     transition: background-color 0.15s ease, color 0.15s ease;
@@ -87,7 +87,7 @@ body.has-device-scope #sidebar-wrapper {
 
 .device-scope-tag:focus-visible {
     outline: 2px solid #e99d1a;
-    outline-offset: 2px;
+    outline-offset: -3px;
 }
 
 .device-scope-retry {
