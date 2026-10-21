@@ -46,40 +46,56 @@ body.has-device-scope #sidebar-wrapper {
     right: 0;
     height: var(--device-scope-height, 56px);
     z-index: 1030;
-    background: #f8f9fa;
+    background: #273759;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
     padding: 8px 16px;
     margin: 0;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid #30426a;
     scrollbar-width: thin;
+    scrollbar-color: #627cb7 #273759;
 }
 
 .device-scope-tag {
     flex: 0 0 auto;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #fff;
-    color: #555;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 3px 3px 0 0;
+    background: transparent;
+    color: #b2bfdc;
     padding: 6px 14px;
     white-space: nowrap;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    box-shadow: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .device-scope-tag:hover {
-    background: #f5f5f5;
-    border-color: #aaa;
+    background: #30426a;
+    color: #fff;
 }
 
 .device-scope-tag.active {
-    background: var(--primary, #337ab7);
-    border-color: var(--primary, #337ab7);
+    background: #30426a;
+    border-bottom-color: #e99d1a;
     color: #fff;
 }
 
 .device-scope-tag:focus-visible {
-    outline: 2px solid var(--primary, #337ab7);
+    outline: 2px solid #e99d1a;
     outline-offset: 2px;
+}
+
+.device-scope-retry {
+    flex: 0 0 auto;
+    color: #b2bfdc;
+}
+
+.device-scope-retry:hover,
+.device-scope-retry:focus {
+    color: #fff;
 }
 
