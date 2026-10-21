@@ -2413,6 +2413,13 @@ const setupSelectForSchedule = function(dialog) {
           query.start = (params.page - 1) * 10;
         }
 
+        const groups = $('select[name="displayGroupIds[]"]', dialog).val();
+        if (groups?.length) {
+          query.scheduleDisplayGroupIds = groups;
+        } else if (window.deviceScope?.getDisplayId()) {
+          query.contextDisplayId = window.deviceScope.getDisplayId();
+        }
+
         return query;
       },
       processResults: function(data, params) {

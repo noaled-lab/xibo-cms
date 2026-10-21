@@ -70,6 +70,19 @@ foreach (['Layout' => 'layout', 'Resolution' => 'resolution'] as $factory => $ta
     }
 }
 
+$pdo->exec('CREATE TEMPORARY TABLE campaign (campaignId INT, isLayoutSpecific INT, layoutId INT)');
+$pdo->exec('INSERT INTO campaign VALUES (1,1,10), (2,1,30), (3,0,NULL)');
+$source = file_get_contents($root . '/lib/Factory/CampaignFactory.php');
+if (!preg_match("~( AND \\(campaign.isLayoutSpecific = 0 OR[^']+)~s", $source, $match)) {
+    throw new RuntimeException('Campaign scope predicate missing');
+}
+$query = $pdo->prepare('SELECT campaign.campaignId FROM campaign LEFT JOIN layout
+    ON layout.layoutId = campaign.layoutId WHERE 1=1' . $match[1] . ' ORDER BY campaign.campaignId');
+foreach ([[1920,1080,1,[1,3]], [1080,1920,1,[2,3]], [0,0,0,[3]]] as [$w,$h,$valid,$ids]) {
+    $query->execute(['scopeWidth' => $w, 'scopeHeight' => $h, 'scopeValid' => $valid]);
+    check(array_map('intval', $query->fetchAll(PDO::FETCH_COLUMN)), $ids, 'Schedule search scopes layouts but retains campaigns');
+}
+
 $store = new class {
     public array $links = [1, 3];
     public function update($sql, $params) {

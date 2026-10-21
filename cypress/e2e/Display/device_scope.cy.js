@@ -32,7 +32,8 @@ describe('Device resource scope', function() {
         request.reply({
           recordsTotal: 2,
           data: [
-            {displayId: 101, displayGroupId: 201, display: 'Lobby'},
+            {displayId: 101, displayGroupId: 201, display: 'Lobby',
+              scopeResolution: '1080 × 1920'},
             {displayId: 102, displayGroupId: 202, display: 'Entrance'},
           ],
         });
@@ -49,6 +50,7 @@ describe('Device resource scope', function() {
     cy.visit('/layout/view');
     cy.get('#device-scope [data-display-id="101"]').click();
     cy.get('#device-scope [data-display-id="101"]')
+      .should('have.attr', 'title', '1080 × 1920')
       .should('have.attr', 'aria-pressed', 'true');
     cy.wait('@scopedLayouts').its('request.query.contextDisplayId')
       .should('eq', '101');

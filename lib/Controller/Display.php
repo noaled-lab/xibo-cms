@@ -769,6 +769,11 @@ class Display extends Base
 
         foreach ($displays as $display) {
             /* @var \Xibo\Entity\Display $display */
+            if (in_array('scopeResolution', $embed)) {
+                [$width, $height] = \Xibo\Support\DeviceScopeResolution::resolve($this->store, $display->displayId);
+                $display->setUnmatchedProperty('scopeResolution',
+                    $width > 0 && $height > 0 ? $width . ' × ' . $height : null);
+            }
             if (in_array('displaygroups', $embed)) {
                 $display->load();
             } else {

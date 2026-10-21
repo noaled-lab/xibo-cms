@@ -49,7 +49,7 @@
   function load(start, accumulated) {
     $bar.attr('aria-busy', 'true');
     $.getJSON(bar.dataset.searchUrl, {
-      start: start, length: 100,
+      start: start, length: 100, embed: 'scopeResolution',
     }).done(function(result) {
       const page = result.data;
       if (!Array.isArray(page)) {
@@ -69,6 +69,7 @@
         $('<button>', {
           type: 'button', class: 'btn btn-sm device-scope-tag',
           text: display.display,
+          title: display.scopeResolution || bar.dataset.unknownResolution,
           'data-display-id': String(display.displayId),
           'aria-pressed': 'false',
         }).appendTo($bar);
