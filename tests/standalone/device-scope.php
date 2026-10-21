@@ -7,6 +7,7 @@
 $root = dirname(__DIR__, 2);
 require getenv('XIBO_TEST_AUTOLOAD') ?: $root . '/vendor/autoload.php';
 require $root . '/lib/Controller/Camera.php';
+require $root . '/lib/Support/DeviceScopeResolution.php';
 
 if (!function_exists('__')) {
     function __($message) { return $message; }
@@ -24,27 +25,46 @@ $pdo = new PDO(
     'mysql:host=' . (getenv('MYSQL_HOST') ?: 'cms-db') . ';dbname=' . getenv('MYSQL_DATABASE') . ';charset=utf8mb4',
     getenv('MYSQL_USER'), getenv('MYSQL_PASSWORD'), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
-$pdo->exec('CREATE TEMPORARY TABLE display (displayId INT, resolution VARCHAR(100))');
+$pdo->exec('CREATE TEMPORARY TABLE display (displayId INT, resolution VARCHAR(100), displayProfileId INT DEFAULT 0, clientType VARCHAR(20) DEFAULT "windows")');
+$pdo->exec('CREATE TEMPORARY TABLE displayprofile (displayProfileId INT, type VARCHAR(20), isDefault INT, config TEXT)');
 $pdo->exec('CREATE TEMPORARY TABLE layout (layoutId INT, width DOUBLE, height DOUBLE)');
 $pdo->exec('CREATE TEMPORARY TABLE resolution (resolutionId INT, intended_width INT, intended_height INT)');
-$pdo->exec("INSERT INTO display VALUES (1, '1920x1080'), (2, '3840x2160'), (3, '1080x1920'), (4, NULL),
+$pdo->exec("INSERT INTO display (displayId, resolution) VALUES (1, '1920x1080'), (2, '3840x2160'), (3, '1080x1920'), (4, NULL),
     (5, '1920 × 1080')");
 $pdo->exec('INSERT INTO layout VALUES (10,1920,1080), (11,1920,1080), (20,3840,2160),
     (30,1080,1920), (40,1920.4,1080)');
 $pdo->exec('INSERT INTO resolution VALUES (1,1920,1080), (2,3840,2160), (3,1080,1920)');
 
+$profile = $pdo->prepare('INSERT INTO displayprofile VALUES (?, ?, ?, ?)');
+$profile->execute([1, 'windows', 0, '[{"name":"sizeX","value":1080},{"name":"sizeY","value":1920}]']);
+$profile->execute([2, 'linux', 1, '[{"name":"sizeX","value":3840},{"name":"sizeY","value":2160}]']);
+$pdo->exec("INSERT INTO display VALUES (6, '1920x1080', 1, 'windows'), (7, NULL, 0, 'linux')");
+$resolutionStore = new class($pdo) {
+    public function __construct(private PDO $pdo) {}
+    public function select($sql, $params) {
+        $query = $this->pdo->prepare($sql);
+        $query->execute($params);
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+};
+check(\Xibo\Support\DeviceScopeResolution::dimensions('1920x1080',
+    '[{"name":"sizeX","value":1280},{"name":"sizeY","value":0}]'), [1280,1080], 'Automatic height uses reported height');
+check(\Xibo\Support\DeviceScopeResolution::dimensions('1920x1080', 'invalid'), [1920,1080], 'Invalid config fallback');
+
 foreach (['Layout' => 'layout', 'Resolution' => 'resolution'] as $factory => $table) {
     $source = file_get_contents($root . '/lib/Factory/' . $factory . 'Factory.php');
-    if (!preg_match('~\$body \.= "( AND EXISTS \(\s*SELECT 1 FROM display scopeDisplay.*?)";~s', $source, $match)) {
+    if (!preg_match("~( AND " . $table . "\\.[^']*:scopeValid = 1 )~s", $source, $match)) {
         throw new RuntimeException('Scope predicate not found in ' . $factory);
     }
     $query = $pdo->prepare('SELECT ' . $table . 'Id FROM ' . $table . ' WHERE 1=1' . $match[1]
         . ' ORDER BY ' . $table . 'Id');
     $expected = $table === 'layout'
-        ? [1 => [10, 11], 2 => [20], 3 => [30], 4 => [], 5 => [10, 11]]
-        : [1 => [1], 2 => [2], 3 => [3], 4 => [], 5 => [1]];
+        ? [1 => [10, 11], 2 => [20], 3 => [30], 4 => [], 5 => [10, 11], 6 => [30], 7 => [20]]
+        : [1 => [1], 2 => [2], 3 => [3], 4 => [], 5 => [1], 6 => [3], 7 => [2]];
     foreach ($expected as $displayId => $ids) {
-        $query->execute(['contextDisplayId' => $displayId]);
+        [$width, $height] = \Xibo\Support\DeviceScopeResolution::resolve($resolutionStore, $displayId);
+        $query->execute(['scopeWidth' => $width, 'scopeHeight' => $height,
+            'scopeValid' => (int) ($width > 0 && $height > 0)]);
         check(array_map('intval', $query->fetchAll(PDO::FETCH_COLUMN)), $ids,
             "$factory exact resolution for display $displayId");
     }

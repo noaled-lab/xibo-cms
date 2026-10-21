@@ -192,14 +192,14 @@ class ResolutionFactory extends BaseFactory
         }
 
         if ($parsedFilter->getInt('contextDisplayId') !== null) {
-            $body .= " AND EXISTS (
-                SELECT 1 FROM display scopeDisplay
-                WHERE scopeDisplay.displayId = :contextDisplayId
-                    AND REPLACE(REPLACE(LOWER(scopeDisplay.resolution), ' ', ''), '×', 'x')
-                        = CONCAT(CAST(resolution.intended_width AS UNSIGNED), 'x',
-                            CAST(resolution.intended_height AS UNSIGNED))
-            ) ";
-            $params['contextDisplayId'] = $parsedFilter->getInt('contextDisplayId');
+            [$scopeWidth, $scopeHeight] = \Xibo\Support\DeviceScopeResolution::resolve(
+                $this->getStore(), $parsedFilter->getInt('contextDisplayId')
+            );
+            $body .= ' AND resolution.intended_width = :scopeWidth AND resolution.intended_height = :scopeHeight
+                AND :scopeValid = 1 ';
+            $params['scopeWidth'] = $scopeWidth;
+            $params['scopeHeight'] = $scopeHeight;
+            $params['scopeValid'] = (int) ($scopeWidth > 0 && $scopeHeight > 0);
         }
 
         if ($parsedFilter->getString('resolution') != null) {

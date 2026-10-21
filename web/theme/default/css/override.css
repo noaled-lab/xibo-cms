@@ -45,7 +45,8 @@ body.has-device-scope #sidebar-wrapper {
     left: 0;
     right: 0;
     height: var(--device-scope-height, 56px);
-    z-index: 1030;
+    /* Bootstrap dropdowns start at 1000; editor controls start at 1001. */
+    z-index: 999;
     background: #273759;
     display: flex;
     align-items: center;
@@ -97,5 +98,17 @@ body.has-device-scope #sidebar-wrapper {
 .device-scope-retry:hover,
 .device-scope-retry:focus {
     color: #fff;
+}
+
+/* Header menus need their parent stacking context above the device bar too. */
+body.has-device-scope .row.header:has(.dropdown-menu.show),
+body.has-device-scope .navbar:has(.dropdown-menu.show) {
+    z-index: 1001;
+}
+
+@media (min-width: 769px) {
+    body.has-device-scope .row.header:has(.dropdown-menu.show) {
+        position: relative;
+    }
 }
 
