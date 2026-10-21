@@ -19,16 +19,30 @@
     if (!filterEnabled) return;
     const id = settings.nTable.id;
     if (['layouts', 'templates', 'resolutions'].includes(id)) {
-      if (id === 'layouts') delete data.activeDisplayGroupId;
+      if (id === 'layouts' && selected) delete data.activeDisplayGroupId;
       // The top-level device's dimensions replace any saved resolution filter.
       if (selected) delete data.resolutionId;
       if (selected) data.contextDisplayId = selected;
+    } else if (id === 'schedule-grid' && getScheduleDisplay()) {
+      delete data['displayGroupIds[]'];
+      delete data.displayGroupIds;
+      delete data.displaySpecificGroupIds;
+      data['displaySpecificGroupIds[]'] = [getScheduleDisplay().displayGroupId];
+      delete data.showAll;
     } else if (id === 'displays' && selected) {
       data.displayId = selected;
     }
   });
 
+  function getScheduleDisplay() {
+    if (!filterEnabled) return null;
+    return displays.find(function(item) {
+      return String(item.displayId) === selected;
+    }) || null;
+  }
+
   window.deviceScope = {
+    getScheduleDisplay: getScheduleDisplay,
     getDisplayId: function() {
       return selected;
     },
@@ -42,31 +56,21 @@
 
   function refresh() {
     if (!filterEnabled) return;
-    const display = displays.find(function(item) {
-      return String(item.displayId) === selected;
-    });
-
-    // Use the calendar's native filter so month, agenda and list agree.
-    if ($('#DisplayList').length) {
-      const $list = $('#DisplayList');
-      $('#DisplayGroupList').val(null).trigger('change.select2');
-      const targets = display ? [display] : displays;
-      targets.forEach(function(target) {
-        const groupId = String(target.displayGroupId);
-        if (!$list.find('option').toArray().some(function(option) {
-          return option.value === groupId;
-        })) {
-          const option = new Option(target.display, groupId);
-          option.setAttribute('type', '1');
-          $list.append(option);
-        }
-      });
-      $list.prop('disabled', false).val(targets.map(function(target) {
-        return String(target.displayGroupId);
-      }));
-      $('#showAll').prop('checked', false);
+    // Keep native values intact; override only outgoing requests.
+    $('#resolutionId, #activeDisplayGroupId, ' +
+      '#DisplayList, #DisplayGroupList, #showAll')
+      .attr('data-device-scope-preserved', selected ? 'true' : null)
+      .closest('.form-group').toggle(!selected);
+    $('.device-scope-filter-note').remove();
+    if (selected) {
+      $('.XiboFilter').first().prepend(
+        $('<div>', {class: 'device-scope-filter-note px-3 pt-3 text-muted',
+          role: 'status', text: bar.dataset.filterNote}),
+      );
+    }
+    if ($('#DisplayList').length && window.calendar) {
       $('.cal-context').removeData('selectedTab');
-      $list.trigger('change');
+      window.calendar.view();
     }
 
     const tables = ['layouts', 'templates', 'resolutions',
@@ -83,7 +87,6 @@
   function select(id) {
     selected = id;
     save();
-    if (filterEnabled) $('#resolutionId').prop('disabled', Boolean(selected));
     $bar.find('[data-display-id]').each(function(index, button) {
       const active = button.dataset.displayId === selected;
       $(button).toggleClass('active', active)
@@ -135,9 +138,7 @@
 
   function failed() {
     $bar.attr('aria-busy', 'false');
-    selected = '';
-    save();
-    refresh();
+    select('');
     if (!$bar.find('.device-scope-retry').length) {
       $('<button>', {
         type: 'button', class: 'btn btn-sm btn-link device-scope-retry',
@@ -149,10 +150,6 @@
   }
 
   $(function() {
-    if (filterEnabled) {
-      $('#activeDisplayGroupId').closest('.form-group').hide();
-      $('#DisplayList, #DisplayGroupList').closest('.form-group').hide();
-    }
     load(0, []);
   });
 

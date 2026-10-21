@@ -1,4 +1,30 @@
 describe('Device resource scope', function() {
+  it('preserves native filters across device changes and reset', function() {
+    cy.intercept('GET', '/layout?*', {
+      recordsTotal: 0, recordsFiltered: 0, data: [],
+    });
+    cy.visit('/layout/view');
+    cy.get('#device-scope [data-display-id=""]').click();
+    cy.get('#resolutionId').then(($select) => {
+      $select.append(new Option('Saved resolution', '7', true, true))
+        .trigger('change');
+    });
+    cy.get('#activeDisplayGroupId').then(($select) => {
+      $select.append(new Option('Saved group', '12', true, true))
+        .trigger('change');
+    });
+    cy.get('#device-scope [data-display-id="101"]').click();
+    cy.get('#resolutionId').closest('.form-group').should('not.be.visible');
+    cy.get('.device-scope-filter-note').should('be.visible');
+    cy.get('.clear-filter-btn').first().click();
+    cy.get('#device-scope [data-display-id="102"]').click();
+    cy.get('#device-scope [data-display-id=""]').click();
+    cy.get('#resolutionId').should('have.value', '7');
+    cy.get('#activeDisplayGroupId').should('have.value', '12');
+    cy.get('#resolutionId').closest('.form-group').should('be.visible');
+    cy.get('.device-scope-filter-note').should('not.exist');
+  });
+
   beforeEach(function() {
     cy.login();
     cy.intercept('GET', '/display?*', (request) => {
