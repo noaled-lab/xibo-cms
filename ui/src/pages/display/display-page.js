@@ -550,6 +550,10 @@ $(function() {
     }
   };
 
+  $(document).on('deviceScope:change', function() {
+    if (map) addMarkersToMap(map.getBounds().toBBoxString());
+  });
+
   // Initialise and build map
   function initializeMap() {
     $displayMap.width($mapParent.width() - 10);
@@ -667,11 +671,14 @@ $(function() {
 
     // Make an ajax request for the displays feature
     // Load GeoJSON data and add it to the marker cluster group
+    const scopeDisplayId = window.deviceScope?.getDisplayId() || '';
     $.ajax($displayMap.data('displaysUrl'), {
       method: 'GET',
       data: $('.XiboGrid').find('.XiboFilter form')
-        .serialize() + '&bounds=' + bounds,
+        .serialize() + '&bounds=' + bounds + (scopeDisplayId ?
+          '&displayId=' + encodeURIComponent(scopeDisplayId) : ''),
       success: function(response) {
+        if (scopeDisplayId !== (window.deviceScope?.getDisplayId() || '')) return;
         // displays
         if (response.features.length > 0) {
           // Define icons for display

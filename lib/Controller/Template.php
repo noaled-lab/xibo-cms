@@ -127,6 +127,7 @@ class Template extends Base
             'useRegexForName' => $sanitizedQueryParams->getCheckbox('useRegexForName'),
             'folderId' => $sanitizedQueryParams->getInt('folderId'),
             'resolutionId' => $sanitizedQueryParams->getInt('resolutionId'),
+            'contextDisplayId' => $sanitizedQueryParams->getInt('contextDisplayId'),
             'logicalOperator' => $sanitizedQueryParams->getString('logicalOperator'),
             'logicalOperatorName' => $sanitizedQueryParams->getString('logicalOperatorName'),
         ], $sanitizedQueryParams));

@@ -191,6 +191,17 @@ class ResolutionFactory extends BaseFactory
             $params['resolutionId'] = $parsedFilter->getInt('resolutionId');
         }
 
+        if ($parsedFilter->getInt('contextDisplayId') !== null) {
+            $body .= " AND EXISTS (
+                SELECT 1 FROM display scopeDisplay
+                WHERE scopeDisplay.displayId = :contextDisplayId
+                    AND REPLACE(REPLACE(LOWER(scopeDisplay.resolution), ' ', ''), '×', 'x')
+                        = CONCAT(CAST(resolution.intended_width AS UNSIGNED), 'x',
+                            CAST(resolution.intended_height AS UNSIGNED))
+            ) ";
+            $params['contextDisplayId'] = $parsedFilter->getInt('contextDisplayId');
+        }
+
         if ($parsedFilter->getString('resolution') != null) {
             $body .= ' AND resolution = :resolution ';
             $params['resolution'] = $parsedFilter->getString('resolution');

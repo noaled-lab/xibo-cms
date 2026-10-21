@@ -1,0 +1,5 @@
+{% import 'forms.twig' as forms %}
+<input type="hidden" name="displayLinksSubmitted" value="1">
+{{ forms.dropdown('displayIds[]', 'dropdownmulti', '연결 디스플레이'|trans,
+    linkedDisplayIds|default([]), displays, 'displayId', 'display',
+    '이 카메라를 표시할 디스플레이를 선택하세요. 여러 개를 선택할 수 있습니다.'|trans) }}

@@ -134,6 +134,7 @@ class Resolution extends Base
         $filter = [
             'enabled' => $sanitizedQueryParams->getInt('enabled', ['default' => -1]),
             'resolutionId' => $sanitizedQueryParams->getInt('resolutionId'),
+            'contextDisplayId' => $sanitizedQueryParams->getInt('contextDisplayId'),
             'resolution' => $sanitizedQueryParams->getString('resolution'),
             'partialResolution' => $sanitizedQueryParams->getString('partialResolution'),
             'width' => $sanitizedQueryParams->getInt('width'),

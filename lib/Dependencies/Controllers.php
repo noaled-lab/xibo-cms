@@ -80,7 +80,7 @@ class Controllers
                 return $controller;
             },
             '\Xibo\Controller\Camera' => function (ContainerInterface $c) {
-                $controller = new \Xibo\Controller\Camera();
+                $controller = new \Xibo\Controller\Camera($c->get('store'), $c->get('displayFactory'));
                 $controller->useBaseDependenciesService($c->get('ControllerBaseDependenciesService'));
                 return $controller;
             },

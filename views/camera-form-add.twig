@@ -24,6 +24,7 @@
                 {% set title %}{% trans "채널 이름" %}{% endset %}
                 {% set helpText %}{% trans "카메라 채널 이름을 입력하세요" %}{% endset %}
                 {{ forms.input("name", title, "", helpText, "", "required") }}
+                {% include 'camera-display-fields.twig' %}
 
                 {% set title %}{% trans "RTSP URL" %}{% endset %}
                 {% set helpText %}{% trans "카메라의 RTSP URL을 입력하세요 (예: rtsp://admin:admin@192.168.1.100/stream1)" %}{% endset %}

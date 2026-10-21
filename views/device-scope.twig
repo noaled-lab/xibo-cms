@@ -1,0 +1,9 @@
+<div class="device-scope" id="device-scope"
+     role="group" aria-label="{{ 'Displays'|trans }}"
+     data-search-url="{{ url_for('display.search') }}"
+     data-storage-key="device-scope-{{ currentUser.userId }}"
+     data-error="{{ 'Unable to load displays'|trans }}"
+     data-retry="{{ 'Retry'|trans }}">
+    <button type="button" class="btn btn-sm device-scope-tag active"
+            data-display-id="" aria-pressed="true">{{ 'All'|trans }}</button>
+</div>

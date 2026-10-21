@@ -2319,6 +2319,18 @@ class LayoutFactory extends BaseFactory
 
         $body .= " WHERE 1 = 1 ";
 
+        if ($parsedFilter->getInt('contextDisplayId') !== null) {
+            $body .= " AND EXISTS (
+                SELECT 1 FROM display scopeDisplay
+                WHERE scopeDisplay.displayId = :contextDisplayId
+                    AND layout.width = CAST(layout.width AS UNSIGNED)
+                    AND layout.height = CAST(layout.height AS UNSIGNED)
+                    AND REPLACE(REPLACE(LOWER(scopeDisplay.resolution), ' ', ''), '×', 'x')
+                        = CONCAT(CAST(layout.width AS UNSIGNED), 'x', CAST(layout.height AS UNSIGNED))
+            ) ";
+            $params['contextDisplayId'] = $parsedFilter->getInt('contextDisplayId');
+        }
+
         // Layout Like
         if ($parsedFilter->getString('layout') != '') {
             $terms = explode(',', $parsedFilter->getString('layout'));

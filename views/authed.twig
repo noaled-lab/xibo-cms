@@ -90,6 +90,10 @@
                     </div>
                 </div>
                 {% endif %}
+                {% if not forceHide and hideNavigation == "0" and currentUser.featureEnabled("displays.view")
+                    and route in ['schedule.view', 'layout.view', 'template.view', 'resolution.view', 'display.view', 'camera.view'] %}
+                    {% include "device-scope.twig" %}
+                {% endif %}
                 <div class="row">
                     <div class="col-sm-12">
                         {% block actionMenu %}{% endblock %}

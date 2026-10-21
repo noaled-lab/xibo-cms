@@ -5,16 +5,21 @@ use GuzzleHttp\Psr7\Stream;
 use Slim\Http\Response as Response;
 use Slim\Http\ServerRequest as Request;
 use Xibo\Support\Exception\NotFoundException;
+use Xibo\Support\Exception\AccessDeniedException;
 
 class Camera extends Base
 {
     private $apiBaseUrl;
+    private $store;
+    private $displayFactory;
 
     const TYPE_STANDARD = 'standard';
     const TYPE_FISHEYE = 'fisheye';
 
-    public function __construct()
+    public function __construct($store, $displayFactory)
     {
+        $this->store = $store;
+        $this->displayFactory = $displayFactory;
         $host = getenv('MEDIAMTX_API_HOST') ?: 'mediamtx:9997';
         $this->apiBaseUrl = sprintf('http://%s/v3/config/paths', $host);
     }
@@ -27,6 +32,17 @@ class Camera extends Base
 
     public function search(Request $request, Response $response) {
         $cameras = [];
+        $displayId = $this->getSanitizer($request->getQueryParams())->getInt('displayId');
+        $visibleDisplays = $this->visibleDisplays();
+        if ($displayId !== null && !isset($visibleDisplays[$displayId])) {
+            throw new AccessDeniedException(__('Access Denied'));
+        }
+        $links = [];
+        foreach ($this->store->select('SELECT channelId, displayId FROM camera_display', []) as $link) {
+            if (isset($visibleDisplays[$link['displayId']])) {
+                $links[$link['channelId']][] = (int) $link['displayId'];
+            }
+        }
 
         try {
             $apiUrl = $this->apiBaseUrl . '/list';
@@ -50,9 +66,16 @@ class Camera extends Base
                         }
 
                         $decoded = $this->decodeName($item['name'], $item['sourceFingerprint'] ?? '');
+                        $displayIds = $links[$item['name']] ?? [];
+                        if ($displayId !== null && !in_array($displayId, $displayIds, true)) {
+                            continue;
+                        }
 
                         $cameras[] = [
                             'name' => $decoded['name'],
+                            'streamId' => 'noaled',
+                            'displayIds' => $displayIds,
+                            'displayNames' => array_map(fn($id) => $visibleDisplays[$id]->display, $displayIds),
                             'channelId' => $item['name'],
                             'url' => '',
                             'rtspUrl' => $item['source'] ?? '',
@@ -221,6 +244,7 @@ class Camera extends Base
     // 채널 추가 폼
     public function addForm(Request $request, Response $response) {
         $this->getState()->template = 'camera-form-add';
+        $this->getState()->setData(['displays' => array_values($this->visibleDisplays())]);
         return $this->render($request, $response);
     }
 
@@ -233,6 +257,8 @@ class Camera extends Base
         $url = $sanitizedParams->getString('url');
         $onDemand = $sanitizedParams->getInt('onDemand') === 1;
         $type = $sanitizedParams->getString('type') ?: self::TYPE_STANDARD;
+
+        $displayIds = $this->validateDisplayLinks($sanitizedParams);
 
         $fingerprint = $this->encodeFingerprint(
             $name,
@@ -267,6 +293,7 @@ class Camera extends Base
             $this->getLog()->debug('Camera add response - HTTP Code: ' . $httpCode . ', Result: ' . $result . ', cURL Error: ' . $curlError);
 
             if ($httpCode === 200) {
+                $this->saveDisplayLinks($channelId, $displayIds);
                 $this->getState()->hydrate([
                     'message' => __('카메라가 추가되었습니다.'),
                     'id' => $channelId,
@@ -308,6 +335,11 @@ class Camera extends Base
         $this->getState()->template = 'camera-form-edit';
         $this->getState()->setData([
             'camera' => $channel,
+            'displays' => array_values($this->visibleDisplays()),
+            'linkedDisplayIds' => array_column($this->store->select(
+                'SELECT displayId FROM camera_display WHERE channelId = :channelId',
+                ['channelId' => $channelId]
+            ), 'displayId'),
             'fisheyeParams' => $channel['fisheyeParams'] ?? $this->defaultFisheyeParams(),
         ]);
 
@@ -326,6 +358,7 @@ class Camera extends Base
 
         $fisheyeParams = $type === self::TYPE_FISHEYE ? $this->buildFisheyeParamsFromRequest($sanitizedParams) : null;
         $fingerprint = $this->encodeFingerprint($name, $type, $fisheyeParams);
+        $displayIds = $this->validateDisplayLinks($sanitizedParams);
 
         try {
             $apiUrl = $this->apiBaseUrl . '/patch/' . urlencode($channelId);
@@ -364,6 +397,7 @@ class Camera extends Base
             $this->getLog()->debug('Camera edit response - HTTP Code: ' . $httpCode . ', Result: ' . $result . ', cURL Error: ' . $curlError);
 
             if ($httpCode === 200) {
+                $this->saveDisplayLinks($channelId, $displayIds);
                 $this->getState()->hydrate([
                     'message' => __('카메라가 수정되었습니다.'),
                     'id' => $id,
@@ -420,6 +454,9 @@ class Camera extends Base
             curl_close($ch);
 
             if ($httpCode === 200) {
+                $this->store->update('DELETE FROM camera_display WHERE channelId = :channelId', [
+                    'channelId' => $channelId,
+                ]);
                 $this->getState()->hydrate([
                     'message' => __('카메라가 삭제되었습니다.'),
                     'id' => $id,
@@ -461,6 +498,48 @@ class Camera extends Base
         ]);
 
         return $this->render($request, $response);
+    }
+
+    /** Return only displays visible to this user, without bypassing factory permissions. */
+    private function visibleDisplays(): array
+    {
+        $displays = [];
+        foreach ($this->displayFactory->query(['display'], []) as $display) {
+            $displays[$display->displayId] = $display;
+        }
+        return $displays;
+    }
+
+    private function validateDisplayLinks($params): ?array
+    {
+        // Older API clients editing camera settings must preserve existing links.
+        if (!$params->hasParam('displayLinksSubmitted')) {
+            return null;
+        }
+        $ids = array_values(array_unique($params->getIntArray('displayIds', ['default' => []])));
+        if (array_diff($ids, array_keys($this->visibleDisplays()))) {
+            throw new AccessDeniedException(__('Access Denied'));
+        }
+        return $ids;
+    }
+
+    private function saveDisplayLinks(string $channelId, ?array $displayIds): void
+    {
+        if ($displayIds === null) {
+            return;
+        }
+        // Preserve links outside the editor's scope of visibility.
+        foreach (array_keys($this->visibleDisplays()) as $displayId) {
+            $this->store->update(
+                'DELETE FROM camera_display WHERE channelId = :channelId AND displayId = :displayId',
+                ['channelId' => $channelId, 'displayId' => $displayId]
+            );
+        }
+        foreach ($displayIds as $displayId) {
+            $this->store->insert('INSERT INTO camera_display (channelId, displayId) VALUES (:channelId, :displayId)', [
+                'channelId' => $channelId, 'displayId' => $displayId,
+            ]);
+        }
     }
 
     private function uuidv4() {

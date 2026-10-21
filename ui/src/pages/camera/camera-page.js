@@ -143,7 +143,12 @@ function displayCameras(cameras) {
     const cameraId = camera.streamId + ':' + camera.channelId;
     const row = $('<tr>').attr('data-camera-id', cameraId);
 
-    row.append($('<td>').text(camera.name || camera.channelId));
+    const $name = $('<td>').text(camera.name || camera.channelId);
+    if (camera.displayNames && camera.displayNames.length) {
+      $name.append($('<small>', {class: 'd-block text-muted',
+        text: camera.displayNames.join(', ')}));
+    }
+    row.append($name);
 
     const typeLabel = CAMERA_TYPE_LABELS[camera.type] || CAMERA_TYPE_LABELS.standard;
     const badgeClass = camera.type === 'fisheye' ? 'badge-info' : 'badge-secondary';
@@ -226,19 +231,23 @@ function displayCameras(cameras) {
   XiboInitialise('#cameraTable');
 }
 
+let cameraRequest = null;
 function loadCameras() {
-  $.ajax({
+  if (cameraRequest) cameraRequest.abort();
+  const data = {_: new Date().getTime()};
+  const displayId = window.deviceScope?.getDisplayId();
+  if (displayId) data.displayId = displayId;
+  cameraRequest = $.ajax({
     url: cameraGridUrl,
     type: 'GET',
     dataType: 'json',
     cache: false,
-    data: {
-      _: new Date().getTime(),
-    },
+    data: data,
     success: function(response) {
       displayCameras(response.data || []);
     },
     error: function(_xhr, status, error) {
+      if (status === 'abort') return;
       console.error('Failed to load cameras:', status, error);
       displayCameras([]);
     },
@@ -251,6 +260,7 @@ window.refreshCameraList = function() {
 
 $(function() {
   loadCameras();
+  $(document).on('deviceScope:change', loadCameras);
 
   $('#refreshGrid').click(function() {
     refreshCameraList();
