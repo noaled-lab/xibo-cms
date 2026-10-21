@@ -494,7 +494,8 @@ $(function() {
         const $calendarErrorMessage = $('#calendar-error-message');
 
         // Append display groups and layouts
-        const scopeDisplay = window.deviceScope?.getScheduleDisplay();
+        const scopeTargets = window.deviceScopeFilters?.scheduleTargets();
+        const scopeDisplay = scopeTargets?.display;
         const isShowAll = !scopeDisplay && $('#showAll').is(':checked');
 
         // Enable or disable the display list
@@ -515,7 +516,7 @@ $(function() {
             $('#DisplayGroupList').serialize();
           const displaySpecificGroups = scopeDisplay ?
             $.param({
-              'displaySpecificGroupIds[]': scopeDisplay.displayGroupId,
+              'displaySpecificGroupIds[]': scopeTargets.displays,
             }) :
             $('#DisplayList').serialize();
           const displayLayouts = $('#campaignIdFilter').serialize();
@@ -2534,9 +2535,10 @@ const setupSelectForSchedule = function(dialog) {
     const displaySpecificGroups = $('#DisplayList').val() ?? [];
     const displayGroups = $('#DisplayGroupList').val() ?? [];
     // add values to one array
-    const scopeDisplay = window.deviceScope?.getScheduleDisplay();
-    const addFormDisplayGroup = scopeDisplay ? [scopeDisplay.displayGroupId] :
-      displaySpecificGroups.concat(displayGroups);
+    const targets = window.deviceScopeFilters?.scheduleTargets(
+      displayGroups, displaySpecificGroups,
+    ) || {groups: displayGroups, displays: displaySpecificGroups};
+    const addFormDisplayGroup = targets.displays.concat(targets.groups);
     // set array of displayGroups as initial value
     $displaySelect.data('initial-value', addFormDisplayGroup);
 

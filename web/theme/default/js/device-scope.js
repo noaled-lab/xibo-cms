@@ -7,42 +7,18 @@
 
   const $bar = $(bar);
   const storageKey = bar.dataset.storageKey;
-  const filterEnabled = bar.dataset.filterEnabled === 'true';
   let selected = '';
   let displays = [];
   try {
     selected = sessionStorage.getItem(storageKey) || '';
   } catch {/* Storage may be disabled. */}
 
-  // Register before page scripts initialise their DataTables.
-  $(document).on('preXhr.dt.deviceScope', function(event, settings, data) {
-    if (!filterEnabled) return;
-    const id = settings.nTable.id;
-    if (['layouts', 'templates', 'resolutions'].includes(id)) {
-      if (id === 'layouts' && selected) delete data.activeDisplayGroupId;
-      // The top-level device's dimensions replace any saved resolution filter.
-      if (selected) delete data.resolutionId;
-      if (selected) data.contextDisplayId = selected;
-    } else if (id === 'schedule-grid' && getScheduleDisplay()) {
-      delete data['displayGroupIds[]'];
-      delete data.displayGroupIds;
-      delete data.displaySpecificGroupIds;
-      data['displaySpecificGroupIds[]'] = [getScheduleDisplay().displayGroupId];
-      delete data.showAll;
-    } else if (id === 'displays' && selected) {
-      data.displayId = selected;
-    }
-  });
-
-  function getScheduleDisplay() {
-    if (!filterEnabled) return null;
-    return displays.find(function(item) {
-      return String(item.displayId) === selected;
-    }) || null;
-  }
-
   window.deviceScope = {
-    getScheduleDisplay: getScheduleDisplay,
+    getDisplay: function() {
+      return displays.find(function(item) {
+        return String(item.displayId) === selected;
+      }) || null;
+    },
     getDisplayId: function() {
       return selected;
     },
@@ -54,36 +30,6 @@
     } catch {/* Keep working without persistence. */}
   }
 
-  function refresh() {
-    if (!filterEnabled) return;
-    // Keep native values intact; override only outgoing requests.
-    $('#resolutionId, #activeDisplayGroupId, ' +
-      '#DisplayList, #DisplayGroupList, #showAll')
-      .attr('data-device-scope-preserved', selected ? 'true' : null)
-      .closest('.form-group').toggle(!selected);
-    $('.device-scope-filter-note').remove();
-    if (selected) {
-      $('.XiboFilter').first().prepend(
-        $('<div>', {class: 'device-scope-filter-note px-3 pt-3 text-muted',
-          role: 'status', text: bar.dataset.filterNote}),
-      );
-    }
-    if ($('#DisplayList').length && window.calendar) {
-      $('.cal-context').removeData('selectedTab');
-      window.calendar.view();
-    }
-
-    const tables = ['layouts', 'templates', 'resolutions',
-      'displays', 'schedule-grid'];
-    tables.forEach(function(id) {
-      const table = document.getElementById(id);
-      if (table && $.fn.dataTable.isDataTable(table)) {
-        $(table).DataTable().ajax.reload();
-      }
-    });
-    $(document).trigger('deviceScope:change', [selected]);
-  }
-
   function select(id) {
     selected = id;
     save();
@@ -92,7 +38,7 @@
       $(button).toggleClass('active', active)
         .attr('aria-pressed', String(active));
     });
-    refresh();
+    $(document).trigger('deviceScope:change', [selected]);
   }
 
   $bar.on('click', '[data-display-id]', function(event) {
@@ -151,12 +97,5 @@
 
   $(function() {
     load(0, []);
-  });
-
-  $(document).on('shown.bs.modal.deviceScope', function() {
-    const $links = $('#cameraAddForm select[name="displayIds[]"]');
-    if (selected && $links.length && !$links.val()?.length) {
-      $links.val([selected]).trigger('change');
-    }
   });
 })(jQuery);

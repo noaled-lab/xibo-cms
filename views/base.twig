@@ -97,6 +97,7 @@
         {% include "globalVars.twig" %}
         {% include "globalConfig.twig" %}
         <script src="{{ theme.uri('js/device-scope.js') }}?v={{ version }}&rev={{revision}}" nonce="{{ cspNonce }}"></script>
+        <script src="{{ theme.uri('js/device-scope-filters.js') }}?v={{ version }}&rev={{revision}}" nonce="{{ cspNonce }}"></script>
         
         {% block javaScriptTemplates %}{% endblock %}
         {% block javaScript %}{% endblock %}
