@@ -315,13 +315,15 @@
                           if (type !== 'display') {
                             return row.layoutId;
                           }
+                          var regenerateAttribute = row.thumbnailRegenerateUrl
+                            ? ' data-regenerate-url="' + row.thumbnailRegenerateUrl + '"' : '';
                           if (data) {
-                            return '<a class="img-replace" data-toggle="lightbox" data-type="image" href="' + data + '">' +
+                            return '<a class="img-replace" data-toggle="lightbox" data-type="image"' + regenerateAttribute + ' href="' + data + '">' +
                                 '<img class="img-fluid" src="' + data + '" alt="{{ "Thumbnail"|trans }}" />' +
                                 '</a>';
                           } else {
                             var addUrl = '{{ url_for("layout.thumbnail.add", {id: ":id"}) }}'.replace(':id', row.layoutId);
-                            return '<a class="img-replace generate-layout-thumbnail" data-type="image" href="' + addUrl + '">' +
+                            return '<a class="img-replace generate-layout-thumbnail" data-type="image"' + regenerateAttribute + ' href="' + addUrl + '">' +
                                 '<img class="img-fluid" src="{{ theme.uri("img/thumbs/placeholder.png") }}" alt="{{ "Add Thumbnail"|trans }}" />' +
                                 '</a>';
                           }

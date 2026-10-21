@@ -1726,6 +1726,8 @@ class Layout extends Base
             $layout->includeProperty('buttons');
 
             // Thumbnail
+            $layout->setUnmatchedProperty('thumbnailRegenerateUrl', $this->getUser()->checkEditable($layout)
+                ? $this->urlFor($request, 'layout.thumbnail.add', ['id' => $layout->layoutId]) : null);
             $layout->setUnmatchedProperty('thumbnail', '');
             if (file_exists($layout->getThumbnailUri())) {
                 $layout->setUnmatchedProperty(
