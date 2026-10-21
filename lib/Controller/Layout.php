@@ -3283,19 +3283,25 @@ class Layout extends Base
                 $image = Img::canvas($layout->width, $layout->height, $layout->backgroundColor);
             }
 
-            $countRegions = count($layout->regions);
-
             // Draw some regions on it.
             foreach ($layout->regions as $region) {
                 try {
-                    // We don't do this for the canvas region.
-                    if ($countRegions > 1 && $region->type === 'canvas') {
-                        continue;
-                    }
-
                     // Get widgets in this region
                     $playlist = $region->getPlaylist()->setModuleFactory($this->moduleFactory);
                     $widgets = $playlist->expandWidgets();
+
+                    if ($region->type === 'canvas') {
+                        $elements = [];
+                        foreach ($widgets as $widget) {
+                            foreach (json_decode($widget->getOptionValue('elements', '[]'), true) ?? [] as $group) {
+                                $elements = array_merge($elements, $group['elements'] ?? []);
+                            }
+                        }
+                        \Xibo\Support\CanvasThumbnail::render($image, $elements, function ($mediaId) use ($libraryLocation) {
+                            return $libraryLocation . $this->mediaFactory->getById($mediaId)->storedAs;
+                        }, (int) $region->left, (int) $region->top);
+                        continue;
+                    }
 
                     if (count($widgets) <= 0) {
                         // Render the region (draw a grey box)
@@ -3386,19 +3392,21 @@ class Layout extends Base
                             }
                         }
 
-                        // Put a number of widgets counter in the bottom
-                        $image->text(
-                            '1 / ' . count($widgets),
-                            $region->left + $region->width - 10,
-                            $region->top + $region->height - 10,
-                            function ($font) {
-                                $font->file(PROJECT_ROOT . '/web/theme/default/fonts/Railway.ttf');
-                                $font->size(36);
-                                $font->color('#000000');
-                                $font->align('right');
-                                $font->valign('bottom');
-                            }
-                        );
+                        // A counter is useful only when a region cycles through multiple widgets.
+                        if (count($widgets) > 1) {
+                            $image->text(
+                                '1 / ' . count($widgets),
+                                $region->left + $region->width - 10,
+                                $region->top + $region->height - 10,
+                                function ($font) {
+                                    $font->file(PROJECT_ROOT . '/web/theme/default/fonts/Railway.ttf');
+                                    $font->size(36);
+                                    $font->color('#000000');
+                                    $font->align('right');
+                                    $font->valign('bottom');
+                                }
+                            );
+                        }
                     }
                 } catch (\Exception $e) {
                     $this->getLog()->error('Problem generating region in thumbnail. e: ' . $e->getMessage());
