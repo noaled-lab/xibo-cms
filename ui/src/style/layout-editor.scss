@@ -76,7 +76,7 @@ body.editor-opened .row.header.header-side {
 .container-designer {
     // height: calc(100vh - 90px);
     // Change height for now
-    height: calc(100vh - 50px);
+    height: calc(100vh - 50px - var(--device-scope-height, 0px));
 }
 
 .main-panel, .playlist-panel {
@@ -326,7 +326,7 @@ body.editor-opened #content-wrapper .page-content>.row {
     .back-button-playlist {
         position: fixed;
         left: 6px;
-        top: 4px;
+        top: calc(4px + var(--device-scope-height, 0px));
     }
 
     .back-button {
@@ -2095,7 +2095,7 @@ body.editor-opened #content-wrapper .page-content>.row {
 
 /* Loading Container */
 #layout-editor .loading-container {
-    height: calc(100vh - 50px);
+    height: calc(100vh - 50px - var(--device-scope-height, 0px));
     width: 100%;
     position: absolute;
 

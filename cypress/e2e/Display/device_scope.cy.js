@@ -44,11 +44,18 @@ describe('Device resource scope', function() {
     cy.visit('/layout/view');
     cy.get('#device-scope [data-display-id="101"]').click();
     cy.visit('/library/view');
-    cy.get('#device-scope').should('not.exist');
+    cy.get('#device-scope').should('be.visible');
+    cy.scrollTo('bottom', {ensureScrollable: false});
+    cy.get('#device-scope').should(($bar) => {
+      expect($bar[0].getBoundingClientRect().top).to.eq(0);
+    });
+    cy.get('#device-scope').should('have.attr', 'data-filter-enabled', 'false');
+    cy.get('#device-scope [data-display-id="102"]').click();
     cy.visit('/campaign/view');
-    cy.get('#device-scope').should('not.exist');
+    cy.get('#device-scope').should('be.visible');
+    cy.get('#device-scope').should('have.attr', 'data-filter-enabled', 'false');
     cy.visit('/resolution/view');
-    cy.get('#device-scope [data-display-id="101"]')
+    cy.get('#device-scope [data-display-id="102"]')
       .should('have.attr', 'aria-pressed', 'true');
   });
 });

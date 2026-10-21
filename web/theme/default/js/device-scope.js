@@ -7,6 +7,7 @@
 
   const $bar = $(bar);
   const storageKey = bar.dataset.storageKey;
+  const filterEnabled = bar.dataset.filterEnabled === 'true';
   let selected = '';
   let displays = [];
   try {
@@ -15,6 +16,7 @@
 
   // Register before page scripts initialise their DataTables.
   $(document).on('preXhr.dt.deviceScope', function(event, settings, data) {
+    if (!filterEnabled) return;
     const id = settings.nTable.id;
     if (['layouts', 'templates', 'resolutions'].includes(id)) {
       if (id === 'layouts') delete data.activeDisplayGroupId;
@@ -39,6 +41,7 @@
   }
 
   function refresh() {
+    if (!filterEnabled) return;
     const display = displays.find(function(item) {
       return String(item.displayId) === selected;
     });
@@ -80,7 +83,7 @@
   function select(id) {
     selected = id;
     save();
-    $('#resolutionId').prop('disabled', Boolean(selected));
+    if (filterEnabled) $('#resolutionId').prop('disabled', Boolean(selected));
     $bar.find('[data-display-id]').each(function(index, button) {
       const active = button.dataset.displayId === selected;
       $(button).toggleClass('active', active)
@@ -146,8 +149,10 @@
   }
 
   $(function() {
-    $('#activeDisplayGroupId').closest('.form-group').hide();
-    $('#DisplayList, #DisplayGroupList').closest('.form-group').hide();
+    if (filterEnabled) {
+      $('#activeDisplayGroupId').closest('.form-group').hide();
+      $('#DisplayList, #DisplayGroupList').closest('.form-group').hide();
+    }
     load(0, []);
   });
 

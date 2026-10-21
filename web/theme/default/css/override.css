@@ -19,13 +19,40 @@
  * along with Xibo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+body.has-device-scope {
+    --device-scope-height: 56px;
+    padding-top: var(--device-scope-height);
+}
+
+body.has-device-scope #sidebar-wrapper {
+    top: var(--device-scope-height);
+    height: calc(100% - var(--device-scope-height));
+}
+
+@media (max-width: 768px) {
+    body.has-device-scope .row.header {
+        top: var(--device-scope-height);
+    }
+
+    body.has-device-scope #sidebar-wrapper {
+        height: auto;
+    }
+}
+
 .device-scope {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--device-scope-height, 56px);
+    z-index: 1030;
+    background: #f8f9fa;
     display: flex;
     align-items: center;
     gap: 8px;
     overflow-x: auto;
-    padding: 4px 0 12px;
-    margin: 0 15px 16px;
+    padding: 8px 16px;
+    margin: 0;
     border-bottom: 1px solid #e5e5e5;
     scrollbar-width: thin;
 }
