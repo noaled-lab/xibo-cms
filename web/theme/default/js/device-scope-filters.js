@@ -57,13 +57,6 @@
       '#DisplayList, #DisplayGroupList, #showAll')
       .attr('data-device-scope-preserved', selected ? 'true' : null)
       .closest('.form-group').toggle(!selected);
-    $('.device-scope-filter-note').remove();
-    if (selected) {
-      $('.XiboFilter').first().prepend(
-        $('<div>', {class: 'device-scope-filter-note px-3 pt-3 text-muted',
-          role: 'status', text: bar.dataset.filterNote}),
-      );
-    }
     if ($('#DisplayList').length && window.calendar) {
       $('.cal-context').removeData('selectedTab');
       window.calendar.view();

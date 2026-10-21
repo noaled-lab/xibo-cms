@@ -5,7 +5,6 @@
      data-filter-enabled="{{ route in ['schedule.view', 'layout.view', 'template.view', 'resolution.view', 'display.view', 'camera.view'] ? 'true' : 'false' }}"
      data-error="{{ 'Unable to load displays'|trans }}"
      data-unknown-resolution="{{ '해상도 정보 없음'|trans }}"
-     data-filter-note="{{ '선택한 디바이스를 기준으로 검색합니다. 아래 추가 필터도 함께 적용됩니다. 결과가 없으면 필터 초기화를 사용하세요. 전체를 선택하면 기존 디바이스·해상도 조건이 다시 적용됩니다.'|trans }}"
      data-retry="{{ 'Retry'|trans }}">
     <button type="button" class="btn btn-sm device-scope-tag active"
             data-display-id="" aria-pressed="true">{{ 'All'|trans }}</button>

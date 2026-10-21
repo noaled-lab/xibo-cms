@@ -15,14 +15,12 @@ describe('Device resource scope', function() {
     });
     cy.get('#device-scope [data-display-id="101"]').click();
     cy.get('#resolutionId').closest('.form-group').should('not.be.visible');
-    cy.get('.device-scope-filter-note').should('be.visible');
     cy.get('.clear-filter-btn').first().click();
     cy.get('#device-scope [data-display-id="102"]').click();
     cy.get('#device-scope [data-display-id=""]').click();
     cy.get('#resolutionId').should('have.value', '7');
     cy.get('#activeDisplayGroupId').should('have.value', '12');
     cy.get('#resolutionId').closest('.form-group').should('be.visible');
-    cy.get('.device-scope-filter-note').should('not.exist');
   });
 
   beforeEach(function() {
