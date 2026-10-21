@@ -11,7 +11,7 @@ class DeviceScopeResolution
             FROM display d LEFT JOIN displayprofile p ON
                 p.displayProfileId = d.displayProfileId
                 OR (COALESCE(d.displayProfileId, 0) = 0
-                    AND p.type = d.clientType AND p.isDefault = 1)
+                    AND p.type = d.client_type AND p.isDefault = 1)
             WHERE d.displayId = :displayId', ['displayId' => $displayId]);
         if (empty($rows)) {
             return [0, 0];

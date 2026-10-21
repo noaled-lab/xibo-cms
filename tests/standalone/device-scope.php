@@ -25,7 +25,18 @@ $pdo = new PDO(
     'mysql:host=' . (getenv('MYSQL_HOST') ?: 'cms-db') . ';dbname=' . getenv('MYSQL_DATABASE') . ';charset=utf8mb4',
     getenv('MYSQL_USER'), getenv('MYSQL_PASSWORD'), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
 );
-$pdo->exec('CREATE TEMPORARY TABLE display (displayId INT, resolution VARCHAR(100), displayProfileId INT DEFAULT 0, clientType VARCHAR(20) DEFAULT "windows")');
+$schemaStore = new class($pdo) {
+    public function __construct(private PDO $pdo) {}
+    public function select($sql, $params) {
+        $query = $this->pdo->prepare($sql);
+        $query->execute($params);
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+};
+// Execute against the real schema before temporary fixtures can mask column errors.
+check(\Xibo\Support\DeviceScopeResolution::resolve($schemaStore, -1), [0, 0],
+    'Resolution query matches real CMS schema');
+$pdo->exec('CREATE TEMPORARY TABLE display (displayId INT, resolution VARCHAR(100), displayProfileId INT DEFAULT 0, client_type VARCHAR(20) DEFAULT "windows")');
 $pdo->exec('CREATE TEMPORARY TABLE displayprofile (displayProfileId INT, type VARCHAR(20), isDefault INT, config TEXT)');
 $pdo->exec('CREATE TEMPORARY TABLE layout (layoutId INT, width DOUBLE, height DOUBLE)');
 $pdo->exec('CREATE TEMPORARY TABLE resolution (resolutionId INT, intended_width INT, intended_height INT)');
