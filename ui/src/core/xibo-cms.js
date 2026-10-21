@@ -44,11 +44,21 @@ $(document).on('click', '*[data-toggle="lightbox"]', function(event) {
   const $source = $(event.currentTarget);
   $source.ekkoLightbox({
     footer: $source.attr('data-regenerate-url') ? ' ' : $source.data('footer'),
-    onShown: function() {
+    onContentLoaded: function() {
+      const $container = $('.ekko-lightbox-container');
+      $container.css({
+        'max-height': $container.height(),
+        height: '',
+        'max-width': $container.width(),
+      });
+      $container.parents('.modal-content').css({width: 'fit-content'});
+
       const url = $source.attr('data-regenerate-url');
       if (!url) return;
       const $modal = this._$modal;
-      const $footer = $modal.find('.modal-footer').removeClass('hide').empty();
+      const $footer = $modal.find('.modal-footer')
+        .removeClass('hide').css('display', '').empty();
+      this._footerIsShown = true;
       const $status = $('<span>', {role: 'status', class: 'text-muted mr-2'})
         .appendTo($footer);
       const $button = $('<button>', {
@@ -80,15 +90,7 @@ $(document).on('click', '*[data-toggle="lightbox"]', function(event) {
         });
       });
     },
-    onContentLoaded: function() {
-      const $container = $('.ekko-lightbox-container');
-      $container.css({
-        'max-height': $container.height(),
-        height: '',
-        'max-width': $container.width(),
-      });
-      $container.parents('.modal-content').css({width: 'fit-content'});
-    },
+
   });
 });
 
