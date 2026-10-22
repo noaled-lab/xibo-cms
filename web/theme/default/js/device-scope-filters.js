@@ -62,7 +62,17 @@
     }
   });
 
+  function showResolutionPrompt() {
+    const notice = document.getElementById('device-scope-resolution-notice');
+    if (!notice) return;
+    const resolution = scope.getDisplay()?.scopeResolution || '';
+    const sized = /^\s*\d+\s*[x×]\s*\d+\s*$/.test(resolution);
+    notice.hidden = !(bar.dataset.resolutionPrompt === 'true' &&
+      scope.getDisplay() && !sized);
+  }
+
   function refresh() {
+    showResolutionPrompt();
     const selected = scope.getDisplayId();
     // Keep native values intact; override only outgoing requests.
     $('#resolutionId, #activeDisplayGroupId, ' +

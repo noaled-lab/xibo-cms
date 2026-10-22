@@ -129,6 +129,14 @@ body.has-device-scope .editor-modal #layout-manager {
     color: #fff;
 }
 
+.device-scope-resolution-notice {
+    margin: 0 0 12px;
+}
+
+.device-scope-resolution-notice[hidden] {
+    display: none !important;
+}
+
 /* Header menus need their parent stacking context above the device bar too. */
 body.has-device-scope .row.header:has(.dropdown-menu.show),
 body.has-device-scope .navbar:has(.dropdown-menu.show) {

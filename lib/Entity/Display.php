@@ -182,6 +182,12 @@ class Display implements \JsonSerializable
     public $defaultLayoutId = 4;
 
     /**
+     * @SWG\Property(description="The Resolution used when this Display filters the top menu")
+     * @var int|null
+     */
+    public $scopeResolutionId;
+
+    /**
      * @SWG\Property(description="The Display Unique Identifier also called hardware key")
      * @var string
      */
@@ -1111,6 +1117,7 @@ class Display implements \JsonSerializable
             UPDATE display
                 SET display = :display,
                     defaultlayoutid = :defaultLayoutId,
+                    scopeResolutionId = :scopeResolutionId,
                     displayTypeId = :displayTypeId,
                     venueId = :venueId,
                     address = :address,
@@ -1172,6 +1179,7 @@ class Display implements \JsonSerializable
         ', [
             'display' => $this->display,
             'defaultLayoutId' => $this->defaultLayoutId,
+            'scopeResolutionId' => (int) $this->scopeResolutionId > 0 ? (int) $this->scopeResolutionId : null,
             'displayTypeId' => $this->displayTypeId === 0 ? null : $this->displayTypeId,
             'venueId' => $this->venueId === 0 ? null : $this->venueId,
             'address' => $this->address,

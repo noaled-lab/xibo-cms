@@ -2323,6 +2323,7 @@ class LayoutFactory extends BaseFactory
             [$scopeWidth, $scopeHeight] = \Xibo\Support\DeviceScopeResolution::resolve(
                 $this->getStore(), $parsedFilter->getInt('contextDisplayId')
             );
+            // No chosen resolution matches nothing, so the page can ask for one.
             $body .= ' AND layout.width = :scopeWidth AND layout.height = :scopeHeight
                 AND :scopeValid = 1 ';
             $params['scopeWidth'] = $scopeWidth;

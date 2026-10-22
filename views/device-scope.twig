@@ -5,6 +5,7 @@
      data-filter-enabled="{{ route in ['schedule.view', 'layout.view', 'template.view', 'resolution.view', 'display.view', 'camera.view'] ? 'true' : 'false' }}"
      data-error="{{ 'Unable to load displays'|trans }}"
      data-unknown-resolution="{{ '해상도 정보 없음'|trans }}"
+     data-resolution-prompt="{{ route in ['layout.view', 'template.view', 'resolution.view', 'schedule.view'] ? 'true' : 'false' }}"
      data-retry="{{ 'Retry'|trans }}">
     <button type="button" class="btn btn-sm device-scope-tag active"
             data-display-id="" aria-pressed="true">{{ 'All'|trans }}</button>
