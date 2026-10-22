@@ -22,6 +22,11 @@
     getDisplayId: function() {
       return selected;
     },
+    select: function(id, fromUser) {
+      id = id == null ? '' : String(id);
+      if (id === selected) return;
+      select(id, fromUser === true);
+    },
   };
 
   function save() {
@@ -30,7 +35,8 @@
     } catch {/* Keep working without persistence. */}
   }
 
-  function select(id) {
+  // fromUser is false while the saved selection is restored on load.
+  function select(id, fromUser) {
     selected = id;
     save();
     $bar.find('[data-display-id]').each(function(index, button) {
@@ -38,12 +44,12 @@
       $(button).toggleClass('active', active)
         .attr('aria-pressed', String(active));
     });
-    $(document).trigger('deviceScope:change', [selected]);
+    $(document).trigger('deviceScope:change', [selected, fromUser === true]);
   }
 
   $bar.on('click', '[data-display-id]', function(event) {
     const id = event.currentTarget.dataset.displayId;
-    if (id !== selected) select(id);
+    if (id !== selected) select(id, true);
   });
 
   function load(start, accumulated) {

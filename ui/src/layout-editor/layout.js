@@ -69,6 +69,7 @@ const Layout = function(id, data) {
   this.backgroundImage = data.backgroundImageId;
   this.backgroundColor = data.backgroundColor;
   this.backgroundzIndex = data.backgroundzIndex;
+  this.autoApplyTransitions = data.autoApplyTransitions;
   this.resolutionId = null;
 
   this.code = data.code;
@@ -619,6 +620,7 @@ Layout.prototype.updateData = function(data) {
   this.backgroundImage = data.backgroundImageId;
   this.backgroundColor = data.backgroundColor;
   this.backgroundzIndex = data.backgroundzIndex;
+  this.autoApplyTransitions = data.autoApplyTransitions;
   this.resolutionId = null;
 };
 

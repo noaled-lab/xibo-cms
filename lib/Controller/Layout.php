@@ -734,6 +734,20 @@ class Layout extends Base
      *      type="integer",
      *      required=false
      *   ),
+     *  @SWG\Parameter(
+     *      name="contextWidth",
+     *      in="formData",
+     *      description="When resolutionId is omitted, the selected display width. An exact resolution is reused or created.",
+     *      type="integer",
+     *      required=false
+     *   ),
+     *  @SWG\Parameter(
+     *      name="contextHeight",
+     *      in="formData",
+     *      description="When resolutionId is omitted, the selected display height.",
+     *      type="integer",
+     *      required=false
+     *   ),
      *  @SWG\Response(
      *      response=200,
      *      description="successful operation",
@@ -763,7 +777,14 @@ class Layout extends Base
 
         // Resolution
         $saveRegions = false;
-        $resolution = $this->resolutionFactory->getById($sanitizedParams->getInt('resolutionId'));
+        $resolutionId = $sanitizedParams->getInt('resolutionId');
+        $contextWidth = (int) $sanitizedParams->getInt('contextWidth');
+        $contextHeight = (int) $sanitizedParams->getInt('contextHeight');
+        $resolution = empty($resolutionId) && $contextWidth > 0 && $contextHeight > 0
+            ? $this->resolutionFactory->getForNewLayout(
+                $contextWidth, $contextHeight, $this->userFactory->getSystemUser()->userId
+            )
+            : $this->resolutionFactory->getById($resolutionId);
 
         if ($layout->width != $resolution->width || $layout->height != $resolution->height) {
             $this->getLog()->debug('editBackground: resolution dimensions have changed, updating layout');

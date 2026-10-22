@@ -140,6 +140,7 @@ window.lD = {
 $(() => {
   // Add class to body so we can use CSS specifically on it
   $('body').addClass('editor-opened layout-editor-opened');
+  require('./device-resolution').bindDeviceResolution(lD);
 
   // Get layout id
   const layoutId = lD.editorContainer.attr('data-layout-id');
@@ -388,6 +389,7 @@ $(() => {
 
       // Load preferences
       lD.loadPrefs();
+      lD.alignDeviceResolution?.();
     } else {
       // Login Form needed?
       if (res.login) {
@@ -877,6 +879,7 @@ lD.reloadData = function(
         // Call callback function
         callBack && callBack();
 
+        lD.alignDeviceResolution?.();
         resolve();
       } else {
         // Login Form needed?

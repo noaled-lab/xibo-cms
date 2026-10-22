@@ -5,7 +5,7 @@
   const bar = document.getElementById('device-scope');
   if (!scope || !bar) return;
 
-  // Read only at creation time; scope changes never resize existing layouts.
+  // Read when a layout is created. The editor applies a later user selection.
   scope.getLayoutDefaults = function() {
     const resolution = scope.getDisplay()?.scopeResolution || '';
     const dimensions = resolution.match(/^\s*(\d+)\s*[x×]\s*(\d+)\s*$/i);
