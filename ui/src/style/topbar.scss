@@ -43,6 +43,71 @@
     }
 }
 
+// Share the available header width instead of overlapping two fixed blocks.
+#layout-editor .editor-top-bar .container-toolbar {
+    position: fixed;
+    top: var(--device-scope-height, 0px);
+    left: 6px;
+    right: 114px;
+    width: auto;
+    height: $toolbar-header-height;
+    padding: 0;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+
+    .left-area {
+        position: static;
+        flex: 1 1 0;
+        min-width: 0;
+
+        .back-button { flex: 0 0 auto; }
+    }
+
+    .navbar-text.layout-info {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        overflow: hidden;
+
+        > span { flex: 0 0 auto; }
+
+        .layout-info-name {
+            flex: 1 1 auto;
+            min-width: 0;
+            float: none;
+        }
+    }
+
+    .layout-action-menu {
+        position: static;
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+}
+
+body.layout-editor-opened .row.header .xibo-logo-container {
+    display: none;
+}
+
+@media (max-width: 1200px) {
+    #layout-editor .editor-top-bar {
+        .interactive-control-label,
+        .layout-info-duration { display: none; }
+
+        #layoutJumpListContainer {
+            min-width: 0;
+            width: 150px;
+            .select2-container { width: 100% !important; }
+        }
+    }
+}
+
+@media (max-width: 600px) {
+    #layout-editor .editor-top-bar #layoutJumpListContainer { display: none; }
+}
+
 .editor-toolbar .container-toolbar {
     .left-area {
         position: fixed;

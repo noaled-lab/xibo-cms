@@ -870,9 +870,9 @@ body.editor-opened #content-wrapper .page-content>.row {
         position: fixed;
         z-index: $designer-overlay-z-index;
         left: 0;
-        top: 0;
+        top: var(--device-scope-height, 0px);
         padding: 0;
-        height: calc(100% - $viewer-bottom-bar-plus-border-height);
+        height: calc(100% - $viewer-bottom-bar-plus-border-height - var(--device-scope-height, 0px));
         width: 100%;
 
         #fullscreenBtn,
@@ -885,9 +885,9 @@ body.editor-opened #content-wrapper .page-content>.row {
             /* Stay in place */
             z-index: calc(#{$designer-overlay-z-index} + 10);
             left: 6px;
-            top: 6px;
+            top: calc(6px + var(--device-scope-height, 0px));
             width: calc(100% - 12px);
-            height: calc(100% - $viewer-bottom-bar-plus-border-height - 12px);
+            height: calc(100% - $viewer-bottom-bar-plus-border-height - 12px - var(--device-scope-height, 0px));
             @include set-transparent-color(background-color, $xibo-color-neutral-900, 0.9);
         }
 

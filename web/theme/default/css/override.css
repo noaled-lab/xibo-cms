@@ -29,6 +29,35 @@ body.has-device-scope #sidebar-wrapper {
     height: calc(100% - var(--device-scope-height));
 }
 
+/* Fixed editor controls do not inherit the body's padding. Keep their offsets
+   here with the bar, including editor bundles loaded after this stylesheet. */
+body.has-device-scope .editor-toolbar .container-toolbar .left-area,
+body.has-device-scope .editor-toolbar .container-toolbar .layout-action-menu,
+body.has-device-scope .editor-modal,
+body.has-device-scope .editor-modal .back-button,
+body.has-device-scope .editor-modal .properties-panel-playlist-editor {
+    top: var(--device-scope-height);
+}
+
+body.has-device-scope.editor-opened .row.header.header-side {
+    /* This header is in normal flow and already follows the body padding. */
+    top: 0;
+}
+
+body.has-device-scope .editor-modal,
+body.has-device-scope .editor-modal .properties-panel-playlist-editor {
+    height: calc(100% - var(--device-scope-height));
+}
+
+body.has-device-scope .editor-toolbar.editor-side-bar-playlist-editor nav {
+    top: calc(50px + var(--device-scope-height));
+    height: calc(100% - 50px - var(--device-scope-height));
+}
+
+body.has-device-scope .editor-modal #layout-manager {
+    top: calc(10px + var(--device-scope-height));
+}
+
 @media (max-width: 768px) {
     body.has-device-scope .row.header {
         top: var(--device-scope-height);
