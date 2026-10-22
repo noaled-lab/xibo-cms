@@ -186,6 +186,16 @@ window.openUploadForm = function(options) {
           return;
         }
 
+        data.result.files.forEach(function(file) {
+          if (!file.error && file.renamed) {
+            toastr.info(
+              '이름 중복으로 ‘' + file.name + '’로 저장했습니다.',
+              '',
+              {escapeHtml: true},
+            );
+          }
+        });
+
         if (options.videoImageCovers) {
           saveVideoCoverImage(data);
         }
