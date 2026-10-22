@@ -48,3 +48,25 @@ assert.equal(scoped.displaySpecificGroupIds, undefined);
 assert.deepEqual(request('', true, 'schedule-grid', schedule), schedule);
 assert.deepEqual(request('101', false, 'schedule-grid', schedule), schedule);
 console.log('Device scope request precedence: 16 assertions passed');
+
+// Creation defaults also work on the designer, where list filtering is disabled.
+let display = null;
+const scope = {getDisplay: () => display};
+vm.runInNewContext(source, {
+  jQuery: () => ({on: () => {}}),
+  document: {getElementById: () => ({dataset: {filterEnabled: 'false'}})},
+  window: {deviceScope: scope},
+});
+const defaults = () => JSON.parse(JSON.stringify(scope.getLayoutDefaults()));
+assert.deepEqual(defaults(), {});
+display = {scopeResolution: '480 x 960'};
+assert.deepEqual(defaults(), {contextWidth: 480, contextHeight: 960});
+display = {scopeResolution: '5280 × 2160'};
+assert.deepEqual(defaults(), {contextWidth: 5280, contextHeight: 2160});
+display = {scopeResolution: '0 x 1080'};
+assert.deepEqual(defaults(), {});
+display = {scopeResolution: 'unknown'};
+assert.deepEqual(defaults(), {});
+display = null;
+assert.deepEqual(defaults(), {});
+console.log('New layout scope defaults: 6 assertions passed');

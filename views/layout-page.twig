@@ -465,7 +465,8 @@
                     type: 'POST',
                     url: $(this).attr('href'),
                     cache: false,
-                    data : {folderId : currentWorkingFolderId},
+                    data : {folderId : currentWorkingFolderId,
+                        ...(window.deviceScope?.getLayoutDefaults?.() || {})},
                     dataType: 'json',
                     success: function(response, textStatus, error) {
                         if (response.success && response.id) {

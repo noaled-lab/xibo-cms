@@ -420,8 +420,12 @@ class Layout extends Base
 
             // Empty template so we create a blank layout with the provided resolution
             if (empty($resolutionId)) {
-                // Get the nearest landscape resolution we can
-                $resolution = $this->resolutionFactory->getClosestMatchingResolution(1920, 1080);
+                // Only new blank layouts inherit the selected display's dimensions.
+                $resolution = $this->resolutionFactory->getForNewLayout(
+                    (int) $sanitizedParams->getInt('contextWidth'),
+                    (int) $sanitizedParams->getInt('contextHeight'),
+                    $this->userFactory->getSystemUser()->userId
+                );
 
                 // Get the ID
                 $resolutionId = $resolution->resolutionId;

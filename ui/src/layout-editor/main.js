@@ -1010,7 +1010,10 @@ lD.addLayout = function() {
     type: urlsForApi.layout.add.type,
     url: urlsForApi.layout.add.url,
     cache: false,
-    data: {folderId: lD.folderId},
+    data: {
+      folderId: lD.folderId,
+      ...(window.deviceScope?.getLayoutDefaults?.() || {}),
+    },
     dataType: 'json',
     success: function(response, textStatus, error) {
       lD.common.hideLoadingScreen();

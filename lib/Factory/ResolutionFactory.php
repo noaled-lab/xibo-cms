@@ -121,6 +121,22 @@ class ResolutionFactory extends BaseFactory
         return $resolutions[0];
     }
 
+    /** Default for a new blank layout; scoped dimensions must match exactly. */
+    public function getForNewLayout(int $width, int $height, int $ownerId): Resolution
+    {
+        if ($width <= 0 || $height <= 0) {
+            return $this->getClosestMatchingResolution(1920, 1080);
+        }
+        try {
+            return $this->getByDimensions($width, $height);
+        } catch (NotFoundException $e) {
+            $resolution = $this->create($width . ' x ' . $height, $width, $height);
+            $resolution->userId = $ownerId;
+            $resolution->save();
+            return $resolution;
+        }
+    }
+
     public function getByOwnerId($ownerId)
     {
         return $this->query(null, ['disableUserCheck' => 1, 'userId' => $ownerId]);

@@ -5,6 +5,18 @@
   const bar = document.getElementById('device-scope');
   if (!scope || !bar) return;
 
+  // Read only at creation time; scope changes never resize existing layouts.
+  scope.getLayoutDefaults = function() {
+    const resolution = scope.getDisplay()?.scopeResolution || '';
+    const dimensions = resolution.match(/^\s*(\d+)\s*[x×]\s*(\d+)\s*$/i);
+    const valid = dimensions &&
+      Number(dimensions[1]) > 0 && Number(dimensions[2]) > 0;
+    return valid ? {
+      contextWidth: Number(dimensions[1]),
+      contextHeight: Number(dimensions[2]),
+    } : {};
+  };
+
   $(document).on('shown.bs.modal.deviceScope', function() {
     const selected = scope.getDisplayId();
     const $links = $('#cameraAddForm select[name="displayIds[]"]');
