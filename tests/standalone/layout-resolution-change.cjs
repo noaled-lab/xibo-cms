@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const {buildResolutionSave, needsConfirm} = require(
+const {buildResolutionSave, needsConfirm, dialogResultAction} = require(
   '../../ui/src/layout-editor/device-resolution.js');
 
 const layout = {
@@ -41,6 +41,9 @@ assert.equal(needsConfirm({isEmpty: () => false}), true);
 assert.equal(needsConfirm({isEmpty: () => {
   throw new Error('missing canvas');
 }}), true);
+assert.equal(dialogResultAction(true), 'resize');
+assert.equal(dialogResultAction(false), 'clear');
+assert.equal(dialogResultAction(null), 'keep');
 
 const source = fs.readFileSync(path.join(__dirname,
   '../../web/theme/default/js/device-scope.js'), 'utf8');
