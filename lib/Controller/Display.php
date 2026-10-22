@@ -43,6 +43,7 @@ use Xibo\Factory\LayoutFactory;
 use Xibo\Factory\NotificationFactory;
 use Xibo\Factory\PlayerVersionFactory;
 use Xibo\Factory\RequiredFileFactory;
+use Xibo\Factory\ResolutionFactory;
 use Xibo\Factory\TagFactory;
 use Xibo\Factory\UserGroupFactory;
 use Xibo\Helper\ByteFormatter;
@@ -108,6 +109,11 @@ class Display extends Base
     private $layoutFactory;
 
     /**
+     * @var ResolutionFactory
+     */
+    private $resolutionFactory;
+
+    /**
      * @var DisplayProfileFactory
      */
     private $displayProfileFactory;
@@ -152,8 +158,9 @@ class Display extends Base
      * @param UserGroupFactory $userGroupFactory
      * @param PlayerVersionFactory $playerVersionFactory
      * @param DayPartFactory $dayPartFactory
+     * @param ResolutionFactory $resolutionFactory
      */
-    public function __construct($store, $pool, $playerAction, $displayFactory, $displayGroupFactory, $displayTypeFactory, $layoutFactory, $displayProfileFactory, $displayEventFactory, $requiredFileFactory, $tagFactory, $notificationFactory, $userGroupFactory, $playerVersionFactory, $dayPartFactory)
+    public function __construct($store, $pool, $playerAction, $displayFactory, $displayGroupFactory, $displayTypeFactory, $layoutFactory, $displayProfileFactory, $displayEventFactory, $requiredFileFactory, $tagFactory, $notificationFactory, $userGroupFactory, $playerVersionFactory, $dayPartFactory, $resolutionFactory)
     {
         $this->store = $store;
         $this->pool = $pool;
@@ -162,6 +169,7 @@ class Display extends Base
         $this->displayGroupFactory = $displayGroupFactory;
         $this->displayTypeFactory = $displayTypeFactory;
         $this->layoutFactory = $layoutFactory;
+        $this->resolutionFactory = $resolutionFactory;
         $this->displayProfileFactory = $displayProfileFactory;
         $this->displayEventFactory = $displayEventFactory;
         $this->requiredFileFactory = $requiredFileFactory;
@@ -1506,6 +1514,22 @@ class Display extends Base
             $layouts = [];
         }
 
+        $resolutionFilter = ['enabled' => 1, 'disableUserCheck' => 1];
+        if ($display->scopeResolutionId > 0) {
+            $resolutionFilter['withCurrent'] = $display->scopeResolutionId;
+        }
+        $scopeResolutions = [[
+            'resolutionId' => '',
+            'label' => __('선택 안 함'),
+        ]];
+        foreach ($this->resolutionFactory->query(['resolution'], $resolutionFilter) as $resolution) {
+            $scopeResolutions[] = [
+                'resolutionId' => $resolution->resolutionId,
+                'label' => $resolution->resolution . ' (' . (int) $resolution->width . ' × '
+                    . (int) $resolution->height . ')',
+            ];
+        }
+
         // Player Version Setting
         $versionId = $display->getSetting('versionMediaId', null, ['displayOnly' => true]);
         $profileVersionId = $display->getDisplayProfile()->getSetting('versionMediaId');
@@ -1565,6 +1589,7 @@ class Display extends Base
             'displayProfile' => $displayProfile,
             'lockOptions' => json_decode($display->getDisplayProfile()->getSetting('lockOptions', '[]'), true),
             'layouts' => $layouts,
+            'scopeResolutions' => $scopeResolutions,
             'profiles' => $this->displayProfileFactory->query(null, array('type' => $display->clientType)),
             'settings' => $profile,
             'timeZones' => $timeZones,
@@ -1665,6 +1690,13 @@ class Display extends Base
      *      description="A Layout ID representing the Default Layout for this Display.",
      *      type="integer",
      *      required=true
+     *   ),
+     *  @SWG\Parameter(
+     *      name="scopeResolutionId",
+     *      in="formData",
+     *      description="The Resolution used when this Display filters the top menu. Empty clears it.",
+     *      type="integer",
+     *      required=false
      *   ),
      *  @SWG\Parameter(
      *      name="licensed",
@@ -1941,6 +1973,15 @@ class Display extends Base
         $display->screenSize = $sanitizedParams->getInt('screenSize');
         $display->auditingUntil = $sanitizedParams->getDate('auditingUntil')?->format('U');
         $display->defaultLayoutId = $sanitizedParams->getInt('defaultLayoutId');
+        if ($sanitizedParams->hasParam('scopeResolutionId')) {
+            $scopeResolutionId = $sanitizedParams->getInt('scopeResolutionId');
+            if (empty($scopeResolutionId)) {
+                $display->scopeResolutionId = null;
+            } else {
+                $this->resolutionFactory->getById($scopeResolutionId);
+                $display->scopeResolutionId = $scopeResolutionId;
+            }
+        }
         $display->licensed = $sanitizedParams->getInt('licensed');
         $display->license = $sanitizedParams->getString('license');
         $display->incSchedule = $sanitizedParams->getInt('incSchedule');

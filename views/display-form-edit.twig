@@ -189,6 +189,10 @@
                             { name: "data-filter-options", value: '{"retired":"0"}' }
                         ] %}
                         {{ forms.dropdown("defaultLayoutId", "single", title, display.defaultLayoutId, layouts, "layoutId", "layout", helpText, "pagedSelect", "", "", "", attributes) }}
+
+                        {% set title %}{% trans "필터 해상도" %}{% endset %}
+                        {% set helpText %}{% trans "위쪽 메뉴에서 이 디스플레이를 고를 때 쓰는 해상도입니다. 해상도 메뉴에 있는 항목 중 하나를 고르면, 가로와 세로가 같은 레이아웃만 목록에 나옵니다. 비워 두면 목록 대신 해상도를 선택해 달라는 안내가 나옵니다." %}{% endset %}
+                        {{ forms.dropdown("scopeResolutionId", "single", title, display.scopeResolutionId, scopeResolutions, "resolutionId", "label", helpText) }}
                     </div>
                     {% if currentUser.isSuperAdmin() %}
                     <div class="tab-pane" id="location">

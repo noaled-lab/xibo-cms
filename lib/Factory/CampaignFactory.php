@@ -256,7 +256,7 @@ class CampaignFactory extends BaseFactory
             foreach ($sizes as $size) {
                 $valid = $valid && $size === [$width, $height];
             }
-            // Only layout-backed campaigns are scoped; ordinary campaigns remain available.
+            // No chosen resolution matches no layouts. Ordinary campaigns remain available.
             $body .= ' AND (campaign.isLayoutSpecific = 0 OR
                 (:scopeValid = 1 AND layout.width = :scopeWidth AND layout.height = :scopeHeight)) ';
             $params['scopeValid'] = (int) $valid;

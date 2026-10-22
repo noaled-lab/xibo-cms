@@ -70,3 +70,40 @@ assert.deepEqual(defaults(), {});
 display = null;
 assert.deepEqual(defaults(), {});
 console.log('New layout scope defaults: 6 assertions passed');
+
+function noticeHidden(prompt, resolution) {
+  const handlers = {};
+  const notice = {hidden: true};
+  const bar = {dataset: {filterEnabled: 'true', resolutionPrompt: String(prompt)}};
+  const chain = {
+    on: (event, callback) => {
+      handlers[event] = callback;
+      return chain;
+    },
+    attr: () => chain,
+    closest: () => chain,
+    toggle: () => chain,
+    length: 0,
+  };
+  vm.runInNewContext(source, {
+    jQuery: () => chain,
+    document: {
+      getElementById: (id) => {
+        if (id === 'device-scope') return bar;
+        if (id === 'device-scope-resolution-notice') return notice;
+        return null;
+      },
+    },
+    window: {deviceScope: {
+      getDisplayId: () => '101',
+      getDisplay: () => ({displayId: '101', displayGroupId: 201,
+        scopeResolution: resolution}),
+    }},
+  });
+  handlers['deviceScope:change']();
+  return notice.hidden;
+}
+assert.equal(noticeHidden(true, ''), false);
+assert.equal(noticeHidden(true, '1920 × 1080'), true);
+assert.equal(noticeHidden(false, ''), true);
+console.log('Resolution prompt: 3 assertions passed');
