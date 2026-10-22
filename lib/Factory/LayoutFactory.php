@@ -2320,15 +2320,14 @@ class LayoutFactory extends BaseFactory
         $body .= " WHERE 1 = 1 ";
 
         if ($parsedFilter->getInt('contextDisplayId') !== null) {
-            $body .= " AND EXISTS (
-                SELECT 1 FROM display scopeDisplay
-                WHERE scopeDisplay.displayId = :contextDisplayId
-                    AND layout.width = CAST(layout.width AS UNSIGNED)
-                    AND layout.height = CAST(layout.height AS UNSIGNED)
-                    AND REPLACE(REPLACE(LOWER(scopeDisplay.resolution), ' ', ''), '×', 'x')
-                        = CONCAT(CAST(layout.width AS UNSIGNED), 'x', CAST(layout.height AS UNSIGNED))
-            ) ";
-            $params['contextDisplayId'] = $parsedFilter->getInt('contextDisplayId');
+            [$scopeWidth, $scopeHeight] = \Xibo\Support\DeviceScopeResolution::resolve(
+                $this->getStore(), $parsedFilter->getInt('contextDisplayId')
+            );
+            $body .= ' AND layout.width = :scopeWidth AND layout.height = :scopeHeight
+                AND :scopeValid = 1 ';
+            $params['scopeWidth'] = $scopeWidth;
+            $params['scopeHeight'] = $scopeHeight;
+            $params['scopeValid'] = (int) ($scopeWidth > 0 && $scopeHeight > 0);
         }
 
         // Layout Like

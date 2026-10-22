@@ -235,6 +235,35 @@ class CampaignFactory extends BaseFactory
            WHERE 1 = 1
         ';
 
+        $scopeGroups = $sanitizedFilter->getIntArray('scheduleDisplayGroupIds', ['default' => []]);
+        $scopeDisplayId = $sanitizedFilter->getInt('contextDisplayId');
+        if (!empty($scopeGroups) || $scopeDisplayId !== null) {
+            $sizes = [];
+            if (!empty($scopeGroups)) {
+                $placeholders = implode(',', array_fill(0, count($scopeGroups), '?'));
+                $scopeDisplays = $this->getStore()->select(
+                    'SELECT DISTINCT displayId FROM lkdisplaydg WHERE displayGroupId IN (' . $placeholders . ')',
+                    array_values($scopeGroups)
+                );
+                foreach ($scopeDisplays as $scopeDisplay) {
+                    $sizes[] = \Xibo\Support\DeviceScopeResolution::resolve($this->getStore(), (int) $scopeDisplay['displayId']);
+                }
+            } else {
+                $sizes[] = \Xibo\Support\DeviceScopeResolution::resolve($this->getStore(), $scopeDisplayId);
+            }
+            [$width, $height] = $sizes[0] ?? [0, 0];
+            $valid = $width > 0 && $height > 0;
+            foreach ($sizes as $size) {
+                $valid = $valid && $size === [$width, $height];
+            }
+            // Only layout-backed campaigns are scoped; ordinary campaigns remain available.
+            $body .= ' AND (campaign.isLayoutSpecific = 0 OR
+                (:scopeValid = 1 AND layout.width = :scopeWidth AND layout.height = :scopeHeight)) ';
+            $params['scopeValid'] = (int) $valid;
+            $params['scopeWidth'] = $width;
+            $params['scopeHeight'] = $height;
+        }
+
         if ($sanitizedFilter->getInt('isLayoutSpecific', ['default' => 0]) != -1) {
             // Exclude layout specific campaigns
             $body .= " AND `campaign`.isLayoutSpecific = :isLayoutSpecific ";

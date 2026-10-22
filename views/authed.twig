@@ -22,7 +22,12 @@
 #}
 {% extends "base.twig" %}
 
+{% block bodyClass %}{% if not forceHide and currentUser.featureEnabled("displays.view") %}has-device-scope{% endif %}{% endblock %}
+
 {% block content %}
+    {% if not forceHide and currentUser.featureEnabled("displays.view") %}
+        {% include "device-scope.twig" %}
+    {% endif %}
     {% set horizontalNav = currentUser.getOptionValue("navigationMenuPosition", theme.getSetting("NAVIGATION_MENU_POSITION", "vertical")) == "horizontal" %}
 
     {% if not hideNavigation %}
@@ -89,10 +94,6 @@
                         {% endif %}
                     </div>
                 </div>
-                {% endif %}
-                {% if not forceHide and hideNavigation == "0" and currentUser.featureEnabled("displays.view")
-                    and route in ['schedule.view', 'layout.view', 'template.view', 'resolution.view', 'display.view', 'camera.view'] %}
-                    {% include "device-scope.twig" %}
                 {% endif %}
                 <div class="row">
                     <div class="col-sm-12">

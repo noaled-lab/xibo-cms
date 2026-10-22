@@ -41,7 +41,9 @@ if (!String.prototype.endsWith) {
 // Set up the light boxes
 $(document).on('click', '*[data-toggle="lightbox"]', function(event) {
   event.preventDefault();
-  $(event.currentTarget).ekkoLightbox({
+  const $source = $(event.currentTarget);
+  $source.ekkoLightbox({
+    footer: $source.attr('data-regenerate-url') ? ' ' : $source.data('footer'),
     onContentLoaded: function() {
       const $container = $('.ekko-lightbox-container');
       $container.css({
@@ -50,7 +52,45 @@ $(document).on('click', '*[data-toggle="lightbox"]', function(event) {
         'max-width': $container.width(),
       });
       $container.parents('.modal-content').css({width: 'fit-content'});
+
+      const url = $source.attr('data-regenerate-url');
+      if (!url) return;
+      const $modal = this._$modal;
+      const $footer = $modal.find('.modal-footer')
+        .removeClass('hide').css('display', '').empty();
+      this._footerIsShown = true;
+      const $status = $('<span>', {role: 'status', class: 'text-muted mr-2'})
+        .appendTo($footer);
+      const $button = $('<button>', {
+        type: 'button', class: 'btn btn-primary', text: '썸네일 재생성',
+      }).appendTo($footer);
+      $button.on('click', function() {
+        $button.prop('disabled', true);
+        $status.text('재생성 중…');
+        $.ajax({
+          url: url, method: 'POST', dataType: 'json',
+        }).done(function(result) {
+          if (result && result.success === false) {
+            $status.text('재생성하지 못했습니다. 다시 시도해 주세요.');
+            return;
+          }
+          const freshUrl = new URL(
+            $source.attr('href'), window.location.href,
+          );
+          freshUrl.searchParams.set('_thumbnail', Date.now());
+          $source.attr('href', freshUrl.href).find('img')
+            .attr('src', freshUrl.href);
+          $modal.find('.ekko-lightbox-container img')
+            .attr('src', freshUrl.href);
+          $status.text('재생성했습니다.');
+        }).fail(function() {
+          $status.text('재생성하지 못했습니다. 다시 시도해 주세요.');
+        }).always(function() {
+          $button.prop('disabled', false);
+        });
+      });
     },
+
   });
 });
 

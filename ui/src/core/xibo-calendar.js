@@ -494,7 +494,9 @@ $(function() {
         const $calendarErrorMessage = $('#calendar-error-message');
 
         // Append display groups and layouts
-        const isShowAll = $('#showAll').is(':checked');
+        const scopeTargets = window.deviceScopeFilters?.scheduleTargets();
+        const scopeDisplay = scopeTargets?.display;
+        const isShowAll = !scopeDisplay && $('#showAll').is(':checked');
 
         // Enable or disable the display list
         // according to whether show all is selected
@@ -510,10 +512,13 @@ $(function() {
           $('.non-agenda-filter').find('input, select').prop('disabled', false);
 
           // Serialise
-          const displayGroups =
-            $('select[name="displayGroupIds[]"').serialize();
-          const displaySpecificGroups =
-            $('select[name="displaySpecificGroupIds[]"').serialize();
+          const displayGroups = scopeDisplay ? '' :
+            $('#DisplayGroupList').serialize();
+          const displaySpecificGroups = scopeDisplay ?
+            $.param({
+              'displaySpecificGroupIds[]': scopeTargets.displays,
+            }) :
+            $('#DisplayList').serialize();
           const displayLayouts = $('#campaignIdFilter').serialize();
           const eventTypes = $('#eventTypeId').serialize();
           const geoAware = $('#geoAware').serialize();
@@ -688,10 +693,14 @@ $(function() {
 
             // Find selected display group and create a
             // display group list used to create tabs
-            $(
+            (scopeDisplay ? $('<option>', {
+              value: scopeDisplay.displayGroupId,
+              text: scopeDisplay.display,
+              type: '1', selected: true,
+            }) : $(
               'select[name="displayGroupIds[]"] option, ' +
               'select[name="displaySpecificGroupIds[]"] option',
-            )
+            ))
               .each(function(_idx, el) {
                 const $self = $(el);
 
@@ -2404,6 +2413,13 @@ const setupSelectForSchedule = function(dialog) {
           query.start = (params.page - 1) * 10;
         }
 
+        const groups = $('select[name="displayGroupIds[]"]', dialog).val();
+        if (groups?.length) {
+          query.scheduleDisplayGroupIds = groups;
+        } else if (window.deviceScope?.getDisplayId()) {
+          query.contextDisplayId = window.deviceScope.getDisplayId();
+        }
+
         return query;
       },
       processResults: function(data, params) {
@@ -2526,7 +2542,10 @@ const setupSelectForSchedule = function(dialog) {
     const displaySpecificGroups = $('#DisplayList').val() ?? [];
     const displayGroups = $('#DisplayGroupList').val() ?? [];
     // add values to one array
-    const addFormDisplayGroup = displaySpecificGroups.concat(displayGroups);
+    const targets = window.deviceScopeFilters?.scheduleTargets(
+      displayGroups, displaySpecificGroups,
+    ) || {groups: displayGroups, displays: displaySpecificGroups};
+    const addFormDisplayGroup = targets.displays.concat(targets.groups);
     // set array of displayGroups as initial value
     $displaySelect.data('initial-value', addFormDisplayGroup);
 

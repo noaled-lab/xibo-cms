@@ -404,6 +404,21 @@ class Media implements \JsonSerializable
             // If the media is imported from a provider (ie Pixabay, etc), use it instead of importing again.
             if (isset($this->apiRef) && $this->apiRef === $result[0]['apiRef']) {
                 $this->mediaId = intval($result[0]['mediaId']);
+            } elseif (!empty($options['renameOnConflict']) && empty($this->mediaId)
+                && $options['oldMedia'] === null) {
+                // Only fresh uploads opt in. Keep the extension and fit the name limit.
+                $extension = pathinfo($this->name, PATHINFO_EXTENSION);
+                $extension = $extension === '' ? '' : '.' . $extension;
+                if (mb_strlen($extension) > 90) {
+                    $extension = '';
+                }
+                $stem = mb_substr($this->name, 0, mb_strlen($this->name) - mb_strlen($extension));
+                $number = 2;
+                do {
+                    $suffix = ' (' . $number++ . ')' . $extension;
+                    $this->name = mb_substr($stem, 0, max(0, 100 - mb_strlen($suffix))) . $suffix;
+                    $params['name'] = $this->name;
+                } while (count($this->getStore()->select($checkSQL, $params)) > 0);
             } else {
                 throw new DuplicateEntityException(__('Media you own already has this name. Please choose another.'));
             }

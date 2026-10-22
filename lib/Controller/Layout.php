@@ -420,8 +420,12 @@ class Layout extends Base
 
             // Empty template so we create a blank layout with the provided resolution
             if (empty($resolutionId)) {
-                // Get the nearest landscape resolution we can
-                $resolution = $this->resolutionFactory->getClosestMatchingResolution(1920, 1080);
+                // Only new blank layouts inherit the selected display's dimensions.
+                $resolution = $this->resolutionFactory->getForNewLayout(
+                    (int) $sanitizedParams->getInt('contextWidth'),
+                    (int) $sanitizedParams->getInt('contextHeight'),
+                    $this->userFactory->getSystemUser()->userId
+                );
 
                 // Get the ID
                 $resolutionId = $resolution->resolutionId;
@@ -730,6 +734,20 @@ class Layout extends Base
      *      type="integer",
      *      required=false
      *   ),
+     *  @SWG\Parameter(
+     *      name="contextWidth",
+     *      in="formData",
+     *      description="When resolutionId is omitted, the selected display width. An exact resolution is reused or created.",
+     *      type="integer",
+     *      required=false
+     *   ),
+     *  @SWG\Parameter(
+     *      name="contextHeight",
+     *      in="formData",
+     *      description="When resolutionId is omitted, the selected display height.",
+     *      type="integer",
+     *      required=false
+     *   ),
      *  @SWG\Response(
      *      response=200,
      *      description="successful operation",
@@ -759,7 +777,14 @@ class Layout extends Base
 
         // Resolution
         $saveRegions = false;
-        $resolution = $this->resolutionFactory->getById($sanitizedParams->getInt('resolutionId'));
+        $resolutionId = $sanitizedParams->getInt('resolutionId');
+        $contextWidth = (int) $sanitizedParams->getInt('contextWidth');
+        $contextHeight = (int) $sanitizedParams->getInt('contextHeight');
+        $resolution = empty($resolutionId) && $contextWidth > 0 && $contextHeight > 0
+            ? $this->resolutionFactory->getForNewLayout(
+                $contextWidth, $contextHeight, $this->userFactory->getSystemUser()->userId
+            )
+            : $this->resolutionFactory->getById($resolutionId);
 
         if ($layout->width != $resolution->width || $layout->height != $resolution->height) {
             $this->getLog()->debug('editBackground: resolution dimensions have changed, updating layout');
@@ -1726,6 +1751,8 @@ class Layout extends Base
             $layout->includeProperty('buttons');
 
             // Thumbnail
+            $layout->setUnmatchedProperty('thumbnailRegenerateUrl', $this->getUser()->checkEditable($layout)
+                ? $this->urlFor($request, 'layout.thumbnail.add', ['id' => $layout->layoutId]) : null);
             $layout->setUnmatchedProperty('thumbnail', '');
             if (file_exists($layout->getThumbnailUri())) {
                 $layout->setUnmatchedProperty(
@@ -3283,19 +3310,25 @@ class Layout extends Base
                 $image = Img::canvas($layout->width, $layout->height, $layout->backgroundColor);
             }
 
-            $countRegions = count($layout->regions);
-
             // Draw some regions on it.
             foreach ($layout->regions as $region) {
                 try {
-                    // We don't do this for the canvas region.
-                    if ($countRegions > 1 && $region->type === 'canvas') {
-                        continue;
-                    }
-
                     // Get widgets in this region
                     $playlist = $region->getPlaylist()->setModuleFactory($this->moduleFactory);
                     $widgets = $playlist->expandWidgets();
+
+                    if ($region->type === 'canvas') {
+                        $elements = [];
+                        foreach ($widgets as $widget) {
+                            foreach (json_decode($widget->getOptionValue('elements', '[]'), true) ?? [] as $group) {
+                                $elements = array_merge($elements, $group['elements'] ?? []);
+                            }
+                        }
+                        \Xibo\Support\CanvasThumbnail::render($image, $elements, function ($mediaId) use ($libraryLocation) {
+                            return $libraryLocation . $this->mediaFactory->getById($mediaId)->storedAs;
+                        }, (int) $region->left, (int) $region->top);
+                        continue;
+                    }
 
                     if (count($widgets) <= 0) {
                         // Render the region (draw a grey box)
@@ -3386,19 +3419,21 @@ class Layout extends Base
                             }
                         }
 
-                        // Put a number of widgets counter in the bottom
-                        $image->text(
-                            '1 / ' . count($widgets),
-                            $region->left + $region->width - 10,
-                            $region->top + $region->height - 10,
-                            function ($font) {
-                                $font->file(PROJECT_ROOT . '/web/theme/default/fonts/Railway.ttf');
-                                $font->size(36);
-                                $font->color('#000000');
-                                $font->align('right');
-                                $font->valign('bottom');
-                            }
-                        );
+                        // A counter is useful only when a region cycles through multiple widgets.
+                        if (count($widgets) > 1) {
+                            $image->text(
+                                '1 / ' . count($widgets),
+                                $region->left + $region->width - 10,
+                                $region->top + $region->height - 10,
+                                function ($font) {
+                                    $font->file(PROJECT_ROOT . '/web/theme/default/fonts/Railway.ttf');
+                                    $font->size(36);
+                                    $font->color('#000000');
+                                    $font->align('right');
+                                    $font->valign('bottom');
+                                }
+                            );
+                        }
                     }
                 } catch (\Exception $e) {
                     $this->getLog()->error('Problem generating region in thumbnail. e: ' . $e->getMessage());

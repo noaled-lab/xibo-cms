@@ -445,7 +445,9 @@ class XiboUploadHandler extends BlueImpUploadHandler
                 $media->permissionsFolderId = $folder->getPermissionFolderIdOrThis();
 
                 // Save
-                $media->save();
+                $media->save(['renameOnConflict' => true]);
+                $file->renamed = $media->name !== $name;
+                $name = $media->name;
 
                 // Upload finished
                 $controller->getDispatcher()->dispatch(

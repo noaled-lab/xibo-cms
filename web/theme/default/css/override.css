@@ -19,40 +19,125 @@
  * along with Xibo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+body.has-device-scope {
+    --device-scope-height: 56px;
+    padding-top: var(--device-scope-height);
+}
+
+body.has-device-scope #sidebar-wrapper {
+    top: var(--device-scope-height);
+    height: calc(100% - var(--device-scope-height));
+}
+
+/* Fixed editor controls do not inherit the body's padding. Keep their offsets
+   here with the bar, including editor bundles loaded after this stylesheet. */
+body.has-device-scope .editor-toolbar .container-toolbar .left-area,
+body.has-device-scope .editor-toolbar .container-toolbar .layout-action-menu,
+body.has-device-scope .editor-modal,
+body.has-device-scope .editor-modal .back-button,
+body.has-device-scope .editor-modal .properties-panel-playlist-editor {
+    top: var(--device-scope-height);
+}
+
+body.has-device-scope.editor-opened .row.header.header-side {
+    /* This header is in normal flow and already follows the body padding. */
+    top: 0;
+}
+
+body.has-device-scope .editor-modal,
+body.has-device-scope .editor-modal .properties-panel-playlist-editor {
+    height: calc(100% - var(--device-scope-height));
+}
+
+body.has-device-scope .editor-toolbar.editor-side-bar-playlist-editor nav {
+    top: calc(50px + var(--device-scope-height));
+    height: calc(100% - 50px - var(--device-scope-height));
+}
+
+body.has-device-scope .editor-modal #layout-manager {
+    top: calc(10px + var(--device-scope-height));
+}
+
+@media (max-width: 768px) {
+    body.has-device-scope .row.header {
+        top: var(--device-scope-height);
+    }
+
+    body.has-device-scope #sidebar-wrapper {
+        height: auto;
+    }
+}
+
 .device-scope {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--device-scope-height, 56px);
+    /* Bootstrap dropdowns start at 1000; editor controls start at 1001. */
+    z-index: 999;
+    background: #273759;
     display: flex;
-    align-items: center;
-    gap: 8px;
+    align-items: stretch;
+    gap: 6px;
     overflow-x: auto;
-    padding: 4px 0 12px;
-    margin: 0 15px 16px;
-    border-bottom: 1px solid #e5e5e5;
+    padding: 0 16px;
+    margin: 0;
+    border-bottom: 1px solid #30426a;
     scrollbar-width: thin;
+    scrollbar-color: #627cb7 #273759;
 }
 
 .device-scope-tag {
     flex: 0 0 auto;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #fff;
-    color: #555;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: #b2bfdc;
     padding: 6px 14px;
     white-space: nowrap;
+    font-size: 1rem;
+    line-height: 1.5;
+    box-shadow: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .device-scope-tag:hover {
-    background: #f5f5f5;
-    border-color: #aaa;
+    background: #30426a;
+    color: #fff;
 }
 
 .device-scope-tag.active {
-    background: var(--primary, #337ab7);
-    border-color: var(--primary, #337ab7);
+    background: #30426a;
+    border-bottom-color: #e99d1a;
     color: #fff;
 }
 
 .device-scope-tag:focus-visible {
-    outline: 2px solid var(--primary, #337ab7);
-    outline-offset: 2px;
+    outline: 2px solid #e99d1a;
+    outline-offset: -3px;
+}
+
+.device-scope-retry {
+    flex: 0 0 auto;
+    color: #b2bfdc;
+}
+
+.device-scope-retry:hover,
+.device-scope-retry:focus {
+    color: #fff;
+}
+
+/* Header menus need their parent stacking context above the device bar too. */
+body.has-device-scope .row.header:has(.dropdown-menu.show),
+body.has-device-scope .navbar:has(.dropdown-menu.show) {
+    z-index: 1001;
+}
+
+@media (min-width: 769px) {
+    body.has-device-scope .row.header:has(.dropdown-menu.show) {
+        position: relative;
+    }
 }
 

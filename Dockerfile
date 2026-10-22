@@ -1,7 +1,7 @@
 # Multi-stage build
 # Stage 1
 # Run composer
-FROM composer as composer
+FROM composer AS composer
 COPY ./composer.json /app
 COPY ./composer.lock /app
 
@@ -48,27 +48,31 @@ RUN npm run publish
 
 # Stage 3
 # Build the CMS container
-FROM debian:bullseye-slim
-MAINTAINER Xibo Signage <support@xibosignage.com>
+FROM debian:bookworm-slim
 LABEL org.opencontainers.image.authors="support@xibosignage.com"
 
 # Install apache, PHP, and supplimentary programs.
-RUN apt update && \
-    apt install -y software-properties-common lsb-release ca-certificates curl && \
+RUN apt-get -o Acquire::Retries=3 -o APT::Update::Error-Mode=any update && \
+    apt-get -o Acquire::Retries=3 install -y --no-install-recommends lsb-release ca-certificates curl && \
     rm -rf /var/lib/apt/lists/* && \
     ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
 
 # Add sury.org PHP Repository
-RUN curl -sSLo /usr/share/keyrings/deb.sury.org-php.gpg https://packages.sury.org/php/apt.gpg && \
-    sh -c 'echo "deb [signed-by=/usr/share/keyrings/deb.sury.org-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+RUN curl -fsSL --retry 3 -o /tmp/debsuryorg-archive-keyring.deb https://packages.sury.org/debsuryorg-archive-keyring.deb && \
+    dpkg -i /tmp/debsuryorg-archive-keyring.deb && \
+    rm /tmp/debsuryorg-archive-keyring.deb && \
+    sh -c 'echo "deb [signed-by=/usr/share/keyrings/debsuryorg-archive-keyring.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
 
-RUN LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive apt update && apt upgrade -y && apt install -y \
+RUN export LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive && \
+    apt-get -o Acquire::Retries=3 -o APT::Update::Error-Mode=any update && \
+    apt-get -o Acquire::Retries=3 upgrade -y && \
+    apt-get -o Acquire::Retries=3 install -y \
     tar \
     bash \
     curl \
     apache2 \
     libapache2-mod-xsendfile \
-    netcat \
+    netcat-openbsd \
     iputils-ping \
     gnupg \
     php8.4 \

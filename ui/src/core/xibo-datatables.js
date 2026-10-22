@@ -133,11 +133,21 @@ window.XiboInitDatatables = function(scope, options) {
     // Handle clear filter
     $target.find('.XiboFilter .clear-filter-btn').off()
       .on('click', function() {
+        const preserved = form.find('[data-device-scope-preserved="true"]')
+          .toArray().map(function(field) {
+            return {
+              field: field, value: $(field).val(), checked: field.checked,
+            };
+          });
         // Reset fields
         form[0].reset();
+        preserved.forEach(function(item) {
+          $(item.field).val(item.value).prop('checked', item.checked);
+        });
 
         // Reset non select 2 selects to default option
         form.find('select:not(.select2-hidden-accessible)')
+          .not('[data-device-scope-preserved="true"]')
           .prop('selectedIndex', 0)
           .trigger('change');
 
@@ -146,7 +156,8 @@ window.XiboInitDatatables = function(scope, options) {
           .trigger('change');
 
         // Trigger change on select2
-        form.find('.select2-hidden-accessible').val('')
+        form.find('.select2-hidden-accessible')
+          .not('[data-device-scope-preserved="true"]').val('')
           .trigger('change');
 
         // Clear tags input
