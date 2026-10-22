@@ -50,7 +50,7 @@
         align-items: center;
         height: $toolbar-header-height;
         gap: 8px;
-        top: 0;
+        top: var(--device-scope-height, 0px);
         left: 6px;
     }
 
@@ -135,7 +135,7 @@
         padding: 0;
         // Fix position for now
         position: fixed;
-        top: 0;
+        top: var(--device-scope-height, 0px);
         right: 114px;
         // Fix position for now
 
