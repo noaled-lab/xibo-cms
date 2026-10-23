@@ -3330,6 +3330,17 @@ class Layout extends Base
                         continue;
                     }
 
+                    // An empty zone is only a placeholder. The translucent box hid the layout behind it.
+                    $preview = $widgets[0] ?? null;
+                    $previewIsMedia = $preview !== null && (
+                        $preview->type === 'image'
+                        || ($preview->type === 'video'
+                            && file_exists($libraryLocation . $preview->getPrimaryMediaId() . '_videocover.png'))
+                    );
+                    if ($region->type === 'zone' && !$previewIsMedia) {
+                        continue;
+                    }
+
                     if (count($widgets) <= 0) {
                         // Render the region (draw a grey box)
                         $image->rectangle(
