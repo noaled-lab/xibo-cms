@@ -66,6 +66,7 @@ use Xibo\Support\Exception\GeneralException;
 use Xibo\Support\Exception\InvalidArgumentException;
 use Xibo\Support\Exception\LibraryFullException;
 use Xibo\Support\Exception\NotFoundException;
+use Xibo\Support\FragmentedMp4;
 use Xibo\Widget\Render\WidgetDownloader;
 
 /**
@@ -529,6 +530,7 @@ class Library extends Base
         $thumbnailRouteName = $isReturnPublicUrls ? 'library.public.thumbnail' : 'library.thumbnail';
         $encryptionKey = $this->getConfig()->getApiKeyDetails()['encryptionKey'];
         $rootUrl = (new HttpsDetect())->getUrl();
+        $libraryLocation = $this->getConfig()->getSetting('LIBRARY_LOCATION');
 
         // Construct the SQL
         $mediaList = $this->mediaFactory->query($this->gridRenderSort($parsedQueryParams), $this->gridRenderFilter([
@@ -569,7 +571,6 @@ class Library extends Base
                     $renderThumbnail = true;
                     // for video, check if the cover image exists here.
                     if ($media->mediaType === 'video') {
-                        $libraryLocation = $this->getConfig()->getSetting('LIBRARY_LOCATION');
                         $renderThumbnail = file_exists($libraryLocation . $media->mediaId . '_videocover.png');
                     }
 
@@ -601,6 +602,14 @@ class Library extends Base
             }
 
             $media->setUnmatchedProperty('fileSizeFormatted', ByteFormatter::format($media->fileSize));
+
+            // Fragmented MP4 uploaded before their duration could be read may have a wrong one stored
+            if (in_array($media->mediaType, ['video', 'audio'])) {
+                $fileDuration = intval(FragmentedMp4::duration($libraryLocation . $media->storedAs));
+                if ($fileDuration > 0 && $fileDuration !== intval($media->duration)) {
+                    $media->setUnmatchedProperty('fileDuration', $fileDuration);
+                }
+            }
 
             // Media expiry
             $media->setUnmatchedProperty('mediaExpiresIn', __('Expires %s'));
@@ -2227,6 +2236,44 @@ class Library extends Base
         }, $layouts);
 
         $this->getState()->setData($result);
+        return $this->render($request, $response);
+    }
+
+    /**
+     * Read the duration of the media file again and apply it to the widgets using it
+     * @param Request $request
+     * @param Response $response
+     * @param $id
+     * @return \Psr\Http\Message\ResponseInterface|Response
+     * @throws GeneralException
+     */
+    public function refreshDuration(Request $request, Response $response, $id)
+    {
+        $media = $this->mediaFactory->getById($id);
+
+        if (!$this->getUser()->checkEditable($media)) {
+            throw new AccessDeniedException();
+        }
+
+        $module = $this->moduleFactory->getByType($media->mediaType);
+        $libraryLocation = $this->getConfig()->getSetting('LIBRARY_LOCATION');
+        $media->updateDuration($module->fetchDurationOrDefaultFromFile($libraryLocation . $media->storedAs));
+
+        foreach ($this->widgetFactory->getByMediaId($media->mediaId, 0) as $widget) {
+            if ($widget->useDuration == 1) {
+                $widget->calculateDuration($this->moduleFactory->getByType($widget->type));
+            } else {
+                $widget->calculatedDuration = $media->duration;
+            }
+            $widget->save();
+        }
+
+        $this->getState()->hydrate([
+            'message' => sprintf(__('Updated the duration of %s'), $media->name),
+            'id' => $media->mediaId,
+            'data' => $media
+        ]);
+
         return $this->render($request, $response);
     }
 
