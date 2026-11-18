@@ -239,7 +239,15 @@
                             if (type != "display")
                                 return data.duration;
 
-                            return dataTableTimeFromSeconds(data.duration, type);
+                            var duration = dataTableTimeFromSeconds(data.duration, type);
+                            if (!data.fileDuration) {
+                                return duration;
+                            }
+
+                            var title = '{% trans "실제 길이는 %s입니다. 클릭하면 업데이트합니다." %}'
+                                .replace('%s', dataTableTimeFromSeconds(data.fileDuration, type));
+                            return duration + ' <a href="#" class="refresh-duration-btn text-warning" data-media-id="' + data.mediaId + '" title="' + title + '">' +
+                                '<span class="fa fa-exclamation-triangle"></span></a>';
                         }
                     },
                     {"data": "duration", "visible": false, responsivePriority: 10},
@@ -389,6 +397,30 @@
                         link.text('{% trans "조회" %}');
                         resultSpan.html('<span class="text-danger">{% trans "오류" %}</span>');
                     });
+            });
+
+            $(document).on('click', '.refresh-duration-btn', function (e) {
+                e.preventDefault();
+                var link = $(this);
+                if (link.hasClass('disabled')) {
+                    return;
+                }
+                link.addClass('disabled');
+                $.ajax({
+                    url: '{{ url_for("library.duration.refresh", {id: ":id"}) }}'.replace(':id', link.data('mediaId')),
+                    type: 'PUT'
+                }).done(function (response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        table.ajax.reload(null, false);
+                    } else {
+                        link.removeClass('disabled');
+                        toastr.error(response.message || '{% trans "오류" %}');
+                    }
+                }).fail(function (xhr) {
+                    link.removeClass('disabled');
+                    toastr.error((xhr.responseJSON && xhr.responseJSON.message) || '{% trans "오류" %}');
+                });
             });
 
             $("#refreshGrid").click(function () {

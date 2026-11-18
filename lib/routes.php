@@ -373,6 +373,7 @@ $app->group('', function (RouteCollectorProxy $group) {
     $group->delete('/library/{id}', ['\Xibo\Controller\Library','delete'])->setName('library.delete');
     $group->post('/library/copy/{id}', ['\Xibo\Controller\Library','copy'])->setName('library.copy');
     $group->put('/library/{id}/selectfolder', ['\Xibo\Controller\Library','selectFolder'])->setName('library.selectfolder');
+    $group->put('/library/{id}/duration', ['\Xibo\Controller\Library','refreshDuration'])->setName('library.duration.refresh');
 })->addMiddleware(new \Xibo\Middleware\FeatureAuth($app->getContainer(), ['library.modify']));
 
 // Tagging

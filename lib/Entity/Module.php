@@ -28,6 +28,7 @@ use Xibo\Factory\ModuleFactory;
 use Xibo\Service\LogServiceInterface;
 use Xibo\Storage\StorageServiceInterface;
 use Xibo\Support\Exception\InvalidArgumentException;
+use Xibo\Support\FragmentedMp4;
 use Xibo\Widget\Definition\LegacyType;
 use Xibo\Widget\Provider\DataProvider;
 use Xibo\Widget\Provider\WidgetCompatibilityInterface;
@@ -387,6 +388,13 @@ class Module implements \JsonSerializable
         if (empty($file)) {
             return 0;
         } else {
+            // getID3 cannot read fragmented MP4 and would guess from a single fragment.
+            // Fall back to 0 (end-detect) when the fragments cannot be read either.
+            $fragmentedDuration = FragmentedMp4::duration($file);
+            if ($fragmentedDuration !== null) {
+                return intval($fragmentedDuration);
+            }
+
             $info = new \getID3();
             $file = $info->analyze($file);
 
