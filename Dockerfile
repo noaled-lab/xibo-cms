@@ -106,6 +106,11 @@ RUN export LC_ALL=C.UTF-8 DEBIAN_FRONTEND=noninteractive && \
 
 RUN update-alternatives --set php /usr/bin/php8.4
 
+# XMR push messages are sealed with RC4 (openssl_seal), which OpenSSL 3 only
+# provides through the legacy provider. Enable it next to the default provider.
+RUN sed -i '/^\[openssl_init\]/a providers = provider_sect' /etc/ssl/openssl.cnf && \
+    printf '\n[provider_sect]\ndefault = default_sect\nlegacy = legacy_sect\n\n[default_sect]\nactivate = 1\n\n[legacy_sect]\nactivate = 1\n' >> /etc/ssl/openssl.cnf
+
 # Enable Apache module
 RUN a2enmod rewrite \
     && a2enmod headers \
